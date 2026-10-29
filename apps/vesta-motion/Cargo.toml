@@ -1,0 +1,21 @@
+[package]
+name = "vesta-motion"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+description = "Native Vesta GPUI motion graphics preview workspace"
+
+[dependencies]
+vesta-gpui.workspace = true
+vesta-gpui-widgets.workspace = true
+vesta-gpui-winit.workspace = true
+vesta-gpui-vulkan = { workspace = true, features = ["viewport"] }
+vesta-viewport.workspace = true
+winit.workspace = true
+accesskit = "=0.21.1"
+image = { version = "=0.25.10", default-features = false, features = ["png"] }
+
+[lints]
+workspace = true

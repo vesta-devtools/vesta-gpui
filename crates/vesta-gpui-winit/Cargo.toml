@@ -1,0 +1,21 @@
+[package]
+name = "vesta-gpui-winit"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+description = "winit input and IME adapter for vesta-gpui"
+
+[dependencies]
+accesskit_winit = "=0.29.2"
+vesta-gpui.workspace = true
+winit = { workspace = true, features = ["serde"] }
+serde_json.workspace = true
+url = "=2.5.8"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+open = "=5.4.2"
+
+[lints]
+workspace = true

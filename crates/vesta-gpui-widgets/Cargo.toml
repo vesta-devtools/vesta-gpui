@@ -1,0 +1,16 @@
+[package]
+name = "vesta-gpui-widgets"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+description = "Backend-neutral reusable widgets for Vesta GPUI hosts"
+
+[dependencies]
+pulldown-cmark = { version = "=0.13.0", default-features = false }
+unicode-segmentation = "=1.13.3"
+vesta-gpui.workspace = true
+
+[lints]
+workspace = true

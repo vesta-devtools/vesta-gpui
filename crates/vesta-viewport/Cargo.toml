@@ -1,0 +1,11 @@
+[package]
+name = "vesta-viewport"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+description = "Backend-neutral camera and scene snapshot contracts for reusable 3D viewports"
+
+[lints]
+workspace = true

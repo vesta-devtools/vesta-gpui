@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "description": "Independent Vesta GPUI maintenance baseline; original source import retained by maintainers without publishing private repository URLs.",
+  "original_sdk_git_commit": "6aca506ea3bb43f54cdd9d05c4103e5626e4cc46",
+  "original_product_source_commit": "9f46038aad64b338c1bd2f3f1c971fd4f7a37c5e",
+  "original_source_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
+  "original_source_tree_sha256": "d5c4d45c8ab360469b5bcaca0a26412a932f687318acfe15584527cbd2106e61",
+  "original_inventory_files": 379,
+  "packages": [
+    {
+      "name": "vesta-gpui",
+      "version": "0.1.0"
+    },
+    {
+      "name": "vesta-gpui-widgets",
+      "version": "0.1.0"
+    },
+    {
+      "name": "vesta-gpui-winit",
+      "version": "0.1.0"
+    },
+    {
+      "name": "vesta-gpui-vulkan",
+      "version": "0.1.0"
+    },
+    {
+      "name": "vesta-gpui-webview",
+      "version": "0.1.0"
+    },
+    {
+      "name": "vesta-gpui-workspace",
+      "version": "0.1.0"
+    },
+    {
+      "name": "vesta-workspace",
+      "version": "0.1.0"
+    },
+    {
+      "name": "vesta-viewport",
+      "version": "0.1.0"
+    }
+  ],
+  "applications": [
+    {
+      "name": "vesta-gpui-standalone",
+      "version": "0.1.0"
+    },
+    {
+      "name": "vesta-motion",
+      "version": "0.1.0"
+    }
+  ],
+  "preserved_notices": [
+    "LICENSE",
+    "crates/vesta-gpui/tests/fixtures/LICENSE-Material-Icons.txt"
+  ],
+  "maintenance_changes": [
+    "Replace private repository context URLs with local validation scope or current Agent access documentation.",
+    "Remove machine-specific product checkout commands.",
+    "Replace the monorepo exporter with an independent source seal/verifier and add checked source packaging."
+  ],
+  "runtime_source_and_dependency_changes": []
+}

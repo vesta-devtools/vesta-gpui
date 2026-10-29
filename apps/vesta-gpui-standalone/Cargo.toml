@@ -1,0 +1,32 @@
+[package]
+name = "vesta-gpui-standalone"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Standalone winit/native Vulkan acceptance host for the reusable Vesta GPUI stack"
+
+[features]
+gpu-fault-injection = ["vesta-gpui-vulkan/fault-injection"]
+
+[dependencies]
+accesskit = "=0.21.1"
+arboard = { version = "=3.6.1", default-features = false }
+serde_json.workspace = true
+base64 = "=0.22.1"
+image = { version = "=0.25.10", default-features = false, features = ["png"] }
+vesta-gpui.workspace = true
+vesta-gpui-vulkan = { workspace = true, features = ["viewport"] }
+vesta-gpui-widgets.workspace = true
+vesta-gpui-winit.workspace = true
+vesta-gpui-workspace.workspace = true
+vesta-viewport.workspace = true
+winit.workspace = true
+vesta-workspace.workspace = true
+
+[dev-dependencies]
+accesskit_consumer = "=0.31.0"
+
+[lints]
+workspace = true

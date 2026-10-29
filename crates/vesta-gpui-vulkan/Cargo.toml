@@ -1,0 +1,38 @@
+[package]
+name = "vesta-gpui-vulkan"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+description = "Native Vulkan UI renderer with an optional viewport for independent desktop hosts"
+
+[features]
+viewport = ["dep:vesta-viewport"]
+# Explicit pre-acquire failures, enabled only by the standalone smoke harness.
+fault-injection = []
+
+[dependencies]
+vesta-gpui.workspace = true
+vesta-viewport = { workspace = true, optional = true }
+vulkano = { version = "=0.35.2", default-features = false }
+winit.workspace = true
+naga = { version = "=27.0.3", features = ["wgsl-in", "spv-out"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "=0.61.2", features = ["Win32_Graphics_Gdi"] }
+
+[dev-dependencies]
+vesta-gpui-widgets.workspace = true
+vesta-gpui-winit.workspace = true
+accesskit = "=0.21.1"
+arboard = { version = "=3.6.1", default-features = false }
+
+# ADR-0304: only checked_pipeline allows documented shader and draw calls.
+[lints.rust]
+unsafe_code = "deny"
+[lints.clippy]
+dbg_macro = "deny"
+todo = "deny"
+undocumented_unsafe_blocks = "deny"
+unwrap_used = "deny"

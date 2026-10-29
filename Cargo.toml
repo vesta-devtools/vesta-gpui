@@ -1,0 +1,59 @@
+[workspace]
+members = [
+    "crates/vesta-gpui",
+    "crates/vesta-gpui-widgets",
+    "crates/vesta-gpui-winit",
+    "crates/vesta-gpui-vulkan",
+    "crates/vesta-gpui-webview",
+    "crates/vesta-gpui-workspace",
+    "crates/vesta-workspace",
+    "crates/vesta-viewport",
+    "apps/vesta-gpui-standalone",
+    "apps/vesta-motion",
+]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89.0"
+license = "Apache-2.0"
+publish = false
+
+[workspace.dependencies]
+bytemuck = { version = "=1.25.2", features = ["derive"] }
+serde = { version = "=1.0", features = ["derive"] }
+serde_json = { version = "=1.0", default-features = false, features = ["std", "float_roundtrip"] }
+taffy = { version = "=0.12.2", default-features = false, features = [
+    "flexbox",
+    "grid",
+    "std",
+    "taffy_tree",
+] }
+vesta-gpui = { version = "=0.1.0", path = "crates/vesta-gpui" }
+vesta-gpui-vulkan = { version = "=0.1.0", path = "crates/vesta-gpui-vulkan" }
+vesta-gpui-widgets = { version = "=0.1.0", path = "crates/vesta-gpui-widgets" }
+vesta-gpui-winit = { version = "=0.1.0", path = "crates/vesta-gpui-winit" }
+vesta-gpui-workspace = { version = "=0.1.0", path = "crates/vesta-gpui-workspace" }
+vesta-viewport = { version = "=0.1.0", path = "crates/vesta-viewport" }
+vesta-workspace = { version = "=0.1.0", path = "crates/vesta-workspace" }
+winit = "=0.30.13"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+dbg_macro = "deny"
+todo = "deny"
+undocumented_unsafe_blocks = "deny"
+unwrap_used = "deny"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
