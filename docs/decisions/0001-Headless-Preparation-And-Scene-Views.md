@@ -1,6 +1,6 @@
 # CPU preparation and bounded scene views
 
-Status: Proposed implementation candidate, not qualified or adopted.
+Status: Accepted implementation; software qualification is recorded separately.
 Date: 2026-10-30.
 Base: public source commit f7c5168e484adfd1ea89c95a11bb96c9721c2fd5.
 
@@ -49,5 +49,6 @@ dropping its scene.
 Extend existing painter/image preparation and target-capacity comprehensive
 contracts. Protect independent cameras/clips/order, borrowed scene identity,
 empty/overflow/overlap/capacity handling, legacy clamping and true production
-CPU geometry. Typecheck/tests/strict need a newly coordinated bounded Cargo slot.
-No GUI, Device, native measurement or Vesta source/adoption is implied.
+CPU geometry. Typecheck/tests/strict qualify only their recorded source identity.
+No GUI, Device, native measurement or Vesta source/adoption is implied by this
+decision or by a successful software batch.

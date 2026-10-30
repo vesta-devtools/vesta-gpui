@@ -1,10 +1,11 @@
-use crate::{
+//! A static editor outline built entirely from the public UI API.
+use vesta_gpui::{
     Align, Axis, Color, Dimension, Element, ElementId, ElementKey, Insets, Justify, Style, Viewport,
 };
 
-/// Stable identities used by the Iteration A editor-outline demo and its tests.
-pub mod demo_ids {
-    use crate::ElementId;
+/// Fixed identities belong to this standalone example only.
+mod demo_ids {
+    use vesta_gpui::ElementId;
 
     pub const ROOT: ElementId = ElementId::new(1);
     pub const TOP: ElementId = ElementId::new(2);
@@ -26,9 +27,17 @@ const ACCENT: Color = Color::rgb8(89, 159, 255);
 const TEXT: Color = Color::rgb8(224, 229, 237);
 const TEXT_MUTED: Color = Color::rgb8(135, 145, 161);
 
-/// Builds the static Top/Left/Center/Right/Bottom editor outline for UI-1.
+fn main() {
+    let outline = build_editor_outline(Viewport::new(1280.0, 720.0, 1.0));
+    println!(
+        "Editor outline: {} top-level regions",
+        outline.children.len()
+    );
+}
+
+/// Builds a static Top/Left/Center/Right/Bottom editor outline.
 #[must_use]
-pub fn build_editor_outline(viewport: Viewport) -> Element {
+fn build_editor_outline(viewport: Viewport) -> Element {
     Element::container(demo_ids::ROOT, key("studio.root"))
         .styled(
             Style::default()

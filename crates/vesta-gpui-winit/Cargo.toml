@@ -17,5 +17,14 @@ url = "=2.5.8"
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 open = "=5.4.2"
 
-[lints]
-workspace = true
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "=0.61.2", features = ["Win32_Graphics_Gdi"] }
+
+# Only the read-only monitor query admits documented Win32 calls.
+[lints.rust]
+unsafe_code = "deny"
+[lints.clippy]
+dbg_macro = "deny"
+todo = "deny"
+undocumented_unsafe_blocks = "deny"
+unwrap_used = "deny"

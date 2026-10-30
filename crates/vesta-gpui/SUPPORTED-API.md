@@ -366,7 +366,7 @@ and text pointer observation. `UiInputRequest` validates bounded command batches
 `UiInputObservation` binds them to the same presented tree, route, layout, owner
 registry and Host context. Hosts retain authorization and dispatch through their
 existing logical handler with explicit Native/Command origin. Command input is
-never native platform qualification. See ADR-0428 and `Docs/GpuiUiAccess.md`.
+never native platform qualification. See [the public UI access guide](../../docs/AGENT-ACCESS.md).
 
 ## Compatibility
 

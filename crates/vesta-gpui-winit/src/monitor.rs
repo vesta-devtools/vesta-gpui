@@ -1,4 +1,5 @@
 //! Read-only platform placement query. No window creation, ownership or mutation.
+//! This is the adapter's only module allowed to call an unsafe platform API.
 use winit::{dpi::PhysicalPosition, monitor::MonitorHandle};
 
 /// Physical desktop bounds of the monitor's usable work area. The tuple is

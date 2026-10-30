@@ -1,6 +1,8 @@
 //! Native projection for logical `WorkspaceModel::FloatingWindow` entries.
 
 use super::*;
+mod events;
+mod presentation;
 use vesta_gpui_widgets::{TitleBarActions, TitleBarLabels, TitleBarState, title_bar};
 
 pub(super) fn placement_from_native_event(

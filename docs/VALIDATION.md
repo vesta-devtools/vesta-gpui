@@ -2,8 +2,9 @@
 
 ## Current candidate
 
-The first independently maintained candidate is `0.1.0-rc.1`; package API
-versions remain `0.1.0`. This is a Windows native 2D developer preview, with
+The published baseline is `0.1.0-rc.1`; the development tree prepares
+`0.1.0-rc.2` with explicit [preview API migrations](../release/0.1.0-rc.2.md).
+Package API versions remain `0.1.0`. This is a Windows native 2D developer preview, with
 optional experimental Workspace, native WebView and viewport capabilities.
 
 Source integrity, Rust compilation, automated contract tests, native operation
@@ -14,8 +15,15 @@ cross-monitor DPI changes or the absence of all visual defects.
 See [the release procedure](RELEASING.md) for the exact independent commands.
 Actual local logs are written under `target/qualification/0.1.0-rc.1`; the
 distribution sidecar records their outcomes and the exact source identity.
-Absence of an outcome means it has not been qualified. This candidate is not
-tagged, publicly hosted or adopted by the Vesta product yet.
+Absence of an outcome means it has not been qualified. The source is hosted at
+[vesta-devtools/vesta-gpui](https://github.com/vesta-devtools/vesta-gpui).
+There is no final 0.1.0 tag or crates.io publication. Adoption by a consuming
+product is separate from the SDK's own qualification.
+
+The repository now includes a Windows software-check workflow and a focused
+native-profile CLI regression. Local fixtures exercise evidence validation and
+module loading; they do not provide new native observations. A workflow must
+actually run successfully before it can be reported as passing.
 
 ## Historical evidence
 

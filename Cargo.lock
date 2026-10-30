@@ -3851,7 +3851,6 @@ dependencies = [
  "vesta-gpui-winit",
  "vesta-viewport",
  "vulkano",
- "windows-sys 0.61.2",
  "winit",
 ]
 
@@ -3886,6 +3885,7 @@ dependencies = [
  "serde_json",
  "url",
  "vesta-gpui",
+ "windows-sys 0.61.2",
  "winit",
 ]
 

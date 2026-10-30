@@ -63,23 +63,9 @@ fn renderer_does_not_depend_on_other_backends_or_author_models() {
     }
     let source = fs::read_to_string(root.join("src/lib.rs")).expect("source");
     assert!(source.contains("#![deny(unsafe_code)]"));
-    // ADR-0640 adds only a read-only monitor query beside checked_pipeline.
-    assert_eq!(source.matches("#[allow(unsafe_code)]").count(), 2);
-    assert!(source.contains("mod popup_monitor;"));
-    assert!(production.contains("windows-sys"));
-    let platform = fs::read_to_string(root.join("src/popup_monitor.rs")).expect("platform query");
-    assert!(platform.contains("GetMonitorInfoW"));
-    for write in [
-        "SetWindow",
-        "ShowWindow",
-        "SetForegroundWindow",
-        "GWLP_HWNDPARENT",
-    ] {
-        assert!(
-            !platform.contains(write),
-            "popup query gained window mutation: {write}"
-        );
-    }
+    assert_eq!(source.matches("#[allow(unsafe_code)]").count(), 1);
+    assert!(!source.contains("popup_monitor"));
+    assert!(!production.contains("windows-sys"));
     for name in ["lib.rs", "painter.rs", "viewport.rs", "targets.rs"] {
         let source = fs::read_to_string(root.join("src").join(name)).expect("source");
         assert!(!source.contains("unsafe {"), "unsafe leaked into {name}");

@@ -19,9 +19,6 @@ vulkano = { version = "=0.35.2", default-features = false }
 winit.workspace = true
 naga = { version = "=27.0.3", features = ["wgsl-in", "spv-out"] }
 
-[target.'cfg(target_os = "windows")'.dependencies]
-windows-sys = { version = "=0.61.2", features = ["Win32_Graphics_Gdi"] }
-
 [dev-dependencies]
 vesta-gpui-widgets.workspace = true
 vesta-gpui-winit.workspace = true

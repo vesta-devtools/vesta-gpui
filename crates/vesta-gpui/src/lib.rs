@@ -1,4 +1,4 @@
-//! Minimal declarative UI loop for Vesta Studio.
+//! Backend-neutral declarative UI contracts for native tool hosts.
 //!
 //! The crate owns stable element identity and deterministic derived layout, paint, and hit-test
 //! data. It deliberately has no dependency on Bevy, wgpu, winit, Graph semantics, or host assets.
@@ -12,7 +12,6 @@ mod accessibility;
 mod control;
 pub use control::{UiCommand, UiOwnerRegistry, UiTargetRef};
 mod action_route;
-mod demo;
 mod element;
 mod focus;
 mod geometry;
@@ -37,7 +36,6 @@ pub use accessibility::{
     SemanticToggle,
 };
 pub use action_route::{ActionRoute, ActionRouteError, EventPhase, PointerClick};
-pub use demo::{build_editor_outline, demo_ids};
 pub use element::{
     Element, ElementId, ElementIdAllocator, ElementIdentity, ElementKey, ElementKind, ElementScope,
     ElementScopeExhausted, TextSource,

@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { sdkInventoryFiles } from './gpui_inventory.mjs';
 
 const version = '0.1.0';
-const candidate = '0.1.0-rc.1';
+const candidate = '0.1.0-rc.2';
+const validCandidate = value => typeof value === 'string' && /^0\.1\.0-rc\.[1-9]\d*$/.test(value);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const readJson = name => JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(readFileSync(name)));
 const validPath = name => typeof name === 'string' && name !== '' &&
@@ -42,7 +43,7 @@ export function seal(directory) {
 export function verify(directory) {
   const receipt = readJson(path.join(directory, 'SOURCE.json'));
   if (receipt.schema_version !== 2 || receipt.sdk_version !== version ||
-      receipt.candidate !== candidate || receipt.status !== 'candidate' ||
+      !validCandidate(receipt.candidate) || receipt.status !== 'candidate' ||
       receipt.authority !== 'independently-maintained-source' || !Array.isArray(receipt.files)) {
     throw new Error('Unsupported maintained-source receipt');
   }

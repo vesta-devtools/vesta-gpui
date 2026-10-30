@@ -3,7 +3,11 @@
 //! The adapter does not own an event loop, widgets, application state, or a clipboard
 //! implementation. Hosts keep those responsibilities and inject the narrow services used here.
 
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
+
+#[allow(unsafe_code)]
+mod monitor;
+pub use monitor::popup_monitor_bounds;
 
 mod document_link;
 mod ui_capture;

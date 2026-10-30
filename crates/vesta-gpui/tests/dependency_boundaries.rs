@@ -4,6 +4,12 @@ use std::{fs, path::Path};
 fn ui_crate_excludes_render_host_graph_and_workspace_crates() {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
     let content = fs::read_to_string(manifest).expect("vesta-gpui manifest readable");
+    let source = fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/lib.rs"))
+        .expect("base UI source");
+    assert!(
+        !source.contains("mod demo;"),
+        "example page leaked into base UI"
+    );
     for forbidden in [
         "bevy",
         "wgpu",

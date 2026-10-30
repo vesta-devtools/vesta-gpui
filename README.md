@@ -5,11 +5,13 @@ widgets, winit/Vulkan integration and opt-in structured UI access for authorized
 Agent integrations. The maintained family contains eight libraries and two
 application examples. No Vesta product, Graph runtime or model account is needed.
 
-The first source candidate is **0.1.0-rc.1**, targeting Windows x86-64 with
-Rust 1.89.0 / Edition 2024. It is a developer preview. Local independent
-compilation, 204 automated tests and strict checks have passed; this is not a
-final public release or registry package. See [validation scope](docs/VALIDATION.md)
-and the distribution qualification sidecar for the exact evidence.
+The published source baseline is **0.1.0-rc.1**, targeting Windows x86-64 with
+Rust 1.89.0 / Edition 2024. The next source candidate is described in the
+[rc.2 migration notes](release/0.1.0-rc.2.md). Both are developer-preview scope;
+no final 0.1.0 tag or registry package is available. The rc.1 baseline passed
+204 independent automated tests and strict checks. See
+[validation scope](docs/VALIDATION.md) and each candidate's qualification
+sidecar for the evidence applicable to that exact source.
 
 ## Run the examples
 
@@ -24,6 +26,12 @@ Standalone demonstrates controls, layout, Markdown/text, collections, input,
 accessibility and Workspace integration. Native rendering needs Windows host
 fonts and a compatible Vulkan loader/driver. WebView2 is needed when using the
 optional native browser carrier.
+
+The backend-neutral static editor-outline example can be run without a window:
+
+```powershell
+cargo run --locked -p vesta-gpui --example editor_outline
+```
 
 ```powershell
 cargo build --locked -p vesta-motion --bin vesta-motion
@@ -57,8 +65,9 @@ artifacts are required. See [ownership](docs/MAINTENANCE.md),
 [qualification/package commands](docs/RELEASING.md) and
 [candidate notes](release/0.1.0-rc.1.md).
 
-`IMPORT.json` records the preserved import identities. `SOURCE.json` seals the
-current source bytes; it is an integrity manifest, not a signature or test
+`IMPORT.json` records the preserved import identities. `SOURCE.json` seals a
+specific candidate's source bytes; intentional development edits invalidate it
+until the next seal. It is an integrity manifest, not a signature or test
 result. Registry publication is disabled in the manifests. Browser/WASM
 execution, full editor authoring and universal platform/reader compatibility
 are not promised by this candidate. Workspace/floating windows, native WebView

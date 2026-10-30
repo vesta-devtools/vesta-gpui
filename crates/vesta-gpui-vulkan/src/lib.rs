@@ -15,9 +15,6 @@ mod image;
 mod painter;
 mod preparation;
 pub use preparation::{PreparedPaint, prepare_paint};
-#[allow(unsafe_code)]
-mod popup_monitor;
-pub use popup_monitor::popup_monitor_bounds;
 mod reconfiguration;
 mod recording;
 mod recovery;
