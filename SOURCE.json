@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "dace5baa822f5e2c3819c118c6e5f7af41e63664ace2247bf025636b430c766d",
+  "tree_sha256": "65ae7f59ed74f0fc1a56a7dc626b9a1e323ab992e3de8a5cccb6c660740e0abc",
   "files": [
     {
       "path": ".gitattributes",
@@ -1925,8 +1925,8 @@
     },
     {
       "path": "crates/vesta-workspace/tests/dependency_boundaries.rs",
-      "bytes": 889,
-      "sha256": "fc3f8603733835f891c87b939f4991e194a3202d0505c16c7d57555b891d39b3"
+      "bytes": 1835,
+      "sha256": "13cc458b74a85d1426f51e1886d9a0991c44b571acb476acc00f5c141df0feeb"
     },
     {
       "path": "docs/AGENT-ACCESS.md",
