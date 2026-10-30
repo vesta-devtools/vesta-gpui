@@ -29,6 +29,7 @@ mod text_input;
 mod text_raster;
 mod text_session;
 mod text_views;
+pub mod trace;
 
 pub use accessibility::{
     AccessibilityTree, ReadOnlyDocument, ReadOnlyDocumentSelection, ReadOnlyText,

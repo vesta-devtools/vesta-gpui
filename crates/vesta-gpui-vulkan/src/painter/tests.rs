@@ -74,6 +74,10 @@ fn prepare_fixture(
 #[test]
 fn image_failures_preserve_adjacent_paint_identity_and_recover_without_negative_cache() {
     use vesta_gpui::{ImageFit, ImagePresentation};
+    let capture = vesta_gpui::trace::TraceCapture::start(Default::default())
+        .expect("shared production preparation capture");
+    let frame = vesta_gpui::trace::frame("Renderer.Contract");
+    let mut phases = crate::frame_profile::Trace::new(false);
     for presentation in [
         None,
         Some(ImagePresentation::new(ImageFit::Stretch)),
@@ -82,6 +86,37 @@ fn image_failures_preserve_adjacent_paint_identity_and_recover_without_negative_
     ] {
         verify_image_failures(presentation);
     }
+    phases.mark(crate::frame_profile::Stage::Prepare);
+    assert!(
+        phases.completed(&RenderOutput::default(), false).is_none(),
+        "shared tracing must not enable the separate FrameCpuProfile API"
+    );
+    drop(frame);
+    let snapshot = capture.stop();
+    assert_eq!(snapshot.stats().dropped_events, 0);
+    assert_eq!(snapshot.stats().invalid_nesting, 0);
+    let frames = snapshot.frames();
+    assert_eq!(frames.len(), 1);
+    let prepare = frames[0]
+        .calls
+        .iter()
+        .find(|call| call.name == "prepare")
+        .expect("renderer phase");
+    assert!(
+        frames[0]
+            .calls
+            .iter()
+            .filter(|call| call.name == "paint.prepare")
+            .all(|call| call.parent_id == Some(prepare.event_id)),
+        "production preparation belongs to its renderer phase and host frame"
+    );
+    let json = snapshot.to_chrome_json().expect("shared trace export");
+    assert!(json.contains("\"name\":\"paint.prepare\""));
+    assert!(json.contains("\"name\":\"prepare\""));
+    assert!(
+        !json.contains("fixture://image"),
+        "image sources are not trace payloads"
+    );
 }
 
 fn verify_image_failures(presentation: Option<vesta_gpui::ImagePresentation>) {

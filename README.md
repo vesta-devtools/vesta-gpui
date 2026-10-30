@@ -43,6 +43,16 @@ Its geometry is host preview content; keyframe authoring, save/undo and export
 are outside the example's scope. Smaller public examples remain integration
 references rather than additional application products.
 
+## UI performance tracing
+
+The opt-in [in-process trace recorder](docs/TRACING.md) is shared by libraries and
+hosts. It records bounded layout/text/paint/render CPU-side wall-time intervals
+with automatic parent/frame association, then exports an offline frame picker,
+recorded call tree and timer totals or Chrome Trace Event JSON. The two native
+examples share `--trace-ui=<new-output.html|json>`. Hosts add one frame-entry guard;
+business scopes are optional. It requires no system profiler and is disabled by default;
+these intervals are not CPU utilization or GPU execution timing.
+
 ## Agent integration
 
 The opt-in JSONL interface exposes current UI semantics, paginated snapshots,

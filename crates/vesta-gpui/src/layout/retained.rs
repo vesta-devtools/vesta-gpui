@@ -37,6 +37,7 @@ impl RetainedLayoutEngine {
         viewport: Viewport,
         context: &mut TextInputContext,
     ) -> Result<LayoutTree, LayoutError> {
+        let _trace = crate::trace::span("gpui.layout", "layout.retained");
         validate_layout(root, viewport)?;
         let source = context.measurement_revision();
         let text_changed = self.text_source.as_ref().is_none_or(|old| old != &source);

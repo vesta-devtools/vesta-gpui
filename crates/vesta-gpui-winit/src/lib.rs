@@ -17,6 +17,7 @@ mod ui_input_command;
 mod ui_input_observation;
 mod ui_json;
 mod ui_stdio;
+mod ui_trace;
 mod ui_wait;
 pub use ui_capture::{UiCaptureGeometry, UiCaptureRequest};
 pub use ui_context::{UiAutomationContext, UiContextLease, UiScopedResponse};
@@ -28,6 +29,7 @@ pub use ui_input_command::{
 pub use ui_input_observation::UiInputObservation;
 pub use ui_json::{ui_changes_json, ui_snapshot_json};
 pub use ui_stdio::{start_ui_stdio, start_ui_stdio_with_limit};
+pub use ui_trace::{UiTraceError, UiTraceExport, UiTraceRecording};
 mod focus_visibility;
 mod ime_request;
 mod text_pointer;

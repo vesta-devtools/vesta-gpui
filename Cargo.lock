@@ -3814,6 +3814,7 @@ dependencies = [
  "accesskit_consumer",
  "bytemuck",
  "parley",
+ "serde_json",
  "swash",
  "taffy",
  "unicode-segmentation",

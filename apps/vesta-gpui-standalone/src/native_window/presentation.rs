@@ -10,6 +10,7 @@ impl App {
         {
             return;
         }
+        let _trace_frame = vesta_gpui::trace::frame("Standalone.Float");
         let mut frame_trace = self.frame_profile.begin();
         let input_watermark = self.lifecycle_profile.begin_frame();
         if let Some(window) = self

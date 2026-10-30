@@ -205,6 +205,7 @@ impl LayoutEngine {
         viewport: Viewport,
         mut measure_text: impl FnMut(TextLayoutRequest<'_>) -> TextLayoutMetrics,
     ) -> Result<LayoutTree, LayoutError> {
+        let _trace = crate::trace::span("gpui.layout", "layout.compute");
         validate_layout(root, viewport)?;
         let mut taffy = LayoutStorage::new();
         let mut taffy_nodes = HashMap::new();

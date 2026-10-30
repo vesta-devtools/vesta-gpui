@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vesta GPUI frame capture</title>
+<style>
+:root{color-scheme:dark;font:15px system-ui;background:#171b22;color:#e6eaf0}body{max-width:1400px;margin:28px auto;padding:0 22px}h1{font-size:26px}h2{font-size:20px;margin-top:30px}p{line-height:1.5;color:#b9c3d2}button,input{font:inherit;color:inherit;background:#283243;border:1px solid #536278;border-radius:4px;padding:6px 10px}button{cursor:pointer}button:disabled{opacity:.4;cursor:default}input{width:85px}#frames{display:flex;gap:3px;align-items:flex-end;height:110px;overflow:hidden;margin:18px 0}#frames button{flex:1;min-width:4px;padding:0;border:0;background:#688dc9;border-radius:2px 2px 0 0}#frames button[aria-pressed=true]{background:#f5bd61;outline:2px solid #fff}#warning{color:#ffd08a;white-space:pre-wrap}#tree details{margin-left:16px;border-left:1px solid #394457;padding-left:9px}#tree>details{margin-left:0}summary{cursor:pointer;padding:6px 0;font:13px ui-monospace,monospace}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;border-bottom:1px solid #394457;padding:9px 6px}th{color:#9fb8db}td:nth-last-child(-n+2),th:nth-last-child(-n+2){text-align:right}#markers{font:13px ui-monospace,monospace;line-height:1.7;white-space:pre-wrap}nav{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.muted{color:#9cacc0}.more{margin:8px 0}code{color:#cadbfb}
+</style>
+<h1>Vesta GPUI frame capture</h1>
+<p>Choose a CPU frame attempt to inspect recorded calls and timers. Times are elapsed wall time, including waits. Self / unattributed time excludes recorded direct children on the same thread. This is not a complete function profiler or GPU / physical presentation timing.</p>
+<p id="capture"></p><p id="warning" role="status"></p>
+<nav><button id="previous">Previous</button><label>Frame <input id="picker" type="number" min="1" step="1"></label><span id="count"></span><button id="next">Next</button></nav>
+<div id="frames" aria-label="Frame duration overview"></div>
+<h2 id="selected"></h2><p id="detail"></p>
+<h2>Recorded call tree</h2><p class="muted">Expand a call to see its children. Each row shows inclusive and self / unattributed milliseconds.</p><div id="tree"></div>
+<h2>Timers in this frame</h2><p class="muted">Aggregated by category and name. Inclusive totals overlap across nested scopes; do not add them to calculate frame duration.</p>
+<table><thead><tr><th>Category / name</th><th>Calls</th><th>Inclusive ms</th><th>Self / unattributed ms</th></tr></thead><tbody id="timers"></tbody></table><div id="moreTimers"></div>
+<h2>Markers and counters</h2><div id="markers"></div>
+<script id="gpui-data" type="application/json">__GPUI_TRACE_DATA__</script>
+<script>
+'use strict';
+const data=JSON.parse(document.getElementById('gpui-data').textContent);
+const frames=data.gpui_frames,stats=data.gpui_trace;
+const $=id=>document.getElementById(id),ms=us=>(us/1000).toFixed(3);
+const node=(tag,text)=>{const element=document.createElement(tag);if(text!==undefined)element.textContent=text;return element;};
+$('capture').textContent=`${frames.length} CPU frame attempts · ${stats.events} events · ${ms(stats.elapsed_us)} ms captured · ${stats.detail??'detailed'} · local thread IDs`;
+const warnings=[];
+if(stats.dropped_events)warnings.push(`${stats.dropped_events} events dropped: trees and totals are incomplete.`);
+if(stats.unfinished_spans)warnings.push(`${stats.unfinished_spans} scopes were clipped at capture stop / deadline.`);
+if(stats.invalid_nesting)warnings.push(`${stats.invalid_nesting} non-LIFO scope closures: call hierarchy and self times may be misleading.`);
+if(stats.unframed_events)warnings.push(`${stats.unframed_events} events have no explicit frame and are available in the JSON timeline only.`);
+if(stats.expired)warnings.push('The capture reached its configured time limit.');
+$('warning').textContent=warnings.join('\n');
+$('count').textContent=`of ${frames.length}`;$('picker').max=frames.length;
+let selected=0;
+function batch(target,items,render){
+  let offset=0,more;
+  function append(){if(more)more.remove();const end=Math.min(offset+100,items.length);for(;offset<end;offset++)target.append(render(items[offset]));if(offset<items.length){more=node('button',`Show next ${Math.min(100,items.length-offset)} (${items.length-offset} remaining)`);more.className='more';more.onclick=append;target.append(more);}}
+  append();
+}
+function choose(index){
+  if(!frames.length)return;
+  selected=Math.max(0,Math.min(frames.length-1,index));const frame=frames[selected];
+  $('picker').value=selected+1;$('previous').disabled=selected===0;$('next').disabled=selected===frames.length-1;
+  $('selected').textContent=`Frame ${frame.ordinal}: ${frame.name}`;
+  $('detail').textContent=`${ms(frame.duration_us)} ms · starts at ${ms(frame.start_us)} ms · thread ${frame.thread} · ${frame.calls.length} recorded scopes${frame.unfinished?' · UNFINISHED / CLIPPED':''}`;
+  const overview=$('frames');overview.replaceChildren();
+  const start=Math.floor(selected/120)*120,visible=frames.slice(start,start+120),peak=Math.max(1,...visible.map(f=>f.duration_us));
+  visible.forEach((f,i)=>{const button=node('button');button.style.height=`${Math.max(4,f.duration_us/peak*100)}%`;button.title=`Frame ${f.ordinal}: ${f.name}, ${ms(f.duration_us)} ms`;button.setAttribute('aria-label',button.title);button.setAttribute('aria-pressed',String(start+i===selected));button.onclick=()=>choose(start+i);overview.append(button);});
+  const children=new Map();for(const call of frame.calls){const key=call.parent_id??0;if(!children.has(key))children.set(key,[]);children.get(key).push(call);}
+  function callNode(call){const details=node('details'),summary=node('summary',`${call.name} [${call.category}] — ${ms(call.inclusive_us)} / ${ms(call.self_us)} ms${call.unfinished?' [CLIPPED]':''}`);details.append(summary);const nested=children.get(call.event_id)??[];if(nested.length){let rendered=false;details.addEventListener('toggle',()=>{if(details.open&&!rendered){rendered=true;const group=node('div');details.append(group);batch(group,nested,callNode);}});}else summary.style.cursor='default';return details;}
+  $('tree').replaceChildren();batch($('tree'),children.get(0)??[],callNode);
+  const body=$('timers');body.replaceChildren();$('moreTimers').replaceChildren();let timerOffset=0;
+  function timerPage(){const end=Math.min(timerOffset+100,frame.timers.length);for(;timerOffset<end;timerOffset++){const t=frame.timers[timerOffset],row=node('tr');for(const value of [`${t.category} / ${t.name}`,String(t.calls),ms(t.inclusive_us),ms(t.self_us)])row.append(node('td',value));body.append(row);} $('moreTimers').replaceChildren();if(timerOffset<frame.timers.length){const more=node('button',`Show next timers (${frame.timers.length-timerOffset} remaining)`);more.onclick=timerPage;$('moreTimers').append(more);}}
+  timerPage();$('markers').replaceChildren();
+  batch($('markers'),frame.markers,marker=>node('div',`+${ms(marker.at_us-frame.start_us)} ms  ${marker.name}${marker.value===null?'':` = ${marker.value}`}`));
+  if(!frame.markers.length)$('markers').textContent='No markers in this frame.';
+}
+$('previous').onclick=()=>choose(selected-1);$('next').onclick=()=>choose(selected+1);
+$('picker').onchange=()=>choose((Number($('picker').value)||1)-1);
+if(frames.length)choose(0);else{$('selected').textContent='No explicit frames captured';$('detail').textContent='Add trace::frame at the host frame entry. Existing unframed events remain in the exported JSON.';$('picker').disabled=true;$('previous').disabled=true;$('next').disabled=true;}
+</script>
+</html>

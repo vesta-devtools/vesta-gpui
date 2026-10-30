@@ -640,6 +640,7 @@ impl TextInputState {
         if current == wrap_width {
             return false;
         }
+        crate::trace::instant("gpui.text", "text.wrap_width.changed");
         self.wrap_width = Some(wrap_width);
         self.refresh(context);
         true
@@ -658,6 +659,7 @@ impl TextInputState {
     }
 
     pub fn refresh(&mut self, context: &mut TextInputContext) {
+        let _trace = crate::trace::span("gpui.text", "text.input.refresh");
         let fonts = context.measurement_revision();
         if self
             .visual_source

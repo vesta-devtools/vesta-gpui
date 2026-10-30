@@ -53,6 +53,7 @@ impl<A> ActionRoute<A> {
         root: &Element,
         actions: impl IntoIterator<Item = (ElementId, A)>,
     ) -> Result<Self, ActionRouteError> {
+        let _trace = crate::trace::span("gpui.input", "action_route.build");
         root.validate_unique_identity(&mut HashSet::new(), &mut HashSet::new())
             .map_err(|duplicate| match duplicate {
                 crate::element::DuplicateIdentity::Id(id) => ActionRouteError::DuplicateElement(id),

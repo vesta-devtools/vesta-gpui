@@ -72,7 +72,10 @@ impl Stage {
     }
 }
 
-pub(super) struct Trace(Option<Timing>);
+pub(super) struct Trace {
+    timing: Option<Timing>,
+    interval: vesta_gpui::trace::TraceSpan,
+}
 
 struct Timing {
     last: Instant,
@@ -81,14 +84,19 @@ struct Timing {
 
 impl Trace {
     pub(super) fn new(enabled: bool) -> Self {
-        Self(enabled.then(|| Timing {
-            last: Instant::now(),
-            profile: FrameCpuProfile::default(),
-        }))
+        Self {
+            timing: enabled.then(|| Timing {
+                last: Instant::now(),
+                profile: FrameCpuProfile::default(),
+            }),
+            interval: vesta_gpui::trace::span("gpui.vulkan.cpu", "phase.interrupted"),
+        }
     }
 
     pub(super) fn mark(&mut self, stage: Stage) {
-        if let Some(timing) = &mut self.0 {
+        std::mem::take(&mut self.interval).finish_with_name(stage.label());
+        self.interval = vesta_gpui::trace::span("gpui.vulkan.cpu", "phase.interrupted");
+        if let Some(timing) = &mut self.timing {
             let now = Instant::now();
             timing.profile.durations[stage as usize] += now.saturating_duration_since(timing.last);
             timing.last = now;
@@ -96,13 +104,13 @@ impl Trace {
     }
 
     pub(super) fn prepared(&mut self, count: usize) {
-        if let Some(timing) = &mut self.0 {
+        if let Some(timing) = &mut self.timing {
             timing.profile.prepared_draws = count;
         }
     }
 
     pub(super) fn recorded(&mut self, bindings: super::checked_pipeline::UiBindings) {
-        if let Some(timing) = &mut self.0 {
+        if let Some(timing) = &mut self.timing {
             timing.profile.pipeline_binds = bindings.pipeline_binds;
             timing.profile.scissor_updates = bindings.scissor_updates;
         }
@@ -113,7 +121,8 @@ impl Trace {
         output: &vesta_gpui::render::RenderOutput,
         finish_requested: bool,
     ) -> Option<FrameCpuProfile> {
-        self.0.map(|timing| FrameCpuProfile {
+        self.interval.finish_with_name("renderer.tail");
+        self.timing.map(|timing| FrameCpuProfile {
             draw_calls: output.draw_calls,
             bitmap_uploads: output.bitmap_uploads,
             bitmap_reuses: output.bitmap_reuses,

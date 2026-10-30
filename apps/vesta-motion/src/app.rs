@@ -260,6 +260,7 @@ impl App {
         self.redraw();
     }
     fn draw(&mut self) -> Result<(), String> {
+        let _trace_frame = vesta_gpui::trace::frame("Motion.Main");
         let Some(window) = self.window.clone() else {
             return Ok(());
         };
@@ -816,6 +817,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                 return Err("motion.observe_seconds: expected 1..300".into());
             }
             options.observe = Some(Duration::from_secs(seconds));
+        } else if arg.starts_with("--trace-ui=") {
+            // The shared launcher validates and owns capture/export.
         } else {
             return Err(format!("motion.argument: {arg}; use --study=<key>, --tour, --smoke, --hidden, --capture-dir=<path>, --observe-seconds=<1..300>").into());
         }

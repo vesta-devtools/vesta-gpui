@@ -61,6 +61,7 @@ impl TextInputContext {
         width: f32,
         options: StyledTextOptions,
     ) -> Result<TextInputSnapshot, StyledTextError> {
+        let _trace = crate::trace::detail_span("gpui.text", "text.shape_styled");
         if text.len() > TEXT_INPUT_MAX_BYTES {
             return Err(StyledTextError::TooLong);
         }

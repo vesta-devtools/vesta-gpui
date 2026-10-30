@@ -365,6 +365,7 @@ impl AccessibilityTree {
         focus: Option<ElementId>,
         title: &str,
     ) -> TreeUpdate {
+        let _trace = crate::trace::span("gpui.accessibility", "accessibility.build");
         self.live.clear();
         self.focusable.clear();
         self.published_actions.clear();

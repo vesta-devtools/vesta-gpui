@@ -1,5 +1,22 @@
 # GPUI Core supported source contracts — 0.1
 
+## Additive process-local trace — 2026-10-30
+
+`trace::{TraceCapture, TraceConfig, TraceSnapshot, TraceStats, TraceSpan, TraceError}`
+and `trace::{frame, span, instant, counter, is_recording}` provide explicit bounded
+wall-time capture. Normal shared stages inherit current parent/frame automatically.
+`TraceDetail` and `TraceCapture::start_with_detail` select stage or detailed
+capture; high-rate measurement/shaping scopes remain available in detailed mode.
+`TraceSnapshot::frames()` returns typed `FrameProfile`, `FrameCall`, `FrameTimer`
+and `FrameMarker` analysis; `to_html_report()` exports an offline frame picker and
+call tree from the same data as the JSON v2 `gpui_frames` extension.
+Hosts own controls, business scopes and output I/O. Capture-local thread lanes,
+loss/unfinished reporting and Chrome Trace Event JSON are documented in
+[Tracing](../../docs/TRACING.md). Disabled hooks take no clock reading or lock;
+no event stores input text, element labels, window titles or automatic files.
+This is not CPU utilization, stack sampling or GPU execution time. Native latency
+and consuming-product deployment are separate qualification.
+
 Status: **0.1 identity, typed Action and dependency-isolation contract frozen on
 2026-10-14**. The existing layout contract is also frozen on2026-10-14 after
 GPL01–05 qualification. Both are recorded in the repository's GPUI

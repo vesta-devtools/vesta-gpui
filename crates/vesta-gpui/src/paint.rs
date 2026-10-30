@@ -165,6 +165,7 @@ impl PaintList {
     /// camera will draw later. Layout and hit testing still use the full tree.
     #[must_use]
     pub fn build_excluding(root: &Element, layout: &LayoutTree, excluded: &[ElementId]) -> Self {
+        let _trace = crate::trace::span("gpui.paint", "paint.build_excluding");
         let mut commands = vec![PaintCommand::PushClip {
             rect: layout.viewport().logical_rect(),
             no_clip: false,
@@ -201,6 +202,7 @@ impl PaintList {
         focus: Option<(ElementId, Color)>,
         interaction: PaintInteraction,
     ) -> Self {
+        let _trace = crate::trace::span("gpui.paint", "paint.build");
         let mut commands = Vec::new();
         commands.push(PaintCommand::PushClip {
             rect: clip,
@@ -624,6 +626,7 @@ pub struct HitTestTree {
 impl HitTestTree {
     #[must_use]
     pub fn build(root: &Element, layout: &LayoutTree) -> Self {
+        let _trace = crate::trace::span("gpui.input", "hit_test.build");
         let mut entries = Vec::new();
         append_hit_entries(root, layout, layout.viewport().logical_rect(), &mut entries);
         Self { entries }

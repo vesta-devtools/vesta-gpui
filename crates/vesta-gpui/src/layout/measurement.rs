@@ -28,6 +28,7 @@ impl LayoutEngine {
         constraint: ContentConstraint,
         context: &mut TextInputContext,
     ) -> Result<DesiredSize, LayoutError> {
+        let _trace = crate::trace::detail_span("gpui.layout", "layout.measure");
         if [constraint.width, constraint.height]
             .into_iter()
             .flatten()

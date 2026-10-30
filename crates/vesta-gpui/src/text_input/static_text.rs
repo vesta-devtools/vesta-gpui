@@ -79,6 +79,7 @@ impl TextInputContext {
         role: FontRole,
         wrap_width: Option<f32>,
     ) -> Result<TextInputSnapshot, TextInputError> {
+        let _trace = crate::trace::detail_span("gpui.text", "text.shape_static");
         let wrap_width = wrap_width.filter(|width| width.is_finite() && *width > 0.0);
         let base_key = (text.to_owned(), font_size.to_bits(), role);
         if let Some(wrap_width) = wrap_width {

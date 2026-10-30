@@ -755,6 +755,7 @@ impl WindowRenderer {
         #[cfg(feature = "viewport")] scene: scene_views::SceneInput<'_>,
         #[cfg(feature = "viewport")] target_mode: Option<TargetMode>,
     ) -> Result<Option<RenderOutput>, RendererError> {
+        let _trace = vesta_gpui::trace::span("gpui.vulkan.cpu", "renderer.attempt");
         self.cpu_profile = None;
         let mut trace = frame_profile::Trace::new(self.cpu_profiling);
         if let Some(error) = self.gpu.failure() {
@@ -952,6 +953,7 @@ impl WindowRenderer {
         }
         match result {
             Ok(()) => {
+                vesta_gpui::trace::instant("gpui.vulkan.cpu", "present.submitted");
                 self.presented_frames += 1;
                 if finish {
                     submission.finish()?;

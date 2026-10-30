@@ -43,6 +43,7 @@ pub fn prepare_paint(
     max_image_dimension: u32,
     options: RenderOptions,
 ) -> Result<PreparedPaint, RendererError> {
+    let _trace = vesta_gpui::trace::span("gpui.vulkan.cpu", "paint.prepare");
     let (batches, output) = painter::prepare(
         viewport,
         paint,

@@ -1,5 +1,10 @@
 # GPUI 0.1.0 candidate API inventory
 
+The shared [in-process trace](../../docs/TRACING.md) additionally observes renderer
+attempts, existing CPU-phase boundaries and successful present submission without
+enabling GPU timestamps or changing FrameCpuProfile's opt-in. Interrupted phases
+remain explicit; these wall-time intervals do not certify GPU or display latency.
+
 ## Unified release boundary — 2026-10-28
 
 This is the single cross-package inventory for the next Windows native2D

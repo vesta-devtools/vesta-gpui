@@ -3,6 +3,7 @@ use super::*;
 
 impl App {
     pub(super) fn redraw(&mut self) {
+        let _trace_frame = vesta_gpui::trace::frame("Standalone.Main");
         if self.gpu.as_ref().is_none_or(|gpu| !gpu.available()) {
             return;
         }

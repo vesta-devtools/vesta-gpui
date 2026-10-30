@@ -8,5 +8,6 @@ mod study;
 mod view;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    app::run()
+    let recording = vesta_gpui_winit::UiTraceRecording::from_arguments(std::env::args_os())?;
+    recording.finish_after_run(app::run())
 }

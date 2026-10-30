@@ -2181,7 +2181,8 @@ fn chrome_resize_direction(cursor: Point, size: Size) -> Option<ResizeDirection>
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    application_run::run()
+    let recording = vesta_gpui_winit::UiTraceRecording::from_arguments(std::env::args_os())?;
+    recording.finish_after_run(application_run::run())
 }
 
 fn theme_clear(theme: WidgetTheme, viewport: bool) -> [f32; 4] {
