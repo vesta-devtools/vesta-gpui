@@ -170,9 +170,11 @@ impl ScenePainter {
         camera: Camera,
         scene: &ViewportScene,
         rect: ViewportRect,
+        clip: ViewportRect,
         depth: Arc<vulkano::image::view::ImageView>,
     ) -> Result<Option<labels::PreparedLabels>, RendererError> {
-        self.labels.prepare(builder, camera, scene, rect, depth)
+        self.labels
+            .prepare(builder, camera, scene, rect, clip, depth)
     }
     pub(super) fn record_labels(
         &self,
@@ -190,6 +192,7 @@ impl ScenePainter {
         camera: Camera,
         scene: &ViewportScene,
         rect: ViewportRect,
+        clip: ViewportRect,
     ) -> Result<(), RendererError> {
         if rect.width == 0 || rect.height == 0 {
             return Ok(());
@@ -232,8 +235,8 @@ impl ScenePainter {
             .set_scissor(
                 0,
                 [Scissor {
-                    offset: [rect.x, rect.y],
-                    extent: [rect.width, rect.height],
+                    offset: [clip.x, clip.y],
+                    extent: [clip.width, clip.height],
                 }]
                 .into_iter()
                 .collect(),

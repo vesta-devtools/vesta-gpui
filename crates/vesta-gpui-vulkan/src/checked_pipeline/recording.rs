@@ -16,7 +16,7 @@ pub(crate) fn record(
     options: RenderOptions,
     trace: &mut frame_profile::Trace,
     presented: bool,
-    #[cfg(feature = "viewport")] scene: crate::recording::SceneFrame<'_>,
+    #[cfg(feature = "viewport")] scene: &[crate::SceneView<'_>],
 ) -> Result<
     (
         AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>,
@@ -73,25 +73,31 @@ pub(crate) fn record(
         .map(|pass| targets::overlay_framebuffer(&framebuffer, pass.clone()))
         .transpose()?;
     #[cfg(feature = "viewport")]
-    let numeric_labels = if let Some((camera, data, rect)) = scene {
-        let rect = vesta_viewport::render::ViewportRect {
-            x: rect.x.min(extent[0]),
-            y: rect.y.min(extent[1]),
-            width: rect.width.min(extent[0].saturating_sub(rect.x)),
-            height: rect.height.min(extent[1].saturating_sub(rect.y)),
-        };
-        let depth = framebuffer
-            .attachments()
-            .get(1)
-            .cloned()
-            .ok_or_else(|| RendererError::at("label_depth", "missing depth attachment"))?;
-        if let Some(painter) = &mut renderer.scene {
-            painter.prepare_labels(&mut builder, camera, data, rect, depth)?
-        } else {
-            None
+    let numeric_labels = {
+        let mut prepared = Vec::with_capacity(scene.len());
+        if !scene.is_empty() {
+            let depth = framebuffer
+                .attachments()
+                .get(1)
+                .cloned()
+                .ok_or_else(|| RendererError::at("label_depth", "missing depth attachment"))?;
+            let painter = renderer.scene.as_mut().ok_or_else(|| {
+                RendererError::at("frame_scene_mode", "scene painter unavailable")
+            })?;
+            for view in scene {
+                if let Some(labels) = painter.prepare_labels(
+                    &mut builder,
+                    view.camera,
+                    view.scene,
+                    view.viewport,
+                    view.clip,
+                    depth.clone(),
+                )? {
+                    prepared.push(labels);
+                }
+            }
         }
-    } else {
-        None
+        prepared
     };
     trace.mark(frame_profile::Stage::Upload);
     builder
@@ -110,15 +116,15 @@ pub(crate) fn record(
         )
         .map_err(|error| RendererError::caused_by("begin_pass", error))?;
     #[cfg(feature = "viewport")]
-    if let Some((camera, scene, rect)) = scene {
-        let rect = vesta_viewport::render::ViewportRect {
-            x: rect.x.min(extent[0]),
-            y: rect.y.min(extent[1]),
-            width: rect.width.min(extent[0].saturating_sub(rect.x)),
-            height: rect.height.min(extent[1].saturating_sub(rect.y)),
-        };
-        if let Some(painter) = &renderer.scene {
-            painter.record(&mut builder, camera, scene, rect)?;
+    if let Some(painter) = &renderer.scene {
+        for view in scene {
+            painter.record(
+                &mut builder,
+                view.camera,
+                view.scene,
+                view.viewport,
+                view.clip,
+            )?;
         }
     }
     if let Some(frame) = overlay_frame {
@@ -136,10 +142,10 @@ pub(crate) fn record(
             .map_err(|error| RendererError::caused_by("overlay_begin_pass", error))?;
     }
     #[cfg(feature = "viewport")]
-    if let Some(labels) = numeric_labels
-        && let Some(painter) = &renderer.scene
-    {
-        painter.record_labels(&mut builder, labels)?;
+    if let Some(painter) = &renderer.scene {
+        for labels in numeric_labels {
+            painter.record_labels(&mut builder, labels)?;
+        }
     }
     let bindings = renderer.painter.record(&mut builder, uploaded, extent)?;
     trace.recorded(bindings);

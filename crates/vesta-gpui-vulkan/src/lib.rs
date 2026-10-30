@@ -13,6 +13,8 @@ mod gpu_failure;
 mod gpu_profile;
 mod image;
 mod painter;
+mod preparation;
+pub use preparation::{PreparedPaint, prepare_paint};
 #[allow(unsafe_code)]
 mod popup_monitor;
 pub use popup_monitor::popup_monitor_bounds;
@@ -21,10 +23,14 @@ mod recording;
 mod recovery;
 mod renderer_error;
 mod retirement;
+#[cfg(feature = "viewport")]
+mod scene_views;
 mod submission;
 mod targets;
 #[cfg(feature = "viewport")]
 mod viewport;
+#[cfg(feature = "viewport")]
+pub use scene_views::{MAX_SCENE_VIEWS, SceneView, validate_scene_views};
 
 pub use creation::RendererCreation;
 #[cfg(feature = "fault-injection")]
@@ -599,7 +605,7 @@ impl WindowRenderer {
             options,
             finish,
             #[cfg(feature = "viewport")]
-            None,
+            scene_views::SceneInput::Single(None),
             #[cfg(feature = "viewport")]
             None,
         )
@@ -625,7 +631,15 @@ impl WindowRenderer {
         )>,
     ) -> Result<Option<RenderOutput>, RendererError> {
         self.render_frame(
-            viewport, paint, context, rasterizer, images, options, finish, scene, None,
+            viewport,
+            paint,
+            context,
+            rasterizer,
+            images,
+            options,
+            finish,
+            scene_views::SceneInput::Single(scene),
+            None,
         )
         .inspect_err(|error| self.record_failure(error))
     }
@@ -659,10 +673,76 @@ impl WindowRenderer {
             images,
             options,
             finish,
-            scene,
+            scene_views::SceneInput::Single(scene),
             Some(mode),
         )
         .inspect_err(|error| self.record_failure(error))
+    }
+
+    /// Present a bounded batch of independent scene views, followed by UI once.
+    /// Visible clips must be disjoint; invalid batches do not retire the renderer.
+    #[cfg(feature = "viewport")]
+    #[allow(clippy::too_many_arguments)]
+    pub fn render_with_scene_views(
+        &mut self,
+        viewport: Viewport,
+        paint: &PaintList,
+        context: &mut TextInputContext,
+        rasterizer: &mut TextRasterizer,
+        images: Option<&dyn ImageResolver>,
+        options: RenderOptions,
+        finish: bool,
+        views: &[SceneView<'_>],
+    ) -> Result<Option<RenderOutput>, RendererError> {
+        self.render_frame(
+            viewport,
+            paint,
+            context,
+            rasterizer,
+            images,
+            options,
+            finish,
+            scene_views::SceneInput::Batch(views),
+            None,
+        )
+        .inspect_err(|error| {
+            if !scene_views::input_rejected(error) {
+                self.record_failure(error);
+            }
+        })
+    }
+
+    /// Use the explicitly prepared target mode with one ordinary batch submission.
+    #[cfg(feature = "viewport")]
+    #[allow(clippy::too_many_arguments)]
+    pub fn render_with_scene_views_and_target_mode(
+        &mut self,
+        viewport: Viewport,
+        paint: &PaintList,
+        context: &mut TextInputContext,
+        rasterizer: &mut TextRasterizer,
+        images: Option<&dyn ImageResolver>,
+        options: RenderOptions,
+        finish: bool,
+        mode: TargetMode,
+        views: &[SceneView<'_>],
+    ) -> Result<Option<RenderOutput>, RendererError> {
+        self.render_frame(
+            viewport,
+            paint,
+            context,
+            rasterizer,
+            images,
+            options,
+            finish,
+            scene_views::SceneInput::Batch(views),
+            Some(mode),
+        )
+        .inspect_err(|error| {
+            if !scene_views::input_rejected(error) {
+                self.record_failure(error);
+            }
+        })
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -675,11 +755,7 @@ impl WindowRenderer {
         images: Option<&dyn ImageResolver>,
         options: RenderOptions,
         finish: bool,
-        #[cfg(feature = "viewport")] scene: Option<(
-            vesta_viewport::Camera,
-            &vesta_viewport::ViewportScene,
-            vesta_viewport::render::ViewportRect,
-        )>,
+        #[cfg(feature = "viewport")] scene: scene_views::SceneInput<'_>,
         #[cfg(feature = "viewport")] target_mode: Option<TargetMode>,
     ) -> Result<Option<RenderOutput>, RendererError> {
         self.cpu_profile = None;
@@ -756,15 +832,17 @@ impl WindowRenderer {
         #[cfg(feature = "viewport")]
         let desired = TargetConfiguration {
             extent: desired.extent,
-            mode: reconfiguration::frame_mode(scene.is_some(), target_mode)?,
+            mode: reconfiguration::frame_mode(scene.is_present(), target_mode)?,
         };
         if self.needs_configuration(desired) {
             self.retry
                 .defer(Instant::now(), FrameRetryReason::TargetConfiguration);
             return Ok(None);
         }
+        #[cfg(feature = "viewport")]
+        let scenes = scene.prepare(desired.extent)?;
         trace.mark(frame_profile::Stage::Targets);
-        let (prepared, mut output) = painter::prepare(
+        let (prepared, mut output) = prepare_paint(
             viewport,
             paint,
             context,
@@ -776,7 +854,8 @@ impl WindowRenderer {
                 .properties()
                 .max_image_dimension2_d,
             options,
-        )?;
+        )?
+        .into_parts();
         trace.prepared(prepared.len());
         trace.mark(frame_profile::Stage::Prepare);
         #[cfg(feature = "fault-injection")]
@@ -826,7 +905,7 @@ impl WindowRenderer {
             &mut trace,
             true,
             #[cfg(feature = "viewport")]
-            scene,
+            &scenes,
         )?;
         self.record_capture(
             &mut builder,
@@ -904,7 +983,7 @@ impl WindowRenderer {
                     }
                 }
                 #[cfg(feature = "viewport")]
-                if scene.is_some() {
+                if scene.is_present() {
                     self.scene_frames = self.scene_frames.saturating_add(1);
                 }
                 self.cpu_profile = trace.completed(&output, finish);

@@ -59,6 +59,44 @@ This reconciliation changes documentation only. Current RC build, native delta
 and performance binding remain pending; old screenshots, samples, failures and
 fixed acceptance cursors are not relabelled as new qualification.
 
+## Next candidate: CPU preparation and bounded scene views
+
+These APIs are a proposed successor to the published rc.1 source. They require
+new software qualification and explicit consumer adoption; rc.1 does not export
+them.
+
+- `prepare_paint(viewport, paint, context, rasterizer, images, max_image_dimension,
+  options) -> Result<PreparedPaint, RendererError>` runs the actual production
+  painter without a Device/window. `PreparedPaint::output` borrows RenderOutput;
+  `batch_count` and `vertex_count` describe CPU preparation before GPU atlas and
+  upload batching. Fonts/images are caller supplied.
+- `SceneView::new(camera, &scene, physical_viewport)` defaults its physical
+  `clip` to the viewport. At most `MAX_SCENE_VIEWS = 32` views fit one target.
+  Viewports must lie in that target; their effective clips must be disjoint.
+  Clips do not rescale each view's projection. Empty clips are skipped, edge
+  touching is admitted, and order is the caller's input order.
+- `validate_scene_views(&views, physical_extent)` uses the same CPU admission as
+  rendering. Invalid count/rect/camera/overlap returns
+  `native_vulkan_scene_batch_rejected` at `scene_batch`. New presented methods
+  return such input rejections (or target-mode mismatches) without retiring the
+  renderer; actual GPU/record/submission errors retain existing recovery owners.
+- `WindowRenderer::render_with_scene_views` has the existing render parameters
+  followed by `&[SceneView]`. `render_with_scene_views_and_target_mode` additionally
+  takes `TargetMode` before that slice.
+- `capture_offscreen_with_scene_views` has the existing offscreen parameters,
+  `CaptureRegion` and the same borrowed slice. It shares the recorder and one
+  readback/submission. A UI-only renderer rejects scene capture instead of
+  silently dropping it.
+- Original single-scene methods preserve signatures and target-edge viewport
+  clamping. Numeric labels retain each view's descriptors, atlas, viewport,
+  clip and depth association. Anchors outside their own visible clip are now
+  omitted before depth sampling, including legacy single-scene edge anchors.
+
+One shared framebuffer clears once, records all scene views and their labels,
+then paints UI once and presents once. No per-pane renderer or image readback is
+introduced. Arbitrary overlapping 3D layers are explicitly unsupported by this
+first batch contract. This section claims no new GPU/pixel/native qualification.
+
 ## Explicit target capacity for experimental viewport consumers
 
 Current source implements opt-in `render_with_target_mode` for a Host that

@@ -20,7 +20,7 @@ impl WindowRenderer {
         options: RenderOptions,
         trace: &mut frame_profile::Trace,
         presented: bool,
-        #[cfg(feature = "viewport")] scene: SceneFrame<'_>,
+        #[cfg(feature = "viewport")] scene: &[crate::SceneView<'_>],
     ) -> Result<
         (
             AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>,

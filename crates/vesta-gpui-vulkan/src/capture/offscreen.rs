@@ -1,7 +1,7 @@
 //! An isolated target uses the same preparation, pipelines and record path as a window.
 use super::*;
 use crate::{
-    PaintList, RenderOptions, TextInputContext, TextRasterizer, Viewport, frame_profile, painter,
+    PaintList, RenderOptions, TextInputContext, TextRasterizer, Viewport, frame_profile,
     submission, targets,
 };
 use vesta_gpui::render::ImageResolver;
@@ -28,7 +28,7 @@ impl WindowRenderer {
             options,
             region,
             #[cfg(feature = "viewport")]
-            None,
+            crate::scene_views::SceneInput::Single(None),
         )
     }
     #[cfg(feature = "viewport")]
@@ -45,7 +45,39 @@ impl WindowRenderer {
         scene: crate::recording::SceneFrame<'_>,
     ) -> Result<CaptureTicket, RendererError> {
         self.capture_offscreen_frame(
-            viewport, paint, context, rasterizer, images, options, region, scene,
+            viewport,
+            paint,
+            context,
+            rasterizer,
+            images,
+            options,
+            region,
+            crate::scene_views::SceneInput::Single(scene),
+        )
+    }
+    /// Capture all admitted scene views and the UI in one offscreen submission.
+    #[cfg(feature = "viewport")]
+    #[allow(clippy::too_many_arguments)]
+    pub fn capture_offscreen_with_scene_views(
+        &mut self,
+        viewport: Viewport,
+        paint: &PaintList,
+        context: &mut TextInputContext,
+        rasterizer: &mut TextRasterizer,
+        images: Option<&dyn ImageResolver>,
+        options: RenderOptions,
+        region: CaptureRegion,
+        views: &[crate::SceneView<'_>],
+    ) -> Result<CaptureTicket, RendererError> {
+        self.capture_offscreen_frame(
+            viewport,
+            paint,
+            context,
+            rasterizer,
+            images,
+            options,
+            region,
+            crate::scene_views::SceneInput::Batch(views),
         )
     }
     #[allow(clippy::too_many_arguments)]
@@ -58,7 +90,7 @@ impl WindowRenderer {
         images: Option<&dyn ImageResolver>,
         options: RenderOptions,
         region: CaptureRegion,
-        #[cfg(feature = "viewport")] scene: crate::recording::SceneFrame<'_>,
+        #[cfg(feature = "viewport")] scene: crate::scene_views::SceneInput<'_>,
     ) -> Result<CaptureTicket, RendererError> {
         if self.capture.pending() {
             return Err(RendererError::at(
@@ -100,7 +132,7 @@ impl WindowRenderer {
         images: Option<&dyn ImageResolver>,
         options: RenderOptions,
         region: CaptureRegion,
-        #[cfg(feature = "viewport")] scene: crate::recording::SceneFrame<'_>,
+        #[cfg(feature = "viewport")] scene: crate::scene_views::SceneInput<'_>,
     ) -> Result<CaptureTicket, RendererError> {
         if self.failed.is_some() || self.acquired.is_some() || self.gpu.failure().is_some() {
             return Err(RendererError::at(
@@ -144,6 +176,18 @@ impl WindowRenderer {
         }
         .validate(extent)?;
         region.validate(extent)?;
+        #[cfg(feature = "viewport")]
+        let scenes = {
+            crate::reconfiguration::frame_mode(
+                scene.is_present(),
+                Some(if self.has_scene() {
+                    crate::TargetMode::Scene
+                } else {
+                    crate::TargetMode::Ui
+                }),
+            )?;
+            scene.prepare(extent)?
+        };
         let ticket = self.begin_capture(region)?;
         let memory = Arc::new(StandardMemoryAllocator::new_default(
             self.gpu.device.clone(),
@@ -166,7 +210,7 @@ impl WindowRenderer {
             self.samples,
             self.has_scene(),
         )?;
-        let (prepared, mut output) = painter::prepare(
+        let (prepared, mut output) = crate::prepare_paint(
             viewport,
             paint,
             context,
@@ -178,7 +222,8 @@ impl WindowRenderer {
                 .properties()
                 .max_image_dimension2_d,
             options,
-        )?;
+        )?
+        .into_parts();
         let mut trace = frame_profile::Trace::new(false);
         let (mut builder, _) = self.record_commands(
             frames[0].clone(),
@@ -189,7 +234,7 @@ impl WindowRenderer {
             &mut trace,
             false,
             #[cfg(feature = "viewport")]
-            scene,
+            &scenes,
         )?;
         self.record_capture(&mut builder, image, self.presented_frames, true)?;
         let command = builder

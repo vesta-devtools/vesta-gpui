@@ -31,6 +31,7 @@ pub(crate) struct PreparedLabels {
     depth: Arc<DescriptorSet>,
     count: u32,
     rect: ViewportRect,
+    clip: ViewportRect,
 }
 
 fn valid(style: NumericLabelStyle) -> bool {
@@ -154,6 +155,7 @@ impl LabelPainter {
         camera: Camera,
         scene: &ViewportScene,
         rect: ViewportRect,
+        clip: ViewportRect,
         depth_view: Arc<ImageView>,
     ) -> Result<Option<PreparedLabels>, RendererError> {
         let Some(labels) = scene
@@ -224,6 +226,12 @@ impl LabelPainter {
                 self.samples as f32,
                 (self.samples as f32 * style.occlusion_fraction).ceil(),
                 0.0,
+            ],
+            [
+                clip.x as f32,
+                clip.y as f32,
+                clip.width as f32,
+                clip.height as f32,
             ],
         ];
         if !policy.iter().flatten().all(|v| v.is_finite()) {
@@ -323,6 +331,7 @@ impl LabelPainter {
             depth,
             count,
             rect,
+            clip,
         }))
     }
     pub(super) fn record(
@@ -331,6 +340,7 @@ impl LabelPainter {
         labels: PreparedLabels,
     ) -> Result<(), RendererError> {
         let rect = labels.rect;
+        let clip = labels.clip;
         builder
             .set_viewport(
                 0,
@@ -347,8 +357,8 @@ impl LabelPainter {
             .set_scissor(
                 0,
                 [Scissor {
-                    offset: [rect.x, rect.y],
-                    extent: [rect.width, rect.height],
+                    offset: [clip.x, clip.y],
+                    extent: [clip.width, clip.height],
                 }]
                 .into_iter()
                 .collect(),

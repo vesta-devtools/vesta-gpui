@@ -53,7 +53,7 @@ fn prepare_fixture(
     viewport: Viewport,
     max_dimension: u32,
 ) -> (Vec<Prepared>, RenderOutput) {
-    prepare(
+    crate::prepare_paint(
         viewport,
         paint,
         &mut TextInputContext::default(),
@@ -68,6 +68,7 @@ fn prepare_fixture(
         },
     )
     .expect("optional image state must not terminate the frame")
+    .into_parts()
 }
 
 #[test]

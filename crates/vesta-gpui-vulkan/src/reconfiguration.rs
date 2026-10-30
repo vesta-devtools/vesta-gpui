@@ -284,5 +284,120 @@ mod frame_mode_tests {
                 .stage,
             "frame_scene_mode"
         );
+        // One shared surface retains each borrowed camera/scene/clip; cropping
+        // does not replace the viewport used by projection and numeric labels.
+        use crate::scene_views::SceneInput;
+        use crate::{MAX_SCENE_VIEWS, SceneView, validate_scene_views};
+        use vesta_viewport::{Camera, ViewportScene, render::ViewportRect};
+        let first = ViewportScene::default();
+        let second = ViewportScene::acceptance_scene();
+        let camera_a = Camera::default();
+        let camera_b = Camera {
+            yaw: 0.6,
+            roll: 0.2,
+            ..camera_a
+        };
+        let viewport = ViewportRect::full(200, 80);
+        let mut views = [
+            SceneView {
+                clip: ViewportRect::full(100, 80),
+                ..SceneView::new(camera_a, &first, viewport)
+            },
+            SceneView {
+                clip: ViewportRect {
+                    x: 100,
+                    y: 0,
+                    width: 100,
+                    height: 80,
+                },
+                ..SceneView::new(camera_b, &second, viewport)
+            },
+        ];
+        let batch = SceneInput::Batch(&views);
+        assert_eq!(
+            frame_mode(batch.is_present(), None).expect("batch target"),
+            TargetMode::Scene
+        );
+        assert_eq!(
+            frame_mode(batch.is_present(), Some(TargetMode::Ui))
+                .expect_err("batch requires depth")
+                .stage,
+            "frame_scene_mode"
+        );
+        let planned = batch
+            .prepare([200, 80])
+            .expect("touching clips are disjoint");
+        assert_eq!(planned.len(), 2);
+        assert!(std::ptr::eq(planned[0].scene, &first));
+        assert!(std::ptr::eq(planned[1].scene, &second));
+        assert_eq!(planned[0].camera, camera_a);
+        assert_eq!(planned[1].camera, camera_b);
+        assert_eq!(planned[0].viewport, viewport);
+        assert_eq!(planned[1].viewport, viewport);
+        assert_eq!(planned[1].clip, views[1].clip);
+        let reversed = [views[1], views[0]];
+        let planned = SceneInput::Batch(&reversed)
+            .prepare([200, 80])
+            .expect("input order");
+        assert_eq!(planned[0].camera, camera_b);
+        assert!(std::ptr::eq(planned[0].scene, &second));
+
+        views[1].clip.x = 99;
+        assert_eq!(
+            validate_scene_views(&views, [200, 80])
+                .expect_err("one pixel overlap")
+                .code,
+            "native_vulkan_scene_batch_rejected"
+        );
+        views[1].clip.x = 100;
+        views[1].viewport.width = 201;
+        assert!(validate_scene_views(&views, [200, 80]).is_err());
+        views[1].viewport = viewport;
+        views[1].clip.x = u32::MAX;
+        views[1].clip.width = 2;
+        assert!(validate_scene_views(&views, [200, 80]).is_err());
+        views[1].clip = ViewportRect {
+            x: 100,
+            y: 0,
+            width: 100,
+            height: 80,
+        };
+        views[1].camera.near = f32::NAN;
+        assert!(validate_scene_views(&views, [200, 80]).is_err());
+        let excess = [views[0]; MAX_SCENE_VIEWS + 1];
+        assert!(validate_scene_views(&excess, [200, 80]).is_err());
+        let empty = [SceneView {
+            clip: ViewportRect::full(0, 80),
+            ..views[0]
+        }];
+        assert!(
+            SceneInput::Batch(&empty)
+                .prepare([200, 80])
+                .expect("clipped away")
+                .is_empty()
+        );
+        assert!(!SceneInput::Batch(&[]).is_present());
+
+        let legacy = SceneInput::Single(Some((
+            camera_a,
+            &first,
+            ViewportRect {
+                x: 180,
+                y: 0,
+                width: 100,
+                height: 80,
+            },
+        )));
+        let planned = legacy.prepare([200, 80]).expect("legacy target clamp");
+        assert_eq!(
+            planned[0].viewport,
+            ViewportRect {
+                x: 180,
+                y: 0,
+                width: 20,
+                height: 80
+            }
+        );
+        assert_eq!(planned[0].clip, planned[0].viewport);
     }
 }

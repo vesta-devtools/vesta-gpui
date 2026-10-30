@@ -7,6 +7,7 @@ struct Policy {
     color: vec4<f32>,
     placement: vec4<f32>, // physical offset, digit capacity, atlas cells
     depth: vec4<f32>, // tolerance, sample count, required occluded samples, unused
+    clip: vec4<f32>, // this view's physical visible depth region
 };
 @group(1) @binding(0) var<storage, read> sources: array<Source>;
 @group(1) @binding(1) var<uniform> policy: Policy;
@@ -58,6 +59,10 @@ fn sample_label_depth(pixel: vec2<i32>, sample: i32) -> f32 {
 @fragment
 fn label_fragment(input: Output) -> @location(0) vec4<f32> {
     let pixel = vec2<i32>(policy.viewport.xy + vec2<f32>(input.anchor.x * 0.5 + 0.5, 0.5 - input.anchor.y * 0.5) * policy.viewport.zw);
+    let clip_min = vec2<i32>(policy.clip.xy);
+    let clip_max = clip_min + vec2<i32>(policy.clip.zw);
+    // Never sample a different view's depth for an anchor outside this clip.
+    if pixel.x < clip_min.x || pixel.y < clip_min.y || pixel.x >= clip_max.x || pixel.y >= clip_max.y { discard; }
     let size = vec2<i32>(textureDimensions(label_depth));
     if pixel.x < 0 || pixel.y < 0 || pixel.x >= size.x || pixel.y >= size.y { discard; }
     var occluded = 0u;
