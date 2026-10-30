@@ -32,12 +32,20 @@ jobs:
       - name: Source and tool contracts
         shell: pwsh
         run: |
-          node --test tools/sdk/gpui_source.test.mjs tools/verify/gpui_profile.test.mjs
+          node --test tools/sdk/gpui_source.test.mjs tools/verify/gpui_profile.test.mjs tools/verify/architecture.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tools/sdk/gpui_source.mjs --verify .
           exit $LASTEXITCODE
       - name: Pinned toolchain
         run: rustup toolchain install 1.89.0 --profile minimal --component clippy --component rustfmt
+      - name: Resolved architecture boundaries
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force target/architecture | Out-Null
+          cargo metadata --locked --format-version 1 --all-features | Set-Content -Encoding utf8 target/architecture/metadata.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/verify/architecture.mjs target/architecture/metadata.json
+          exit $LASTEXITCODE
       - name: Format
         run: cargo fmt --all -- --check
       - name: All feature contracts and examples

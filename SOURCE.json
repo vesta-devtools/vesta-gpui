@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "780f82079f05610d844218175a0852105fb6536d3c3751028a4bd423ae48b546",
+  "tree_sha256": "b58d1773b5662f28d40e0c895abcbff113cdf4ddacdddaee782e8556cf5304c4",
   "files": [
     {
       "path": ".gitattributes",
@@ -15,8 +15,8 @@
     },
     {
       "path": ".github/workflows/checks.yml",
-      "bytes": 1736,
-      "sha256": "e0d7a086fdf19817b5b92c01bea8c9633842d9ed303e04973de8347b3bf4230e"
+      "bytes": 2227,
+      "sha256": "06ef380b9cd616ee3868ce7ab3a14940a998093cd26da1141ac255ee8bbc92ac"
     },
     {
       "path": ".gitignore",
@@ -45,8 +45,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 4145,
-      "sha256": "f70726dc5f6d0041b1084d191281c4d35ff5205f83cd61731ed7992bcc7f9b3d"
+      "bytes": 4510,
+      "sha256": "21e3f67dc95bf4ab7fff2ae723dc7cc91e7b68dcb8cf24215036933d4549892d"
     },
     {
       "path": "apps/vesta-gpui-standalone/Cargo.toml",
@@ -70,8 +70,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/application_state.rs",
-      "bytes": 6511,
-      "sha256": "a9c0842d8bc2c52322f238aafeb344c72c02d47a4e80dc188d68aa6859382567"
+      "bytes": 16899,
+      "sha256": "bb93d382232dae767e98746070f379ed39f0d5f2071057258c80a09d8f91e230"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/breadcrumb_demo.rs",
@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/demo_actions.rs",
-      "bytes": 2859,
-      "sha256": "59e4b7d92ea41e9dcc90bd9f8a32a87ff43742548498ea259b16fc0010c4901d"
+      "bytes": 25105,
+      "sha256": "4e65b92acc1f540ab687d3def4a21cc3941fd56b6902115f232208fa24d2fd1c"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/demo_images.rs",
@@ -200,8 +200,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/main.rs",
-      "bytes": 113232,
-      "sha256": "c51329222aca3364a25ff911d9918b9aeabcc5737f956c8ceca968f604d9d594"
+      "bytes": 19392,
+      "sha256": "4a2cb2530b2d3166214470fdc0ebd735f13aa7d84b60a62bbf4007298c3db37e"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/native_capture.rs",
@@ -327,6 +327,11 @@
       "path": "apps/vesta-gpui-standalone/src/palette_demo.rs",
       "bytes": 16167,
       "sha256": "2e84915638d5ddd19549c7dec098fd139e9725435880993b8337a460954d7373"
+    },
+    {
+      "path": "apps/vesta-gpui-standalone/src/presentation.rs",
+      "bytes": 28103,
+      "sha256": "afea5fe6b3a3c9e1cf24c46ed6dc7f5f26f836e0978af1f9a1aefa386e267282"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/ramp_demo.rs",
@@ -534,6 +539,11 @@
       "sha256": "40b4635c60663a69cca39d3e2220e4c01f74ad9da941628b80e2595ad662be5a"
     },
     {
+      "path": "apps/vesta-gpui-standalone/src/viewport_demo.rs",
+      "bytes": 1963,
+      "sha256": "b340d78781b7f4cbfebf49249b899cbcd2be3b588a7182384652c05021e7d6ea"
+    },
+    {
       "path": "apps/vesta-gpui-standalone/src/window_accessibility.rs",
       "bytes": 13350,
       "sha256": "a228c2a15969863aaefa9c5e84f7267be1a29d88802a7a1aa73a7a6d590af029"
@@ -580,8 +590,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_focus.rs",
-      "bytes": 27522,
-      "sha256": "e39c4ddf1232709a47d35d4b41be858cf804c4b4076498ab81ad8b0b9ef37e4a"
+      "bytes": 30296,
+      "sha256": "4ccc03c52e222d160f018f0940f6d90215cb7299e7c5eeb8f19378553c7c04b2"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_focus/tests.rs",
@@ -600,13 +610,13 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_keyboard.rs",
-      "bytes": 27086,
-      "sha256": "697474a8e5cfcda9637ceab2036200a5253ddaed88b5a4cb69ee8d8743cbeec5"
+      "bytes": 28781,
+      "sha256": "158ef90327c27bfe59d4ebfebc3ffa51a785cf3b301855045956cd827995e28d"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_menus.rs",
-      "bytes": 34765,
-      "sha256": "bc39410a5508b322e661957addc2d4e669baa2119d22cb9f661e2d1cc0bc759b"
+      "bytes": 36268,
+      "sha256": "69eee66d9d352851b9c350b3aa0663550f18506473fea6972711ffed4acc0bf9"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_notifications.rs",
@@ -615,8 +625,13 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_platform.rs",
-      "bytes": 1745,
-      "sha256": "0f2201a98ab606f190e95111ae850ead3ce2d717eb7cc93498dcf6aa6e23b5ae"
+      "bytes": 5019,
+      "sha256": "322d57e3a8077cae9e10af1839ab061da41dca0bc714f6288597b5558d9dc4b1"
+    },
+    {
+      "path": "apps/vesta-gpui-standalone/src/window_pointer.rs",
+      "bytes": 25292,
+      "sha256": "0843314d8935916328a6cc3c6444cd622a005f99a61305938aec193cb90deda6"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_presentation.rs",
@@ -630,8 +645,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/workspace_session.rs",
-      "bytes": 3027,
-      "sha256": "04812fe1706bb440889f8821b121324dd96e8135fc9ab4c106a4e1e48bc00c22"
+      "bytes": 5022,
+      "sha256": "689db5f15d0482c3b504949d77c6d941d4e8e20a5a30f8a17671744e255647de"
     },
     {
       "path": "apps/vesta-gpui-standalone/tests/dependency_boundaries.rs",
@@ -730,8 +745,8 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/SUPPORTED-API.md",
-      "bytes": 30844,
-      "sha256": "54fd20074052ac4083c045b4afd6f8d92eedb7f8d4e442691cb8a8260a27a48e"
+      "bytes": 22806,
+      "sha256": "695fe541028f93e7bac65cda7618e71f22055f6b3d78d14793109637eb4e3b60"
     },
     {
       "path": "crates/vesta-gpui-vulkan/examples/native/mod.rs",
@@ -770,8 +785,8 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/checked_pipeline.rs",
-      "bytes": 31233,
-      "sha256": "464621260a2f0f8aeec6a40e13e9b4aa8651a1be241f958ea85964f5cfacbde5"
+      "bytes": 31216,
+      "sha256": "8d0383f8492f79370dc599642976c0959bcdfbc28e77e2158326a45329e3cdf5"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/checked_pipeline/recording.rs",
@@ -820,8 +835,8 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/lib.rs",
-      "bytes": 38336,
-      "sha256": "7573486ef673bc78726104931edaa9ba655e1f9c75f5b317bb53732e74d1acf1"
+      "bytes": 38400,
+      "sha256": "7ede3fd4092be2ebbcae34514883d9a65f6d35996bce35df5a2f8091bc40e64a"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/painter.rs",
@@ -840,8 +855,8 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/reconfiguration.rs",
-      "bytes": 13752,
-      "sha256": "2eb32932d6d7388d1d1b0d03acdae0b2bf401303d7d2fce0e0629dae8ed31db3"
+      "bytes": 13751,
+      "sha256": "59375eb1fac6cbfba080780fa1a1dc430a387e6f2e0d1b8bde9c18cabb2d2e24"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/recording.rs",
@@ -880,13 +895,18 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/viewport.rs",
-      "bytes": 20191,
-      "sha256": "ae0e2cc55fb0d3440ba129adb36f17d58330f5ab5f55b7953ebcf76f8853c61f"
+      "bytes": 20190,
+      "sha256": "dea2bfd78f8cfb9124748687372f4156cdb8e0ca85a3846229ee4c8a5f480091"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/viewport/labels.rs",
       "bytes": 12852,
       "sha256": "4d675ae0ba4cb1438f0bcd952b8d46e948d35cd5ec60dbd6fff6378d0a50c2d2"
+    },
+    {
+      "path": "crates/vesta-gpui-vulkan/src/viewport_fixture.rs",
+      "bytes": 1964,
+      "sha256": "508607cb8b7c371bf1fcb8d9dc1b41e55fe3563f28367f7958658d470fa8e3b0"
     },
     {
       "path": "crates/vesta-gpui-vulkan/tests/dependency_boundaries.rs",
@@ -1445,8 +1465,8 @@
     },
     {
       "path": "crates/vesta-gpui-winit/src/lib.rs",
-      "bytes": 35333,
-      "sha256": "d70143615c5cafe43d4dcb121670e8f12bd1b2ad565418930311b8783f16fdcc"
+      "bytes": 35523,
+      "sha256": "c3b1e8626f5466522111ab9ad6b323a6c583f7790effb815332235de98f730f6"
     },
     {
       "path": "crates/vesta-gpui-winit/src/monitor.rs",
@@ -1524,6 +1544,11 @@
       "sha256": "1c0f70707181bddb9ef85fc4e02eb2d8b003408f40ed62773d51fdaec8ad0462"
     },
     {
+      "path": "crates/vesta-gpui-winit/tests/text_error_chain.rs",
+      "bytes": 762,
+      "sha256": "b866c8184075503a118446776a30ee40197eaf731233cf9235613e4c0127cdf3"
+    },
+    {
       "path": "crates/vesta-gpui-workspace/Cargo.toml",
       "bytes": 390,
       "sha256": "4d5f57c8f793b051c32237186369c08792d51996e1b62642ffc3205e483f7f30"
@@ -1590,8 +1615,8 @@
     },
     {
       "path": "crates/vesta-gpui/SUPPORTED-API.md",
-      "bytes": 28007,
-      "sha256": "3e971db671be30ea4301ea40c94187e234d45b5f067495079b23b45a4ee34617"
+      "bytes": 29165,
+      "sha256": "3a9905e06ec758c99be901db6a57fde381b9e9af864f30943a4fb09f0f9908dd"
     },
     {
       "path": "crates/vesta-gpui/examples/editor_outline.rs",
@@ -1770,13 +1795,18 @@
     },
     {
       "path": "crates/vesta-gpui/src/text_input.rs",
-      "bytes": 42532,
-      "sha256": "5a6bbfd721ed96d536388f334f07d2a64e397007e1ad7fcc6b2f34fe2dd8e34b"
+      "bytes": 39864,
+      "sha256": "944628d991173f24063d8d9a19a4ac06844d3e5b2466ff09e6e0be05e5c517f9"
     },
     {
       "path": "crates/vesta-gpui/src/text_input/accessibility.rs",
       "bytes": 6070,
       "sha256": "a08ef89b5bd47d6584589aab677d739ff814547b369ebb59c640278e74c58d79"
+    },
+    {
+      "path": "crates/vesta-gpui/src/text_input/context.rs",
+      "bytes": 3726,
+      "sha256": "91a3b7762b3bf346e588eb9ac34dbf8830c606bd60efa50c5550f23ac9ea61db"
     },
     {
       "path": "crates/vesta-gpui/src/text_input/marks.rs",
@@ -1800,13 +1830,13 @@
     },
     {
       "path": "crates/vesta-gpui/src/text_input/static_text.rs",
-      "bytes": 15313,
-      "sha256": "b7cfee9f77b2d8765ca8d82cb4807211e13a37d621955e86a4b596cb3e812bd5"
+      "bytes": 15553,
+      "sha256": "aa81bac7c3aca82d6a5967b8440d6d8170c929fda9188e7a13b89c08582d174b"
     },
     {
       "path": "crates/vesta-gpui/src/text_input/styled.rs",
-      "bytes": 10282,
-      "sha256": "5f477eb434a4649cc7c12c74e460933de6df5ee27129d6dbc9430679cdc0c092"
+      "bytes": 10730,
+      "sha256": "83636ca43868a42800c725277bca4ca3dfd36ac8f6674f037aa8ce8070de2357"
     },
     {
       "path": "crates/vesta-gpui/src/text_input_tests.rs",
@@ -1825,8 +1855,8 @@
     },
     {
       "path": "crates/vesta-gpui/src/text_views.rs",
-      "bytes": 2479,
-      "sha256": "e7b1d92d8ed25ffe632695a67caaf230d250fc14b4cb7e23a8db71e1a25eca5c"
+      "bytes": 3070,
+      "sha256": "4d3c17b9d761c3b0ee016272c263fbdf914c2a704ff68ed366a9e1efea11acb2"
     },
     {
       "path": "crates/vesta-gpui/src/trace.rs",
@@ -1864,6 +1894,11 @@
       "sha256": "03e82cb52717a1c66f8ce738f02b3cdcea8673e49228b5203abe486970384107"
     },
     {
+      "path": "crates/vesta-gpui/tests/text_error_contract.rs",
+      "bytes": 1567,
+      "sha256": "ef1558f7150cac65555d038fc0617e14b66893fdc1bbf7aa8932cc2d59db3b10"
+    },
+    {
       "path": "crates/vesta-gpui/tests/trace_contract.rs",
       "bytes": 10502,
       "sha256": "34b81d51531203a25d1265585a40e7c60f8721b3af7fe55522b7c3ea2a6ea2bd"
@@ -1890,8 +1925,8 @@
     },
     {
       "path": "crates/vesta-viewport/src/lib.rs",
-      "bytes": 30529,
-      "sha256": "7d5fb739ddd10bde67df32b61156f297246a5be7f2e689b46f86aa5925e8e5b7"
+      "bytes": 30816,
+      "sha256": "a21cd73106962261732aaebe9ff584e0e9ee861f4de56ae4d809b2d43e91dbce"
     },
     {
       "path": "crates/vesta-viewport/src/lighting.rs",
@@ -1964,14 +1999,29 @@
       "sha256": "308a1e36ff42cd6c994ca69f50d6ec5c398bc2b534cf0c1e571dbb2eb90f9dc1"
     },
     {
+      "path": "docs/ARCHITECTURE.md",
+      "bytes": 7077,
+      "sha256": "d430bc4a54b52dcac4ee6fc55870360c788e47a96dfe09b640341ce3f02eaefe"
+    },
+    {
       "path": "docs/MAINTENANCE.md",
-      "bytes": 3093,
-      "sha256": "0f0b693205b29955c12c92e20da296c53f69d3a10dc9ac0b886a286aca0b677a"
+      "bytes": 3392,
+      "sha256": "879d9e0c4432797961bb0632f92166ea6208d994d26f2597b0f0a3da3c734c1d"
+    },
+    {
+      "path": "docs/REFINEMENT.md",
+      "bytes": 10206,
+      "sha256": "3bcd1fb13fb809bf155e669964f702a7412cb6dc9940e447effee71ba973cfbe"
     },
     {
       "path": "docs/RELEASING.md",
-      "bytes": 3270,
-      "sha256": "8ff8d92261e50523238e1fe199968cfeecbe8968b818487e2e614ae5877b0212"
+      "bytes": 3631,
+      "sha256": "8d924d62672a2ec2b6dd993850210717cbb262ab81c56a4d2776ad9254567050"
+    },
+    {
+      "path": "docs/SUPPORTED-API.md",
+      "bytes": 8541,
+      "sha256": "59be6717cbad95b247214c1a833e02e596ee1bb620f79cc38b17cc89cf355907"
     },
     {
       "path": "docs/TRACING.md",
@@ -1980,8 +2030,8 @@
     },
     {
       "path": "docs/VALIDATION.md",
-      "bytes": 7368,
-      "sha256": "87816c5fb6695f7c0fa99d53d03d842546e19f0fa2571e1376fb59176c1562f4"
+      "bytes": 9355,
+      "sha256": "743e68a1789d829e90ce4bba7d93ae040aeb04dc5dde7a30808b7b92ca9d3284"
     },
     {
       "path": "docs/decisions/0001-Headless-Preparation-And-Scene-Views.md",
@@ -2009,14 +2059,29 @@
       "sha256": "812f8666c7ec666e0ad469072cf3d26cb4694a46e918092a66ac615b37dd9595"
     },
     {
+      "path": "docs/decisions/0006-Explicit-Architecture-And-Refinement-Gates.md",
+      "bytes": 2088,
+      "sha256": "101e17cb507f9844324560b5eebbd4bee380d1062429357a3a82fcb22e39dd61"
+    },
+    {
+      "path": "docs/decisions/0007-Text-Ownership-Errors-And-Example-Composition.md",
+      "bytes": 2925,
+      "sha256": "8a8c3d469bbbfd3f320b2b8a702d92d940ffc6ff0d1d79080aacd3d382b0bbe2"
+    },
+    {
+      "path": "docs/decisions/0008-Example-Scene-And-Api-Boundary-Ownership.md",
+      "bytes": 2397,
+      "sha256": "3050e2a2caa69813d2d6b8a173c9408dd7486fa468d5d038994a0164b92f8ae4"
+    },
+    {
       "path": "release/0.1.0-rc.1.md",
       "bytes": 1749,
       "sha256": "70f2d9dd4dac7f66c3b66003bad71719f5a0308ead3ce68dc958ba54f5a38868"
     },
     {
       "path": "release/0.1.0-rc.2.md",
-      "bytes": 2664,
-      "sha256": "a5e76496e55e2b1f297f7a6124849d2eea6740048cf338dcbfc03aaf44457369"
+      "bytes": 3431,
+      "sha256": "77d9557bd2949f0e9c3725fc9f20841bd499f7420ff64cef4f9956e4abe9bf8f"
     },
     {
       "path": "rust-toolchain.toml",
@@ -2042,6 +2107,16 @@
       "path": "tools/sdk/gpui_source.test.mjs",
       "bytes": 2450,
       "sha256": "b0cb92e25ece5982c424a6814b0adad5a78258cd801579a01e142579e47ce846"
+    },
+    {
+      "path": "tools/verify/architecture.mjs",
+      "bytes": 5608,
+      "sha256": "4f89823a7ccd94f0950670693cf8c70a5d11a67ba845f6ff24fbadbd49f056a2"
+    },
+    {
+      "path": "tools/verify/architecture.test.mjs",
+      "bytes": 2935,
+      "sha256": "0876356ac916ea55a157f00955ff7d7938a7bf9fb63a9bb468f89eb7413db30c"
     },
     {
       "path": "tools/verify/gpui_profile.mjs",

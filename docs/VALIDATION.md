@@ -25,6 +25,33 @@ native-profile CLI regression. Local fixtures exercise evidence validation and
 module loading; they do not provide new native observations. A workflow must
 actually run successfully before it can be reported as passing.
 
+## Refinement checkpoint — 2026-10-31
+
+The current refinement changes add standard text error propagation, separate the
+font/cache owner from editor history, untangle Standalone composition and remove
+a fixed experimental demo scene from the public viewport API. The family support
+matrix has one owner in SDK documentation. Public migrations are in the rc.2 notes.
+
+Frozen run05 passed 212 contracts across 32 harnesses, documentation tests,
+all-feature and renderer-base strict checks, three Node tool groups, formatting
+and both ordinary standard example builds. Input hashes stayed unchanged.
+All 88 moved root function bodies and 52 viewport function bodies match their
+prior implementation. The demo retains the original scene data; renderer tests
+use matching private test inputs with their original assertions.
+
+A fresh all-feature resolved dependency graph, public rustdoc with warnings
+denied, and 55 local document links passed. Generated viewport documentation no
+longer exports the demo fixture. Actual local receipts are under
+`target/research/refinement-text-host-20261031/run05` and `docs01`.
+The original missing-error-trait compile failure, strict test-module placement
+failure, missed renderer test callers and interrupted run04 remain recorded.
+
+This is local source/software qualification. It adds no native interaction or
+physical input observations, no new remote CI result and no consuming-product
+deployment. The refinement programme remains active. This result paragraph and
+related status paragraphs are post-qualification documentation-only updates;
+production bytes must retain the qualified hashes.
+
 ## On-demand stage capture — 2026-10-31
 
 The shared native recorder now supports explicit start, stats and a frozen
@@ -114,7 +141,12 @@ The old product's Handoff and broad widget roadmap are not release requirements
 or promises of unimplemented product functionality in this repository.
 
 The earlier product accepted some remaining manual interaction checks by an
-explicit human waiver. That decision is retained as historical acceptance; it
+explicit human waiver on 2026-10-29: the remaining GPW04/05 interaction/visual
+checks were accepted, and GPW06's dependent acceptance prerequisite was closed.
+The original fixed module ledger recorded 115 completed exits and three accepted
+by waiver/dependency closure. This is a historical denominator, not a score for
+the current refinement programme or the entire framework.
+That decision is retained as historical acceptance; it
 does not create new physical measurements or implement unsupported capabilities.
 Known software defects, independent build failures and unsupported APIs cannot
 be waived by source packaging.

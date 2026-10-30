@@ -290,7 +290,7 @@ mod frame_mode_tests {
         use crate::{MAX_SCENE_VIEWS, SceneView, validate_scene_views};
         use vesta_viewport::{Camera, ViewportScene, render::ViewportRect};
         let first = ViewportScene::default();
-        let second = ViewportScene::acceptance_scene();
+        let second = crate::viewport_fixture::scene();
         let camera_a = Camera::default();
         let camera_b = Camera {
             yaw: 0.6,

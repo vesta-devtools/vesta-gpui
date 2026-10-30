@@ -16,6 +16,17 @@ pub enum StyledTextError {
     InteractiveSnapshot,
 }
 
+impl fmt::Display for StyledTextError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::TooLong => "styled text exceeds its byte limit",
+            Self::InvalidRange => "invalid styled-text range or dimensions",
+            Self::InteractiveSnapshot => "styled text requires a read-only snapshot",
+        })
+    }
+}
+impl std::error::Error for StyledTextError {}
+
 /// Alignment is part of the immutable read-only glyph geometry.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum StyledTextAlignment {

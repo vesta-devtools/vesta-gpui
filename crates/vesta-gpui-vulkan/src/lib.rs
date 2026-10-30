@@ -26,6 +26,8 @@ mod submission;
 mod targets;
 #[cfg(feature = "viewport")]
 mod viewport;
+#[cfg(all(test, feature = "viewport"))]
+mod viewport_fixture;
 #[cfg(feature = "viewport")]
 pub use scene_views::{MAX_SCENE_VIEWS, SceneView, validate_scene_views};
 

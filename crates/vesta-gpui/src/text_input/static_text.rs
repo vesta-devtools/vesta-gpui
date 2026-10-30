@@ -1,6 +1,9 @@
 //! Immutable static shaping, width reflow and grapheme ellipsis (ADR-0229).
 use super::*;
-use std::{collections::VecDeque, hash::Hash};
+use std::{
+    collections::{HashMap, VecDeque},
+    hash::Hash,
+};
 
 const STATIC_TEXT_CACHE_ENTRIES: usize = 512;
 const STATIC_TEXT_CACHE_BYTES: usize = 128 * 1024;
@@ -187,7 +190,14 @@ impl fmt::Display for EllipsisError {
     }
 }
 
-impl std::error::Error for EllipsisError {}
+impl std::error::Error for EllipsisError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Shape(error) => Some(error),
+            Self::InvalidWidth | Self::InvalidFontSize => None,
+        }
+    }
+}
 
 /// A derived single-line display; the caller retains the complete source.
 #[derive(Clone, Debug, PartialEq)]

@@ -762,3 +762,78 @@ impl App {
 
 #[cfg(test)]
 mod tests;
+
+impl App {
+    pub(super) fn focused_text_field(&self) -> Option<TextFieldKind> {
+        self.text_session_field(STANDALONE_WINDOW)
+    }
+
+    /// The focused element of one window.
+    pub(super) fn window_focus(&self, window: UiWindowId) -> Option<ElementId> {
+        if window == STANDALONE_WINDOW {
+            return self.input_ownership.focus().map(|focus| focus.element);
+        }
+        self.native_windows
+            .values()
+            .find(|host| host.ui_window == window)
+            .and_then(|host| host.input.focus())
+            .map(|focus| focus.element)
+    }
+
+    /// Reveal remains active while focus moves among the field's own controls.
+    pub(super) fn is_password_control(
+        &self,
+        window: UiWindowId,
+        element: Option<ElementId>,
+    ) -> bool {
+        self.gallery_scopes(window).is_some_and(|gallery| {
+            [PASSWORD_ROOT, PASSWORD_ROOT + 3, PASSWORD_ROOT + 5]
+                .into_iter()
+                .any(|id| element == Some(gallery.element(id)))
+        })
+    }
+
+    /// Whether this window should project the palette or a modal dialog it opened.
+    pub(super) fn owns_overlay(&self, window: UiWindowId) -> bool {
+        self.overlay_owner == Some(window)
+    }
+
+    /// The text field a window's element id names, using that window's own scopes.
+    pub(super) fn text_field_at(
+        &self,
+        window: UiWindowId,
+        element: Option<ElementId>,
+    ) -> Option<TextFieldKind> {
+        let element = element?;
+        let scopes = self.gallery_scopes(window)?;
+        TextFieldKind::ALL
+            .into_iter()
+            .find(|field| field.element(scopes) == element)
+    }
+
+    /// The caret owner for one window, if that window holds the text session.
+    pub(super) fn text_session_field(&self, window: UiWindowId) -> Option<TextFieldKind> {
+        self.text_session
+            .filter(|session| session.window == window)
+            .map(|session| session.field)
+    }
+
+    pub(super) fn set_text_focus(&mut self, field: Option<TextFieldKind>) {
+        self.set_focus_target(field.map(|field| field.element(self.scopes.gallery)));
+    }
+
+    #[cfg(test)]
+    pub(super) fn traverse_focus(&mut self, backwards: bool) {
+        self.traverse_window_focus(STANDALONE_WINDOW, backwards);
+    }
+
+    pub(super) fn accessibility_action(&mut self, request: accesskit::ActionRequest) {
+        self.window_accessibility_action(STANDALONE_WINDOW, request);
+    }
+
+    /// Press on a text field of the main window; native floating windows call
+    /// [`App::begin_text_selection`] with their own window and pointer.
+    pub(super) fn start_text_selection(&mut self, field: TextFieldKind) {
+        self.begin_text_selection(STANDALONE_WINDOW, field, Some(self.cursor));
+    }
+}

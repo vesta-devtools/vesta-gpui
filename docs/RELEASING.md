@@ -48,6 +48,12 @@ separate processes; do not enable registry publishing as a side effect.
 
 The repository workflow runs the tool contracts, source verification, format,
 workspace tests, doctests and strict all/base-feature checks without a GUI.
+The resolved boundary check is part of that workflow. With the pinned toolchain,
+generate full `cargo metadata --locked --format-version 1 --all-features` output
+as a UTF-8 file, then run `node tools/verify/architecture.mjs <metadata.json>`.
+`--no-deps` omits the graph and is rejected. Its contract runs with
+`node --test tools/verify/architecture.test.mjs`.
+
 CI outcomes must be read from the actual run; the presence of a workflow file is
 not a passing CI result. Native profile verification can be run separately:
 

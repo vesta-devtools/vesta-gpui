@@ -491,7 +491,7 @@ mod tests {
 
     #[test]
     fn transparent_depth_tracks_camera_and_local_geometry() {
-        let scene = ViewportScene::acceptance_scene();
+        let scene = crate::viewport_fixture::scene();
         let mut near = scene.renderables[0].clone();
         let mut far = near.clone();
         near.translation = Vec3::default();

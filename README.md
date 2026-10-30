@@ -63,11 +63,17 @@ unrealized data remain explicit boundaries.
 
 Start with [structured UI access](docs/AGENT-ACCESS.md) and the API inventories:
 
+- [Package support and host boundaries](docs/SUPPORTED-API.md)
 - [Core UI](crates/vesta-gpui/SUPPORTED-API.md)
 - [Widgets](crates/vesta-gpui-widgets/SUPPORTED-API.md)
 - [Native renderer and integration](crates/vesta-gpui-vulkan/SUPPORTED-API.md)
 
 ## Maintain and release
+
+The [architecture map](docs/ARCHITECTURE.md) states dependency direction, state
+ownership and host responsibilities. The [refinement programme](docs/REFINEMENT.md)
+tracks the remaining API, lifecycle, frame and performance gates; its completion
+is separate from release or universal platform support.
 
 The repository is maintained directly as one versioned family. Use its normal
 default Cargo target and pinned lockfile; no other product checkout or compiled

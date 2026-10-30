@@ -620,7 +620,7 @@ mod tests {
             use vesta_viewport::{SurfaceLighting, SurfaceMaterial, render};
             let shader = naga::front::wgsl::parse_str(render::VIEWPORT_SHADER)
                 .expect("complete shared viewport source");
-            let scene = vesta_viewport::ViewportScene::acceptance_scene();
+            let scene = crate::viewport_fixture::scene();
             let item = &scene.renderables[0];
             let packed = render::mesh_vertices(item, None).expect("legacy vertices");
             assert_eq!(

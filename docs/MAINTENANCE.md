@@ -32,6 +32,11 @@ registry publication; a source release does not imply registry availability.
 
 ## Ownership inside the repository
 
+Use [ARCHITECTURE.md](ARCHITECTURE.md) for the current responsibility and state
+map, and [REFINEMENT.md](REFINEMENT.md) for open work. A boundary change requires
+a decision and the resolved architecture check. Public API additions must state
+their caller, necessity, owner, lifecycle and failures.
+
 - `vesta-gpui`: stable UI identity, layout, text, input and semantic contracts.
 - `vesta-gpui-widgets`: reusable UI projections and typed interaction helpers.
 - `vesta-gpui-winit`: native events, IME, accessibility and monitor geometry.

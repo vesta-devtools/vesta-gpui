@@ -134,13 +134,20 @@ pub enum TextInputBridgeError<E> {
 impl<E: fmt::Display> fmt::Display for TextInputBridgeError<E> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Edit(error) => write!(formatter, "text edit failed: {error:?}"),
+            Self::Edit(error) => write!(formatter, "text edit failed: {error}"),
             Self::Clipboard(error) => write!(formatter, "clipboard access failed: {error}"),
         }
     }
 }
 
-impl<E: Error + 'static> Error for TextInputBridgeError<E> {}
+impl<E: Error + 'static> Error for TextInputBridgeError<E> {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Edit(error) => Some(error),
+            Self::Clipboard(error) => Some(error),
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct TextInputBridge {

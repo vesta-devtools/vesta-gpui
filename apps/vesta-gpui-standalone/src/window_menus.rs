@@ -978,3 +978,50 @@ pub(super) fn build_menu_popup(
         text_context,
     )
 }
+
+impl App {
+    pub(super) fn open_menu_for(&mut self, menu: MenuId, anchor: Point) {
+        if let Some(context) = self.pane_context_at(STANDALONE_WINDOW, self.demo.tab_menu_item) {
+            self.open_window_menu(STANDALONE_WINDOW, menu, anchor, context);
+        }
+    }
+
+    pub(super) fn hover_menu_item(&mut self, hovered: Option<ElementId>) {
+        self.hover_window_menu_item(STANDALONE_WINDOW, hovered);
+    }
+
+    pub(super) fn open_menu(&mut self, anchor: Point) {
+        self.open_menu_for(MenuId(1), anchor);
+    }
+
+    pub(super) fn open_context_menu(&mut self, anchor: Point) {
+        self.demo.tab_menu_item = self
+            .hit_test
+            .hit(anchor)
+            .and_then(|hit| self.ui_actions.action_for_hit(hit))
+            .and_then(|action| match action {
+                DemoAction::Workspace(WorkspaceViewAction::Tab(item)) => Some(*item),
+                _ => None,
+            })
+            .filter(|item| self.demo.workspace.item(*item).is_some());
+        self.open_menu_for(
+            if self.demo.tab_menu_item.is_some() {
+                MenuId(6)
+            } else {
+                MenuId(1)
+            },
+            anchor,
+        );
+    }
+
+    pub(super) fn close_menu(&mut self, restore_focus: bool) {
+        self.close_window_menu(
+            STANDALONE_WINDOW,
+            if restore_focus {
+                PopupCloseReason::Explicit
+            } else {
+                PopupCloseReason::FocusTransfer
+            },
+        );
+    }
+}

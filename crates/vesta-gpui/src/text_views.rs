@@ -8,6 +8,23 @@ pub enum TextInputViewError {
     DuplicateField { first: ElementId, second: ElementId },
 }
 
+impl std::fmt::Display for TextInputViewError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::DuplicateElement(element) => {
+                write!(formatter, "duplicate text input element {}", element.get())
+            }
+            Self::DuplicateField { first, second } => write!(
+                formatter,
+                "text input field is mapped by both {} and {}",
+                first.get(),
+                second.get()
+            ),
+        }
+    }
+}
+impl std::error::Error for TextInputViewError {}
+
 /// Rebuilt from one window's current renderer output. Content, drafts, validation
 /// and platform IME objects remain host-owned; absent fields have no stale geometry.
 #[derive(Clone, Debug)]

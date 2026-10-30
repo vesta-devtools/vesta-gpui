@@ -329,6 +329,64 @@ impl App {
     }
 }
 
+pub(super) fn demo_keymap() -> Keymap<DemoAction> {
+    let mut keymap = Keymap::default();
+    for (key, action) in palette_demo::SHORTCUT_COMMANDS {
+        keymap
+            .bind(KeyChord::character(key, KeyModifiers::default()), action)
+            .expect("unique demo shortcut");
+        if key.is_ascii_alphabetic() {
+            keymap
+                .bind(
+                    KeyChord::character(
+                        key,
+                        KeyModifiers {
+                            shift: true,
+                            ..KeyModifiers::default()
+                        },
+                    ),
+                    action,
+                )
+                .expect("unique shifted demo shortcut");
+        }
+    }
+    keymap
+        .bind(
+            KeyChord::character(
+                'p',
+                KeyModifiers {
+                    control: true,
+                    shift: true,
+                    ..KeyModifiers::default()
+                },
+            ),
+            DemoAction::OpenCommandPalette,
+        )
+        .expect("unique command palette shortcut");
+    keymap
+}
+
+pub(super) fn key_chord_caption(chord: KeyChord) -> String {
+    let mut parts = Vec::new();
+    if chord.modifiers.control {
+        parts.push("Ctrl".to_owned());
+    }
+    if chord.modifiers.alt {
+        parts.push("Alt".to_owned());
+    }
+    if chord.modifiers.shift {
+        parts.push("Shift".to_owned());
+    }
+    if chord.modifiers.super_key {
+        parts.push("Super".to_owned());
+    }
+    parts.push(match chord.key {
+        KeyStroke::Character(key) => key.to_uppercase().to_string(),
+        other => format!("{other:?}"),
+    });
+    parts.join("+")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

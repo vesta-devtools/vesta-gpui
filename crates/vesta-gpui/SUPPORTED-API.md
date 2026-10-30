@@ -264,8 +264,12 @@ limits remain. This source freeze does not publish/adopt an immutable SDK or
 complete general focus/capture/replay, raw platform TextRange, reader, native
 media, latency or other existing release gates.
 
-`TextInputContext` receives host font bytes and has no system-font discovery or
-clipboard. `TextInputState` owns one transient editing buffer/history, not an
+`TextInputContext` owns host-supplied fonts, shaping resources and bounded static
+text caches. Its private context module does not own an editing buffer, history,
+system-font discovery or clipboard. `TextMeasurementRevision` is an opaque
+process-local validity token: another context, successful font registration or
+a changed role stack invalidates prior measurements; failed/no-op updates do not.
+It is not a serialized document revision. `TextInputState` owns one transient editing buffer/history, not an
 author document. Original single-line, multiline, password and read-only
 constructors remain. Owner `reset` replaces the source and clears composition
 and history; user Undo does not span an owner reset. Single-line edits normalize
@@ -277,6 +281,18 @@ choose a limit clamped to1..16KiB. Oversized input returns `TooLong` before
 replacing the current source/selection/history. Undo/Redo share a bounded history
 of32 snapshots and256KiB of source bytes. Typing and same-kind deletion coalesce
 until `end_group` or navigation; paste and IME commit are separate edits.
+
+`TextInputError`, `StyledTextError`, `TextInputViewError` and `EllipsisError`
+implement `Display` and `std::error::Error`. A host can propagate editing failures
+with ordinary `?` into `Box<dyn Error + Send + Sync>` and still downcast to the
+original typed error. Match variants for programmatic decisions; display wording
+is explanatory and contains no editor contents. `EllipsisError::Shape` retains
+its original `TextInputError` through `Error::source`. In the native adapter,
+`TextInputBridgeError<E>` retains editing and clipboard causes when
+`E: std::error::Error + 'static`, preserving its existing bound. Clipboard
+implementations with other error types retain the existing typed/Display API.
+These adapters add no second error classification,
+error log, clipboard implementation or automatic retry.
 
 Transient host references use `TextInputMark` UTF-8 ranges in that same buffer.
 `insert_mark` inserts a bounded visible label with an opaque host ID; ordinary
