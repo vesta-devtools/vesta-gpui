@@ -3,22 +3,8 @@ use crate::MIN_DOCK_PANE_EXTENT;
 use vesta_gpui::{FlowDirection, Point, Rect};
 use vesta_workspace::SplitAxis;
 
-pub(crate) fn valid_rect(rect: Rect) -> bool {
-    rect.width >= 0.0
-        && rect.height >= 0.0
-        && [
-            rect.x,
-            rect.y,
-            rect.width,
-            rect.height,
-            rect.right(),
-            rect.bottom(),
-        ]
-        .into_iter()
-        .all(f32::is_finite)
-}
 pub(crate) fn hittable_rect(rect: Rect) -> bool {
-    valid_rect(rect) && rect.width > 0.0 && rect.height > 0.0
+    rect.is_valid() && !rect.is_empty()
 }
 pub(crate) fn finite_point(point: Point) -> bool {
     point.x.is_finite() && point.y.is_finite()

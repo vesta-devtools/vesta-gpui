@@ -24,6 +24,12 @@ impl Size {
     pub const fn new(width: f32, height: f32) -> Self {
         Self { width, height }
     }
+
+    /// Finite nonnegative extents. Zero area is valid but empty.
+    #[must_use]
+    pub fn is_valid(self) -> bool {
+        self.width.is_finite() && self.height.is_finite() && self.width >= 0.0 && self.height >= 0.0
+    }
 }
 
 /// An axis-aligned rectangle in logical window pixels.
@@ -56,6 +62,19 @@ impl Rect {
         self.y + self.height
     }
 
+    /// Finite origins, nonnegative finite extents and representable finite edges.
+    /// Positive extents must advance their corresponding edge at f32 precision.
+    /// Valid zero-area rectangles remain empty and cannot be hit.
+    #[must_use]
+    pub fn is_valid(self) -> bool {
+        Size::new(self.width, self.height).is_valid()
+            && [self.x, self.y, self.right(), self.bottom()]
+                .into_iter()
+                .all(f32::is_finite)
+            && (self.width == 0.0 || self.right() > self.x)
+            && (self.height == 0.0 || self.bottom() > self.y)
+    }
+
     #[must_use]
     pub fn is_empty(self) -> bool {
         self.width <= 0.0 || self.height <= 0.0
@@ -63,7 +82,8 @@ impl Rect {
 
     #[must_use]
     pub fn contains(self, point: Point) -> bool {
-        !self.is_empty()
+        self.is_valid()
+            && !self.is_empty()
             && point.x >= self.x
             && point.x <= self.right()
             && point.y >= self.y
@@ -73,7 +93,9 @@ impl Rect {
     /// True when `other` lies entirely inside this rect (inclusive edges).
     #[must_use]
     pub fn contains_rect(self, other: Self) -> bool {
-        !self.is_empty()
+        self.is_valid()
+            && other.is_valid()
+            && !self.is_empty()
             && !other.is_empty()
             && other.x >= self.x
             && other.y >= self.y
@@ -83,6 +105,9 @@ impl Rect {
 
     #[must_use]
     pub fn intersection(self, other: Self) -> Option<Self> {
+        if !self.is_valid() || !other.is_valid() {
+            return None;
+        }
         let left = self.x.max(other.x);
         let top = self.y.max(other.y);
         let right = self.right().min(other.right());

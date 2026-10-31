@@ -2,6 +2,7 @@
 
 use super::*;
 use crate::{ElementKind, ScrollbarGutter};
+use taffy::{Overflow, Point as TaffyPoint};
 
 pub(super) fn scroll_extent_clip(element: &Element) -> crate::ClipMode {
     if element.style.clip == crate::ClipMode::Inherit

@@ -34,6 +34,14 @@ pub struct ElementIdAllocator;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ElementScopeExhausted;
 
+impl std::fmt::Display for ElementScopeExhausted {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("process element scope capacity exhausted")
+    }
+}
+
+impl std::error::Error for ElementScopeExhausted {}
+
 impl ElementIdAllocator {
     pub fn allocate_scope(&self) -> Result<ElementScope, ElementScopeExhausted> {
         NEXT_SCOPE

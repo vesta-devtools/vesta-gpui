@@ -42,7 +42,7 @@ its existing gate and evidence, rather than expanding a widget catalogue.
 
 | Family | Qualified work retained | Remaining review target |
 | --- | --- | --- |
-| Core | Identity/dependency authority; text/context ownership; reviewed error interoperability; frame/trace and inspection contracts | Style/render payload ownership and detailed export coverage; reproduced missing `Error` on `ElementScopeExhausted` (projection focused02) |
+| Core | Identity/dependency authority; text/context ownership; reviewed errors/frame/trace/inspection; finite geometry/layout and scope-error boundary qualified below (decision 0020) | Complete current export/caller review remains open, including render payload naming/ownership and primitive semantics; Polyline visibility/join and owner-registry atomicity are source-review candidates, not qualified fixes |
 | Widgets | Existing controlled widget contracts, temporary-editor/tree/suggestion and cancellation evidence | Remaining gallery composition and controlled editing/collection/popup public state boundaries |
 | Native adapter | Registered text ownership; typed error causes; stdio deadline/process lifetime | Remaining automation/context/capture and platform-service exported boundaries |
 | Vulkan renderer | CPU preparation, scene admission, frame/retirement contracts; native recipe consumes async tickets | Capture/recovery/profile/resource lifetimes and actual public contract coverage |
@@ -158,6 +158,35 @@ closed; five other family reviews remain open. Agent/Builder still resolve the
 published 9e31f07 revision and require the recorded API migration during GF06.
 No physical input, additional original scenario pass, remote CI, current product
 adoption or overall programme completion is inferred.
+
+## GF02 / GF04 Core numeric admission checkpoint
+
+[Decision 0020](decisions/0020-Core-Geometry-Admission-And-Failure-Identity.md)
+closes the reproduced value/layout boundary. The original external compile red
+retains scope-error `?` rejection; three runtime reds preserve invalid rectangles
+becoming clips, 36 accepted nonfinite input/path combinations and successful
+publication of finite-input overflow. Scope exhaustion now implements standard
+Error. `Size`/`Rect` own basic validity, and image/Dock/text metrics reuse it.
+The existing conversion is unchanged inside one private Style-to-Taffy bridge;
+all layout entries share its finite admission. Typed errors identify invalid
+input/output elements, and existing retained recovery remains the only reset.
+Finite negative normalization, negative margins and zero-sized geometry remain.
+
+Final full01 passed 227 contracts / 37 harnesses, CPU smoke, two existing
+compile-fail docs, feature/strict/tool/format checks and ordinary builds. Actual
+ordinary Standalone 639d0624… / PID 56704 passed the inputs probe with 64 submitted
+Main and 64 submitted Float steps, zero injection, normal exit and no live owned
+descendants. Its runtime inputs and actual executable match that frozen build.
+The import failure and two fixture-ID failures remain preserved; the latter
+correctly rejected grandchild ID 3 after the preceding rounded node became empty.
+
+Evidence is under `target/research/core-family-20261031`. This closes this Core
+boundary, not the complete Core family: render payload visibility/primitive
+semantics, the owner-registry failure contract and remaining actual export/caller
+coverage still need review. Source candidates are not reported as reproduced
+runtime defects or fixed by these tests. No new physical/DPI/reader result,
+measured speed improvement, remote CI or immutable product adoption is claimed.
+Five full family reviews and the remaining GF03–GF06 exits are still open.
 
 ## GF05 bounded CPU checkpoint
 

@@ -101,6 +101,15 @@ owners; a session only holds an untrusted snapshot until restore. Native Hosts
 use narrow placement/title operations instead of mutating topology through a
 floating-window reference. ID capacity is checked before compound changes.
 
+Core values own basic size/rectangle validity. One private layout bridge owns
+finite Style-to-Taffy input conversion for stateless, retained and measurement
+paths; completed logical geometry is checked before publication. Image and Dock
+reuse the value predicate instead of maintaining independent finiteness rules.
+This is numeric admission around the same solver, not another layout algorithm,
+frame-validity flag or geometry model. Raw DTO construction and direct render
+math keep explicit input preconditions. See
+[decision 0020](decisions/0020-Core-Geometry-Admission-And-Failure-Identity.md).
+
 The [Dock projection](DOCK.md) borrows that model. One private numeric module
 admits frame, resize and routing geometry. A complete fallible frame preserves
 all tab ordering and layout direction; it is derived data, not a second model

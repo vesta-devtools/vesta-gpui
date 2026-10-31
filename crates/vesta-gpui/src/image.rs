@@ -144,20 +144,7 @@ impl ImagePlacement {
 }
 
 fn valid_rect(rect: Rect) -> bool {
-    [
-        rect.x,
-        rect.y,
-        rect.width,
-        rect.height,
-        rect.right(),
-        rect.bottom(),
-    ]
-    .into_iter()
-    .all(f32::is_finite)
-        && rect.width > 0.0
-        && rect.height > 0.0
-        && rect.right() > rect.x
-        && rect.bottom() > rect.y
+    rect.is_valid() && rect.width > 0.0 && rect.height > 0.0
 }
 
 #[cfg(test)]

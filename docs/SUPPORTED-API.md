@@ -25,9 +25,11 @@ diagnostic payloads remain strings, not fabricated error objects. There is no
 SDK-wide umbrella error or second validation layer. See
 [decision 0012](decisions/0012-Public-Error-Interoperability.md).
 
-This is not yet a guarantee for every exported failure. The complete projection
-review found Core `ElementScopeExhausted` still lacks the standard error trait;
-that specific compile failure remains open in the Core family ledger.
+This is not yet a guarantee for every exported failure. The projection review
+found the additional Core `ElementScopeExhausted` gap; its existing unit type
+now supports the same standard trait boundary. Its external compile red is
+retained under [decision 0020](decisions/0020-Core-Geometry-Admission-And-Failure-Identity.md).
+The complete Core family review remains separate from these specific errors.
 
 ## Package boundaries
 

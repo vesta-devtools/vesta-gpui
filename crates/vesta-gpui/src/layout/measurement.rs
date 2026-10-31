@@ -64,6 +64,9 @@ impl LayoutEngine {
         )?;
         let size = taffy.layout(root_node).map_err(engine_error)?.size;
         let preferred = Size::new(size.width, size.height);
+        if !preferred.is_valid() {
+            return Err(LayoutError::InvalidGeometry(root.id));
+        }
         run_taffy_layout(
             &mut taffy,
             root_node,
@@ -76,9 +79,13 @@ impl LayoutEngine {
             },
         )?;
         let size = taffy.layout(root_node).map_err(engine_error)?.size;
+        let min_content = Size::new(size.width, size.height);
+        if !min_content.is_valid() {
+            return Err(LayoutError::InvalidGeometry(root.id));
+        }
         Ok(DesiredSize {
             preferred,
-            min_content: Size::new(size.width, size.height),
+            min_content,
         })
     }
 }

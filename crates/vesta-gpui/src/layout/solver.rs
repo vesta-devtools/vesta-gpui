@@ -3,10 +3,11 @@
 use super::*;
 use std::cell::Cell;
 use taffy::{
-    CacheTree, CompactLength, Layout, LayoutFlexboxContainer, LayoutGridContainer, LayoutInput,
-    LayoutOutput, LayoutPartialTree, RoundTree, RunMode, SizingMode, TraversePartialTree,
-    TraverseTree, compute_cached_layout, compute_flexbox_layout, compute_grid_layout,
-    compute_hidden_layout, compute_leaf_layout, compute_root_layout, round_layout,
+    CacheTree, CompactLength, Display, Layout, LayoutFlexboxContainer, LayoutGridContainer,
+    LayoutInput, LayoutOutput, LayoutPartialTree, RoundTree, RunMode, SizingMode,
+    TraversePartialTree, TraverseTree, compute_cached_layout, compute_flexbox_layout,
+    compute_grid_layout, compute_hidden_layout, compute_leaf_layout, compute_root_layout,
+    round_layout,
 };
 
 #[derive(Clone, Copy, Default)]

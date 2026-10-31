@@ -1,8 +1,9 @@
 use std::error::Error;
 use vesta_gpui::{
-    ActionRoute, ActionRouteError, Element, ElementId, ElementKey, FontRole, KeymapError,
-    StyledTextError, TEXT_INPUT_MAX_BYTES, TextInputContext, TextInputError, TextInputState,
-    TextInputViewError, TextRasterError, UiQueryError,
+    ActionRoute, ActionRouteError, Element, ElementId, ElementIdAllocator, ElementKey,
+    ElementScopeExhausted, FontRole, KeymapError, StyledTextError, TEXT_INPUT_MAX_BYTES,
+    TextInputContext, TextInputError, TextInputState, TextInputViewError, TextRasterError,
+    UiQueryError,
 };
 
 fn host_replace(
@@ -23,6 +24,10 @@ fn rejected_operations_preserve_typed_causes_and_original_state() {
     host_error::<KeymapError>();
     host_error::<UiQueryError>();
     host_error::<TextRasterError>();
+    host_error::<ElementScopeExhausted>();
+    let allocate =
+        || -> Result<_, Box<dyn Error + Send + Sync>> { Ok(ElementIdAllocator.allocate_scope()?) };
+    allocate().expect("ordinary Host propagation of scope allocation");
     let mut context = TextInputContext::default();
     let mut editor = TextInputState::default();
     host_replace(&mut context, &mut editor, "retained draft").expect("initial draft");

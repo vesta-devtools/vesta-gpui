@@ -24,11 +24,7 @@ pub struct TextLayoutMetrics {
 
 impl TextLayoutMetrics {
     pub(super) fn is_valid(self) -> bool {
-        self.size.width.is_finite()
-            && self.size.width >= 0.0
-            && self.size.height.is_finite()
-            && self.size.height >= 0.0
-            && self.first_baseline.is_none_or(f32::is_finite)
+        self.size.is_valid() && self.first_baseline.is_none_or(f32::is_finite)
     }
 
     pub(super) fn checked(self, element: ElementId) -> Result<Self, LayoutError> {

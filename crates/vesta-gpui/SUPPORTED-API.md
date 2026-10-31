@@ -201,6 +201,28 @@ the repository; platform adapters/renderers remain separate crates.
 
 ## Layout and measurement
 
+### Numeric values and admission
+
+`Point`, `Size`, `Rect` and `Viewport` are logical-coordinate values, not native
+handles or validated storage. Their public fields/constructors retain the supplied
+numbers. `Size::is_valid` requires finite nonnegative extents. `Rect::is_valid`
+also requires finite origins and computed edges; a positive extent must advance
+its edge at f32 precision. Finite negative origins are valid. Zero area is valid
+but empty, so containment/hit tests and intersection admit no area there.
+`Viewport::is_valid` instead requires strictly positive dimensions and scale;
+Hosts suspend zero-sized windows before layout.
+
+Rectangle containment/intersection reject invalid inputs. In particular, floating
+min/max cannot turn an invalid NaN operand into a valid clip. Image fitting and
+Workspace geometry reuse this one value rule with their positive-area policies.
+Raw arithmetic helpers such as `inset`, `right`, `bottom`, rotation, vertex/color
+conversion and direct render preparation still require valid finite inputs and
+a valid viewport; they do not mint a validated frame. Check derived results at
+their publication boundary. These conditions do not promise arbitrary native
+image/vertex budgets or physical screen-coordinate representability.
+
+### Declarative layout and publication
+
 `Style`, `Dimension`, `GridTrack`, `GridCell`, `Axis`, `FlexWrap`, `Align`,
 `Justify`, `FlowDirection`, `PositionMode`, clips and explicit child slots feed
 one shared Taffy-backed layout path. Supported behavior includes Box sizing,
@@ -233,6 +255,25 @@ retired and `clear` releases the derived tree. A window owns its retained engine
 Invalid viewport/constraint, duplicate identities, invalid aspect/baseline/text
 metrics and solver errors retain their existing typed `LayoutError` variants.
 No usable layout is published on a rejected computation.
+
+The one private Style-to-Taffy bridge admits finite dimensions, optional offsets,
+flex/grid/spacing inputs and ScrollBox offsets for stateless, retained and content
+measurement paths. `LayoutError::NonFiniteStyle(element)` rejects nonfinite
+inputs, including currently inactive layout fields; `Auto`/optional constraints
+express an unconstrained value instead of infinity. Existing finite negative
+length normalization, finite negative margins and valid zero-sized nodes retain
+their semantics. Specific aspect/baseline/text errors remain specific.
+
+Completed node/clip/scroll geometry and preferred/min-content sizes must also be
+valid; finite inputs whose derived output overflows return
+`LayoutError::InvalidGeometry(element)`. No partial tree is usable. Retained
+failure uses the existing reset/recovery path and cannot replace application
+state. Hosts must handle the new typed variants in exhaustive matches. See
+[decision 0020](../../docs/decisions/0020-Core-Geometry-Admission-And-Failure-Identity.md).
+
+`ElementScopeExhausted` now implements the same standard `Display`/`Error`
+boundary as the other reviewed errors, permitting ordinary Host `?` propagation.
+Its unit identity, process allocator and exhaustion behavior are unchanged.
 
 Qualification includes the existing portable layout/measurement/retained/flow/
 paint-hit regressions, the complete host-font constrained mixed-row regression,

@@ -112,12 +112,12 @@ impl DockFrame {
         workspace: Option<Rect>,
     ) -> Result<Self, vesta_gpui::LayoutError> {
         use vesta_gpui::LayoutError;
-        if workspace.is_some_and(|rect| !geometry::valid_rect(rect)) {
+        if workspace.is_some_and(|rect| !rect.is_valid()) {
             return Err(LayoutError::InvalidConstraint);
         }
         let node = |id| {
             let node = layout.node(id).ok_or(LayoutError::MissingLayout(id))?;
-            if !geometry::valid_rect(node.rect) || !geometry::valid_rect(node.inherited_clip) {
+            if !node.rect.is_valid() || !node.inherited_clip.is_valid() {
                 return Err(LayoutError::InvalidConstraint);
             }
             Ok(node)
@@ -135,7 +135,7 @@ impl DockFrame {
                 let list = node(region.tab_list)?;
                 let body = node(region.body)?;
                 let viewport = list.scroll_viewport();
-                if !geometry::valid_rect(viewport) {
+                if !viewport.is_valid() {
                     return Err(LayoutError::InvalidConstraint);
                 }
                 Ok(DockPaneFrame {
