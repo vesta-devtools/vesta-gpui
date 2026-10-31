@@ -15,6 +15,7 @@ pub(super) fn run() -> Result<(), Box<dyn Error>> {
     event_loop.set_control_flow(ControlFlow::Wait);
     let mut app = App::new();
     app.prepare_native_capture()?;
+    app.prepare_frame_reflow_probe()?;
     if app.smoke && app.mode == AcceptanceMode::Gallery2d {
         // Exercise text/popover controls and the image cache in the same visible Dock pages.
         for panel_type in ["gallery.inputs", "gallery.layout"] {
@@ -65,6 +66,15 @@ pub(super) fn run() -> Result<(), Box<dyn Error>> {
         ui_query::start(event_loop.create_proxy(), app.ui_query.control_enabled)?;
     }
     let event_result = event_loop.run_app(&mut app);
+    if frame_reflow_probe::requested()
+        && !app
+            .frame_reflow_probe
+            .as_ref()
+            .is_some_and(|probe| probe.completed)
+    {
+        app.fatal_error
+            .get_or_insert("frame_reflow_probe_incomplete".into());
+    }
     app.require_native_capture_completion();
     let retirement = app.gpu.as_ref().map(GpuState::retirement_monitor);
     let context_probe = render_backend::retirement_probe_enabled()
@@ -129,7 +139,7 @@ impl ApplicationHandler<UserEvent> for App {
         if self.window.is_some() {
             return;
         }
-        if !self.smoke && self.native_capture.is_none() {
+        if !self.smoke && self.native_capture.is_none() && !frame_reflow_probe::requested() {
             match ui_preferences::load() {
                 Ok(Some(preferences)) => {
                     let drawer = self.drawer_state();
@@ -169,6 +179,7 @@ impl ApplicationHandler<UserEvent> for App {
             .with_title(self.demo.locale.window_title())
             .with_decorations(!cfg!(target_os = "windows"))
             .with_visible(false)
+            .with_active(!frame_reflow_probe::requested())
             .with_inner_size(LogicalSize::new(initial_width, 800.0))
             .with_min_inner_size(LogicalSize::new(400.0, 600.0));
         #[cfg(target_os = "windows")]
@@ -196,7 +207,7 @@ impl ApplicationHandler<UserEvent> for App {
         ) {
             Ok(gpu) => {
                 self.demo.viewport3d_available = true;
-                window.set_visible(true);
+                window.set_visible(!frame_reflow_probe::requested());
                 self.frame_profile.report_native_geometry(
                     STANDALONE_WINDOW,
                     NativeGeometryEvent::Created,
@@ -307,7 +318,11 @@ impl ApplicationHandler<UserEvent> for App {
                 self.rendered_frames
             );
         }
-        if !self.smoke && self.native_capture.is_none() && self.window.is_some() {
+        if !self.smoke
+            && self.native_capture.is_none()
+            && self.window.is_some()
+            && !frame_reflow_probe::requested()
+        {
             let drawer_width = self
                 .drawer_resize
                 .map_or(self.demo.drawer_width, |drag| *drag.initial());

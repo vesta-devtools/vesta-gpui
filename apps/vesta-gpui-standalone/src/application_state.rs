@@ -38,6 +38,7 @@ impl App {
             .expect("bounded label source");
         Self {
             scopes: UiScopes::new(),
+            frame_reflow_probe: None,
             ui_query: ui_query::Store::new(
                 std::env::args()
                     .any(|arg| matches!(arg.as_str(), "--ui-query-stdio" | "--ui-control-stdio")),

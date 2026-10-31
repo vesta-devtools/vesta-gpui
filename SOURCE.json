@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "b58d1773b5662f28d40e0c895abcbff113cdf4ddacdddaee782e8556cf5304c4",
+  "tree_sha256": "3523f75339576c3cde7f1cf709390cce67f5106baa2a4b4b7e02a0111edfbd92",
   "files": [
     {
       "path": ".gitattributes",
@@ -55,8 +55,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/README.md",
-      "bytes": 25561,
-      "sha256": "a2e4f5320d8f0331c65ab4beba2b6078f08d1fe7a5c4ffff895046640cfe2376"
+      "bytes": 26799,
+      "sha256": "4a31864046f3df91a49240345b2ed82a56e0a734a3e29dfff28ff3670e04b59b"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/application_chrome.rs",
@@ -65,13 +65,13 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/application_run.rs",
-      "bytes": 12667,
-      "sha256": "0a6bcff0ab8bc261608d8bf348011e0fbc5d120b16c37cd5857c329c0381577e"
+      "bytes": 13172,
+      "sha256": "220610be8ddc751bc90fc9da1f7fb94657f52e03f2ee3e49394666ff34a26cd6"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/application_state.rs",
-      "bytes": 16899,
-      "sha256": "bb93d382232dae767e98746070f379ed39f0d5f2071057258c80a09d8f91e230"
+      "bytes": 16937,
+      "sha256": "faef8f264a7dd7643c6d74652de18cb54e2a01d4943db5097727f0d485e0181a"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/breadcrumb_demo.rs",
@@ -112,6 +112,11 @@
       "path": "apps/vesta-gpui-standalone/src/frame_profile.rs",
       "bytes": 22556,
       "sha256": "aae9dc8300120e1faed8782162595c7e4f734da0a82207a77a649225877d9527"
+    },
+    {
+      "path": "apps/vesta-gpui-standalone/src/frame_reflow_probe.rs",
+      "bytes": 11910,
+      "sha256": "0da7c35318a293cb82fc6aeaaf2ccb913bc52600f8599a77e44fd3844c4ba4aa"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/gallery.rs",
@@ -200,8 +205,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/main.rs",
-      "bytes": 19392,
-      "sha256": "4a2cb2530b2d3166214470fdc0ebd735f13aa7d84b60a62bbf4007298c3db37e"
+      "bytes": 19616,
+      "sha256": "1476a2c34dd3d5b2dcb8b5ac77dc605e5bbb02020527a475d426c8c9af3f8c8a"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/native_capture.rs",
@@ -305,8 +310,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/native_window.rs",
-      "bytes": 20273,
-      "sha256": "93d4ff4d7031061d341881a591b5194dbab48884a65e970fcad69a76bf9c86be"
+      "bytes": 20360,
+      "sha256": "1c09f8b8da4a179388555ce6c35f09a9bbdb52da311a847f1e6ae2a84edec0a5"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/native_window/events.rs",
@@ -315,8 +320,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/native_window/presentation.rs",
-      "bytes": 24825,
-      "sha256": "f29c25aa9ef9a2b9025f1c8dccc8b5bd1d7366fed1a2c30bb8435fb9daa49de8"
+      "bytes": 27867,
+      "sha256": "d93f97fe9d9229d2be722a16f72b600e40c7d77f078a1665682096d8f42838cc"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/numeric_demo.rs",
@@ -605,8 +610,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_idle.rs",
-      "bytes": 14538,
-      "sha256": "2d7132de282e024951663217aa5dcc024babecb05f52b753aacad4ed9ca31533"
+      "bytes": 14623,
+      "sha256": "45b11de9e9e72daf5fa15f9024417b5da3dbb742c7b86bfb8510eebbbf65416f"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_keyboard.rs",
@@ -635,8 +640,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_presentation.rs",
-      "bytes": 31447,
-      "sha256": "84d2d8eb4bfda872799f664ed3f30d80a567fe44e020fb593a83d1a591c87eed"
+      "bytes": 35209,
+      "sha256": "5105e34c2d4f87f4ec9457d8dc55ffa8702a82847aca4755540e6d1b759abaf6"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_tooltips.rs",
@@ -2000,8 +2005,8 @@
     },
     {
       "path": "docs/ARCHITECTURE.md",
-      "bytes": 7077,
-      "sha256": "d430bc4a54b52dcac4ee6fc55870360c788e47a96dfe09b640341ce3f02eaefe"
+      "bytes": 7513,
+      "sha256": "a142cfa54019863be9452bdf9eed9cb075c4b31781b8c8b341073bcdd0fe9d3a"
     },
     {
       "path": "docs/MAINTENANCE.md",
@@ -2010,8 +2015,8 @@
     },
     {
       "path": "docs/REFINEMENT.md",
-      "bytes": 10206,
-      "sha256": "3bcd1fb13fb809bf155e669964f702a7412cb6dc9940e447effee71ba973cfbe"
+      "bytes": 12991,
+      "sha256": "780a4eb99b78fb7112a41e9a419d13e77dc7eafebdb2f97356050cd015e62c81"
     },
     {
       "path": "docs/RELEASING.md",
@@ -2030,8 +2035,8 @@
     },
     {
       "path": "docs/VALIDATION.md",
-      "bytes": 9355,
-      "sha256": "743e68a1789d829e90ce4bba7d93ae040aeb04dc5dde7a30808b7b92ca9d3284"
+      "bytes": 10330,
+      "sha256": "58b4274abe8625d38bb16146c901fdd91411b590e416debd05e25ea7f40ed451"
     },
     {
       "path": "docs/decisions/0001-Headless-Preparation-And-Scene-Views.md",
@@ -2072,6 +2077,11 @@
       "path": "docs/decisions/0008-Example-Scene-And-Api-Boundary-Ownership.md",
       "bytes": 2397,
       "sha256": "3050e2a2caa69813d2d6b8a173c9408dd7486fa468d5d038994a0164b92f8ae4"
+    },
+    {
+      "path": "docs/decisions/0009-Bounded-Host-Frame-Settlement.md",
+      "bytes": 3271,
+      "sha256": "2b99d3f58737aae5f3588df666df9b054e5b77bf5c31dec5a511457976bea23f"
     },
     {
       "path": "release/0.1.0-rc.1.md",
@@ -2117,6 +2127,11 @@
       "path": "tools/verify/architecture.test.mjs",
       "bytes": 2935,
       "sha256": "0876356ac916ea55a157f00955ff7d7938a7bf9fb63a9bb468f89eb7413db30c"
+    },
+    {
+      "path": "tools/verify/frame_settlement.mjs",
+      "bytes": 3486,
+      "sha256": "10af815d25c45d8b393fdb53a640cc35e3ec931b7f0ed64fd62e968fe22fab15"
     },
     {
       "path": "tools/verify/gpui_profile.mjs",

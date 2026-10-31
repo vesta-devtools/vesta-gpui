@@ -27,6 +27,20 @@ actually run successfully before it can be reported as passing.
 
 ## Refinement checkpoint — 2026-10-31
 
+Main/Float now reconcile changed text/document/focus/scroll projections in a
+bounded draw before the renderer. The actual native forward/reverse split sweep
+originally reached the renderer 13/64 times in Main and 1/64 in Float. After the
+fix, Inputs, Documents and focus workloads each submitted 64/64 per window with
+at most three passes, retaining draft and selection/focus ownership contracts.
+The final standard two-example build passed a directed focus identity check.
+Frozen frame01 passed 212 contracts across 32 harnesses, documentation, all/base
+strict checks, three Node tool groups, formatting and both standard builds.
+Receipts retain the original red run and failed first focus assertion under
+`target/research/frame-settlement-20261031`; family logs are in
+`target/research/refinement-text-host-20261031/frame01`. No physical gestures or
+GPU/display latency are inferred. GF03 remains open for the specific boundary
+findings in [the programme](REFINEMENT.md).
+
 The current refinement changes add standard text error propagation, separate the
 font/cache owner from editor history, untangle Standalone composition and remove
 a fixed experimental demo scene from the public viewport API. The family support

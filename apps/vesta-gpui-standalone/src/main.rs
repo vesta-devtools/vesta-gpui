@@ -10,6 +10,7 @@ mod demo_actions;
 mod demo_images;
 mod dock_drag;
 mod frame_profile;
+mod frame_reflow_probe;
 mod gallery;
 mod gallery_sections;
 mod gpu_lifecycle;
@@ -193,6 +194,7 @@ use winit::{
 };
 
 const MODE_2D: u32 = 10;
+const FRAME_LAYOUT_PASS_LIMIT: u8 = 8;
 const MODE_3D: u32 = 11;
 const THEME_TOGGLE: u32 = 12;
 const LOCALE_TOGGLE: u32 = 17;
@@ -390,6 +392,7 @@ impl AcceptanceMode {
 }
 
 struct App {
+    frame_reflow_probe: Option<frame_reflow_probe::Probe>,
     ui_query: ui_query::Store,
     scopes: UiScopes,
     documents: GalleryDocuments,
@@ -504,7 +507,10 @@ struct App {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let recording = vesta_gpui_winit::UiTraceRecording::from_arguments(std::env::args_os())?;
+    let recording = match frame_reflow_probe::recording()? {
+        Some(recording) => recording,
+        None => vesta_gpui_winit::UiTraceRecording::from_arguments(std::env::args_os())?,
+    };
     recording.finish_after_run(application_run::run())
 }
 

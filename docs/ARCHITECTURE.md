@@ -46,6 +46,9 @@ and target-specific paths; native support is still Windows-preview scope.
    same data. A widget must not create a second author model.
 2. `InputOwnership` owns transient focus/capture for explicit window/element IDs.
    The host adapts native events and reconciles it with the current live route.
+   Independent windows retain their own remembered focus. `WindowTextSession`
+   identifies the single caret/IME owner of a shared editor; transferring that
+   session does not erase another window's remembered focus.
    Text editor state owns text/history/composition; a text context owns font and
    measurement resources. Moving one cannot silently replace the other.
 3. Element trees describe the current projection. Layout, actions, hit geometry,
@@ -53,8 +56,11 @@ and target-specific paths; native support is still Windows-preview scope.
    solver storage; it does not become another UI model or layout algorithm.
 4. The host completes necessary text/scroll/layout reconciliation before exposing
    a frame for input and rendering. The Agent consumer currently bounds its own
-   settlement to eight passes; this is not a shared SDK scheduling API. The
-   cross-host contract remains under review in GF03.
+   settlement to eight passes. Standalone now bounds its Main/Float preparation
+   the same way, with one trace/timing frame and at most one renderer attempt per
+   draw. This is host policy, not a shared SDK scheduling API. Remaining prepared
+   input geometry on renderer deferral and consumer-bridge integration remain
+   under review in GF03.
 5. The renderer retains only the resources needed by submitted work, then retires
    them through its existing owner. Submission, GPU completion and physical
    display are distinct facts. Recovery preserves caller-owned CPU state.

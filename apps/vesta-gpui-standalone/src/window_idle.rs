@@ -173,6 +173,9 @@ impl App {
             return;
         }
         self.sync_native_windows(event_loop);
+        if self.drive_frame_reflow_probe(event_loop) {
+            return;
+        }
         self.position_native_capture_windows();
         let now = Instant::now();
         let caret_target = self

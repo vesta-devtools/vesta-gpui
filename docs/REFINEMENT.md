@@ -21,7 +21,7 @@ exits, not estimated feature percentages or the number of tests.
 | --- | --- | --- |
 | GF01 — Architecture authority | Current eight-library graph, state/lifecycle ownership map, resolved dependency boundary gate and corruption checks | Completed 2026-10-31: actual all-feature Cargo metadata accepted; corruption contract rejects reverse/optional/target/build/transitive native and UI leaks; no new Rust/native qualification |
 | GF02 — API and module reduction | Audit actual public surfaces against current documentation and callers; remove unjustified wrappers/exports, untangle mixed responsibilities, provide migrations for changed public contracts | In progress; text/ownership/composition, private fixture and API-authority changes qualified; remaining families open |
-| GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | Open; Agent-specific regression is prior consumer evidence, not SDK completion |
+| GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | In progress; actual Main/Float reflow starvation reproduced and fixed; prepared-input and consumer integration audits remain |
 | GF04 — Interaction and lifecycle | Close concrete existing input/text/IME/focus/popup/selection/resource gaps; make transport, cancellation, error and ownership limits explicit; preserve existing accepted scenarios | Open |
 | GF05 — Performance and diagnostics | Reproducible static/resize/text/collection workloads, disabled/enabled trace cost, bounds/retention/idle checks; select and fix measured bottlenecks with comparable evidence | Open |
 | GF06 — Usability and delivery | Small reusable host recipe, capability-oriented docs, matching exports, clean feature checks and CI, exact SDK source identity and immutable Vesta consumer validation | Open |
@@ -121,6 +121,46 @@ receipt are documentation-only updates after the frozen commands; production
 inputs must still match those commands byte for byte.
 
 ## Validation discipline
+
+### GF03 current finding and evidence
+
+[Decision 0009](decisions/0009-Bounded-Host-Frame-Settlement.md) keeps the policy
+with the host. In `frame-settlement-20261031/before01`, the exact hidden native
+split sweep reached the renderer only 13/64 times in Main and 1/64 in Float.
+The unchanged draft and normal process exit did not make that a passing result.
+The same default workload in after01 reached/submitted 64/64 in each window,
+with two preparation passes at most. Documents01 submitted 64/64 per window with
+at most three passes and retained each window's Markdown selection/copy binding.
+Focus02 submitted 64/64 per window with Main at most three passes and Float two,
+while retaining independent focus memories and one Float caret-session owner.
+These are logical/native CPU paths, not physical input or presentation timing.
+
+Focus01's final fixture assertion incorrectly expected another window's remembered
+focus to be erased. It failed and is retained. Existing `set_window_focus` and
+`WindowTextSession` contracts require separate window memories and one active
+editor owner; focus02 checks both memories and that owner instead. No production
+focus behavior was changed to satisfy the fixture. The existing 45 default
+Standalone contracts passed. Frozen frame01 then passed all 212 contracts across
+32 harnesses, documentation, all/base strict checks, three Node tool groups,
+formatting and both standard builds, with unchanged inputs. The final two-example
+build has a different executable identity from focus02 despite identical Rust
+inputs; its exact standard executable passed the directed finalfocus01 run with
+the same 64/64 per-window submissions and three/two-pass bounds. Earlier scenes
+retain their actual executable hashes rather than inheriting this new identity.
+
+The verifier was rebound to each actual native PID. Eight actual-report and
+corruption reviews retain the original red result and reject a missing step,
+missing renderer call, capture loss and foreign PID. Corrupted reports are not
+new native evidence. Receipts are in `target/research/frame-settlement-20261031`.
+
+Remaining GF03 review is concrete: Main/Float advance CPU routes/scroll geometry
+before a renderer result, while text input viewports are currently installed
+from successful renderer output. Audit that boundary during backend deferral;
+the public paint command already carries the immutable snapshot and bounds used
+by the production painter. Also review Builder's embedded Agent `layout()`
+changed result: its current draw asks for a later redraw but still submits the
+earlier widget. Do not call that a reproduced Builder starvation defect or copy
+business/author updates into a generic retry loop. These findings keep GF03 open.
 
 GF01's maintained gate is `tools/verify/architecture.mjs`, with its focused
 contract and Windows workflow step. It requires full Cargo metadata and enabled

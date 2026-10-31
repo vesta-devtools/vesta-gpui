@@ -1,5 +1,30 @@
 # Vesta GPUI Standalone
 
+## Frame settlement probe
+
+From the SDK root, build the standard program, then select a new report path:
+
+```powershell
+cargo build --locked -p vesta-gpui-standalone
+.\target\debug\vesta-gpui-standalone.exe --probe-frame-reflow=target/reflow-inputs.html
+node tools/verify/frame_settlement.mjs target/reflow-inputs.html
+```
+
+`--probe-frame-case=documents` exercises Markdown reflow; `focus` stages logical
+focus in both windows and checks remembered focus separately from the single
+shared text-session owner. The default is `inputs`. Each isolated hidden run
+changes each window's split 64 times forward/reverse through the actual draw
+entries, preserves its draft, closes normally and retires GPU owners. It performs
+no OS input, preference restore/save or user-workspace persistence. It cannot be
+combined with ordinary smoke, UI stdio, native-input or another trace recording.
+
+The verifier checks complete capture, one CPU frame and renderer attempt per
+step, bounded preparation and explicit budget deferrals. An optional numeric
+third argument binds the report to the launched process PID. Submission markers
+are CPU-side facts, not physical display or input-latency measurements.
+
+## Gallery interactions
+
 Collections uses the shared controlled tree module. Its existing thousand-item
 tree now offers Reverse siblings, Remove selected subtrees, Restore tree,
 Expand all, Collapse all and Reveal selected. Collapse preserves hidden
