@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "c37631f37d6d5b7c33c156e7e72de18e6d40cb9f3df30a9655c5f696bf0acdd6",
+  "tree_sha256": "9b4ee0795fa014a369ea183ed044397244447fef361d7f54ab177baec35d0fdd",
   "files": [
     {
       "path": ".gitattributes",
@@ -2015,8 +2015,8 @@
     },
     {
       "path": "docs/REFINEMENT.md",
-      "bytes": 17339,
-      "sha256": "28b22ca0d84b43955d0121f65297eba1e5ecf251145cf4c3ae67b5f0dbee400e"
+      "bytes": 20249,
+      "sha256": "f4e4af0017002b90346f9620d4e1e83b1400b35bb59466ebb0b29004f58ee710"
     },
     {
       "path": "docs/RELEASING.md",

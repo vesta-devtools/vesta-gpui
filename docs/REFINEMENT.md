@@ -21,7 +21,7 @@ exits, not estimated feature percentages or the number of tests.
 | --- | --- | --- |
 | GF01 — Architecture authority | Current eight-library graph, state/lifecycle ownership map, resolved dependency boundary gate and corruption checks | Completed 2026-10-31: actual all-feature Cargo metadata accepted; corruption contract rejects reverse/optional/target/build/transitive native and UI leaks; no new Rust/native qualification |
 | GF02 — API and module reduction | Audit actual public surfaces against current documentation and callers; remove unjustified wrappers/exports, untangle mixed responsibilities, provide migrations for changed public contracts | In progress; text/ownership/composition, private fixture and API-authority changes qualified; remaining families open |
-| GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | In progress; Main/Float reflow, deferred geometry and controlled budget-exit admission qualified; remaining consumer review/integration open |
+| GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | In progress; Main/Float reflow, deferred geometry and controlled budget exits qualified; Builder ordinary frame bridge qualified on its existing SDK pin; consumer budget/fault review and integration remain open |
 | GF04 — Interaction and lifecycle | Close concrete existing input/text/IME/focus/popup/selection/resource gaps; make transport, cancellation, error and ownership limits explicit; preserve existing accepted scenarios | Open |
 | GF05 — Performance and diagnostics | Reproducible static/resize/text/collection workloads, disabled/enabled trace cost, bounds/retention/idle checks; select and fix measured bottlenecks with comparable evidence | Open |
 | GF06 — Usability and delivery | Small reusable host recipe, capability-oriented docs, matching exports, clean feature checks and CI, exact SDK source identity and immutable Vesta consumer validation | Open |
@@ -211,16 +211,57 @@ earlier probe accidentally entered normal stdio startup; current in-process prob
 are isolated from that branch. Earlier geometry evidence remains at its actual
 identity, but the old assertion that no stdin worker started is not substantiated.
 
-Remaining GF03 consumer review is concrete: Builder's embedded Agent `layout()`
-changed result currently asks for a later redraw but still submits the earlier
-widget. Do not call that a reproduced Builder starvation defect or copy business/
-author updates into a generic retry loop. Review the other consumer publication
-boundaries too; the programme stays open until that scope has evidence.
+The external Builder bridge review now has a reproduced immutable-snapshot
+failure: its text height changed from 243.6 to 365.40002 while the old candidate
+still accepted host focus. The product fixes its own pure UI retry and explicit
+facade readiness. It removes its renderer text callback and projects the same
+prepared snapshot geometry, keeping business/author/Worker updates once per draw.
+An unmounted facade now returns unchanged instead of exhausting the host's loop.
+The existing settings contract also caught a real duplicate local identity 550;
+only the fixed reset control moves, with no new registry or scope.
+
+Vesta ADR-0684 and its external
+`Docs/Research/Evidence/builder-embedded-frame-20261031/qualification.json` own
+the full product evidence. Agent 84 and Builder 29 contracts passed, with one
+existing manual GPU profile ignored; strict checks and format passed. Actual
+standard Builder PID 53108 completed five native resize/mount/unmount/restore
+cases, 372 submissions and normal GPU retirement. Private controls retained their
+identities and rejected command focus. The old full Builder script's menu/status
+assumptions and Creation Scene prerequisite remain unqualified. Its unsuccessful
+edits are retained as research, while `--builder-frame` qualifies only the changed
+no-Scene frame contract. Original failures and an executable replacement caught
+before launch are preserved; a normal standard rebuild supplied the final identity.
+
+That product still consumes public 9e31f07 through all eight selectors, rather
+than this SDK's newer local source. Its 2,561 runtime inputs were stable through
+the actual native run; later Agent/Data source changes are separately listed and
+do not inherit the result. No SDK native rerun, physical-input result, remote CI
+or immutable joint adoption is claimed by this external checkpoint.
+
+GF03 remaining consumer work is specific. Builder's host budget exhaustion and
+GPU deferral/loss need directed qualification; a headless facade suspension check
+does not sign them. Independent Agent `window.rs` installs hit/layout state before
+rendering but updates text viewports after renderer output, and its budget exit
+needs admission review. These are source findings to reproduce, not new hardware
+failure claims. Motion has no editor or stateful width-feedback reconciliation:
+its source keeps one presented hit/layout frame until submission and invalidates
+it on resize/scale/target preparation. It needs no speculative eight-pass loop;
+this is a source review, not additional Motion native acceptance.
+
+GF05 must also resolve Builder's shared frame scopes: its current entry point
+does not start the shared capture. Hook up the existing bounded capture convention
+or remove those unused scopes before signing diagnostics; the separate existing
+product recorder is not evidence that these scopes were collected. No trace cost
+or performance improvement is signed by this functional checkpoint.
 
 GF04 also retains two source-audit leads at unavailable-window cancellation:
 the text bridge's click history is separate from `PointerClick`/capture, and a
 shared value-preview rollback must invalidate/redraw the other window. Reproduce
 and trace their existing reset/notification paths before changing or signing them.
+The known stdio callers opt in once at native startup, matching the documented
+process-lifetime transport. No current consumer requirement justifies a generic
+transport runtime; retain the explicit no-join/no-cancel limit while reviewing
+its actual failure/cancellation paths.
 
 GF01's maintained gate is `tools/verify/architecture.mjs`, with its focused
 contract and Windows workflow step. It requires full Cargo metadata and enabled
