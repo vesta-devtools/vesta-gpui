@@ -1,6 +1,9 @@
 //! CPU preparation shared by native UI render backends.
 use std::sync::Arc;
 
+mod stroke;
+pub use stroke::polyline_vertices;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ImageData {
     pub width: u32,
@@ -188,43 +191,6 @@ pub fn quad_vertices(points: &[Point; 4], color: Color, viewport: Viewport) -> V
         .to_vec()
 }
 
-pub fn polyline_vertices(
-    points: &[Point],
-    width: f32,
-    color: Color,
-    viewport: Viewport,
-) -> Vec<ShapeVertex> {
-    let mut vertices = Vec::new();
-    let linear = linear_color(color);
-    for pair in points.windows(2) {
-        let start = pair[0];
-        let end = pair[1];
-        let dx = end.x - start.x;
-        let dy = end.y - start.y;
-        let length = (dx * dx + dy * dy).sqrt();
-        if length <= f32::EPSILON {
-            continue;
-        }
-        let normal = Point::new(-dy / length * width * 0.5, dx / length * width * 0.5);
-        let quad = [
-            Point::new(start.x + normal.x, start.y + normal.y),
-            Point::new(start.x - normal.x, start.y - normal.y),
-            Point::new(end.x - normal.x, end.y - normal.y),
-            Point::new(end.x + normal.x, end.y + normal.y),
-        ];
-        for index in [0, 1, 2, 0, 2, 3] {
-            vertices.push(ShapeVertex {
-                position: ndc(quad[index], viewport),
-                local: [0.0, 0.0],
-                size: [0.0, 0.0],
-                radius_border: [-1.0, 0.0],
-                color: linear,
-            });
-        }
-    }
-    vertices
-}
-
 #[allow(clippy::too_many_arguments)]
 pub fn static_text_view(
     context: &mut TextInputContext,
@@ -377,6 +343,150 @@ pub const TEXTURE_SHADER: &str = include_str!("render/texture.wgsl");
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn coverage(vertices: &[ShapeVertex], point: Point, viewport: Viewport) -> usize {
+        let p = ndc(point, viewport).map(f64::from);
+        vertices
+            .chunks_exact(3)
+            .filter(|tri| {
+                let v = [tri[0], tri[1], tri[2]].map(|v| v.position.map(f64::from));
+                let mut signs = [0.0; 3];
+                for i in 0..3 {
+                    let a = v[i];
+                    let b = v[(i + 1) % 3];
+                    signs[i] = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+                }
+                signs.iter().all(|v| *v > 1e-10) || signs.iter().all(|v| *v < -1e-10)
+            })
+            .count()
+    }
+
+    #[test]
+    fn connected_strokes_cover_bends_and_keep_prepared_vertices_finite() {
+        let viewport = Viewport::new(100.0, 100.0, 1.25);
+        let color = Color::srgba(0.2, 0.3, 0.4, 0.5);
+        let path = [
+            Point::new(10.0, 10.0),
+            Point::new(30.0, 10.0),
+            Point::new(30.0, 30.0),
+        ];
+        let mesh = polyline_vertices(&path, 8.0, color, viewport);
+        assert_eq!(
+            coverage(&mesh, Point::new(31.0, 8.5), viewport),
+            1,
+            "ordinary stroke bend must cover its outer bevel"
+        );
+        assert_eq!(
+            coverage(&mesh, Point::new(28.0, 12.0), viewport),
+            1,
+            "ordinary stroke bend must not double-blend its inner join"
+        );
+        for angle in [5.0_f64, 30.0, 60.0, 90.0, 120.0, 165.0] {
+            let (sin, cos) = angle.to_radians().sin_cos();
+            let points = [
+                Point::new(10.0, 50.0),
+                Point::new(50.0, 50.0),
+                Point::new((50.0 + 40.0 * cos) as f32, (50.0 + 40.0 * sin) as f32),
+            ];
+            let mesh = polyline_vertices(&points, 8.0, color, viewport);
+            let outer = Point::new(
+                (50.0 + 4.0 * sin / 3.0) as f32,
+                (50.0 - 4.0 * (1.0 + cos) / 3.0) as f32,
+            );
+            let inner = Point::new(
+                (50.0 - 0.37 * 4.0 * sin / (1.0 + cos)) as f32,
+                (50.0 + 0.37 * 4.0) as f32,
+            );
+            assert_eq!(
+                coverage(&mesh, outer, viewport),
+                1,
+                "outer bevel at {angle} degrees"
+            );
+            assert_eq!(
+                coverage(&mesh, inner, viewport),
+                1,
+                "inner overlap at {angle} degrees"
+            );
+        }
+        for reversed in [false, true] {
+            for mirrored in [false, true] {
+                let mut points = path.to_vec();
+                if mirrored {
+                    for p in &mut points {
+                        p.y = 40.0 - p.y;
+                    }
+                }
+                if reversed {
+                    points.reverse();
+                }
+                points.insert(1, points[1]);
+                let mesh = polyline_vertices(&points, 8.0, color, viewport);
+                let gap = Point::new(31.0, if mirrored { 31.5 } else { 8.5 });
+                let inner = Point::new(28.0, if mirrored { 28.0 } else { 12.0 });
+                assert_eq!(coverage(&mesh, gap, viewport), 1);
+                assert_eq!(coverage(&mesh, inner, viewport), 1);
+                assert!(
+                    mesh.iter()
+                        .all(|v| v.position.iter().all(|x| x.is_finite()))
+                );
+            }
+        }
+        let closed = [path[0], path[1], path[2], Point::new(10.0, 30.0), path[0]];
+        assert_eq!(
+            coverage(
+                &polyline_vertices(&closed, 8.0, color, viewport),
+                Point::new(8.5, 9.0),
+                viewport
+            ),
+            1
+        );
+        let large = polyline_vertices(
+            &[
+                Point::new(-f32::MAX / 4.0, 50.0),
+                Point::new(f32::MAX / 4.0, 50.0),
+            ],
+            8.0,
+            color,
+            viewport,
+        );
+        assert!(
+            large.iter().any(|v| v.position[1].abs() > 0.01),
+            "finite long strokes must retain width"
+        );
+        for points in [
+            vec![
+                Point::new(10.0, 10.0),
+                Point::new(30.0, 10.0),
+                Point::new(11.0, 10.001),
+            ],
+            vec![path[0], path[1], path[0]],
+        ] {
+            let mesh = polyline_vertices(&points, 8.0, color, viewport);
+            assert!(!mesh.is_empty());
+            assert!(mesh.len() <= points.len() * 9);
+            assert!(
+                mesh.iter()
+                    .all(|v| v.position.iter().all(|x| x.is_finite() && x.abs() <= 1.1))
+            );
+        }
+        for width in [0.0, -1.0, f32::NAN, f32::INFINITY] {
+            assert!(polyline_vertices(&path, width, color, viewport).is_empty());
+        }
+        assert!(
+            polyline_vertices(&[path[0], Point::new(f32::NAN, 1.0)], 2.0, color, viewport)
+                .is_empty()
+        );
+        assert!(polyline_vertices(&path, 2.0, color, Viewport::new(0.0, 100.0, 1.0)).is_empty());
+        assert!(
+            polyline_vertices(
+                &path,
+                2.0,
+                color,
+                Viewport::new(f32::MIN_POSITIVE, 100.0, 1.0)
+            )
+            .is_empty()
+        );
+    }
 
     #[test]
     fn convex_quad_projection_rejects_invalid_geometry_and_keeps_winding() {

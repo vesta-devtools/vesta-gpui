@@ -42,7 +42,7 @@ its existing gate and evidence, rather than expanding a widget catalogue.
 
 | Family | Qualified work retained | Remaining review target |
 | --- | --- | --- |
-| Core | Identity/dependency authority; text/context ownership; reviewed errors/frame/trace/inspection; finite geometry/layout and scope-error boundary qualified below (decision 0020) | Complete current export/caller review remains open, including render payload naming/ownership and primitive semantics; Polyline visibility/join and owner-registry atomicity are source-review candidates, not qualified fixes |
+| Core | Identity/dependency authority; text/context ownership; reviewed errors/frame/trace/inspection; finite geometry/layout (decision 0020); complete render preparation and owner-capacity boundary qualified below (decision 0021) | Complete current export/caller and resource review remains open, including text/semantic/inspection/trace/raster boundaries; those source-review leads have not inherited the render/owner qualification |
 | Widgets | Existing controlled widget contracts, temporary-editor/tree/suggestion and cancellation evidence | Remaining gallery composition and controlled editing/collection/popup public state boundaries |
 | Native adapter | Registered text ownership; typed error causes; stdio deadline/process lifetime | Remaining automation/context/capture and platform-service exported boundaries |
 | Vulkan renderer | CPU preparation, scene admission, frame/retirement contracts; native recipe consumes async tickets | Capture/recovery/profile/resource lifetimes and actual public contract coverage |
@@ -187,6 +187,38 @@ coverage still need review. Source candidates are not reported as reproduced
 runtime defects or fixed by these tests. No new physical/DPI/reader result,
 measured speed improvement, remote CI or immutable product adoption is claimed.
 Five full family reviews and the remaining GF03–GF06 exits are still open.
+
+## GF02 / GF04 Core render and owner checkpoint
+
+[Decision 0021](decisions/0021-Core-Render-Payloads-Strokes-And-Owner-Updates.md)
+closes the three source candidates with actual evidence: external payload import
+failed, an outer stroke bend had no coverage, and failed owner updates corrupted
+old references in same/new-instance cases. Original red01 remains. `Polyline`
+now names the existing Style field, one private stroke body fills bevel joins
+and shares ordinary inner edges, and one staged registry update preserves old
+state on capacity failure. Signatures, vertex/shader format, existing error code,
+instance/window retirement and source payload ownership remain explicit.
+
+The [complete render preparation contract](RENDER-PREPARATION.md) maps value,
+paint, vertex/image/text data, raw-helper preconditions and Host/renderer limits.
+The seven source owners and current SDK/Agent/Builder caller hashes are recorded
+in `target/research/core-render-20261031/audit.json`. Short/reversed/self-crossing
+stroke overlap remains an explicit limit; it is not an unimplemented global
+path-union feature hidden by the original no-gap claim.
+
+Focused01 and frozen full01 passed: 230 contracts / 38 harnesses, CPU smoke,
+two existing compile-fail docs, feature/doc/strict/tool/format checks and both
+ordinary standard builds. Actual Standalone 7cb53376… / PID 61908 passed the
+existing hidden/nonactive inputs case with 64 Main and 64 Float submissions,
+zero injection, normal exit and no live owned descendants. Its current runtime
+and executable identity match full01. CPU topology and native integration keep
+their different scopes; no new physical pixels, input, DPI, reader or speed
+improvement is claimed. Exact receipts are under that same research directory.
+
+The full Core family remains open for its remaining current exports/callers and
+text/semantic/inspection/trace/raster/resource contracts. Five family reviews and
+the other GF03–GF06 exits remain open; local qualification is not remote CI or
+immutable product adoption.
 
 ## GF05 bounded CPU checkpoint
 

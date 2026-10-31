@@ -120,6 +120,12 @@ The [family boundary](SUPPORTED-API.md) owns the package support matrix and comm
 migration policy. Core, Widgets and renderer inventories own their detailed
 contracts; the renderer does not define another package's support policy.
 
+The [CPU preparation contract](RENDER-PREPARATION.md) maps Host-owned Style values
+to derived paint and transient vertices. One private stroke body serves all
+current callers. Owner registry updates stage generations before publishing;
+capacity failure preserves the previous references without a second registry
+or compensation state. Neither boundary owns application dispatch or GPU lifetime.
+
 Every public addition must identify its caller, owner, necessary use case,
 inputs/outputs, lifetime, errors and qualification. Keep pure operations separate
 from I/O and platform adapters. A `pub` declaration alone is not an API design.

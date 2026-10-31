@@ -38,7 +38,7 @@ pub enum PaintCommand {
         rotation: f32,
         color: Color,
     },
-    /// 连续折线描边：按 points 顺序以固定宽度生成连续带状（无段间缺口）。
+    /// Window-coordinate connected bevel stroke; the Host still owns the source payload.
     FillPolyline {
         element: ElementId,
         points: Vec<Point>,

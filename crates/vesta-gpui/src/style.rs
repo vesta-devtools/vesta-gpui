@@ -238,7 +238,8 @@ impl Default for VisualStyle {
     }
 }
 
-/// 折线描边数据：按 points 顺序以固定宽度生成连续带状（无段间缺口、宽度均匀）。
+/// Local-coordinate stroke data: butt endpoints and connected bevel joins.
+/// Repeating the first point closes the join; self-crossing/short runs may overlap.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Polyline {
     pub points: Vec<crate::geometry::Point>,
@@ -353,9 +354,10 @@ pub struct Style {
     pub text_v_align: TextVAlign,
     /// Static text may soft-wrap within its measured content width.
     pub text_wrap: bool,
-    /// 绘制旋转（弧度，绕元素中心）。只影响绘制，不影响布局与命中矩形。
+    /// Rounded-rectangle fill/border rotation in radians about the element center.
+    /// Text, polyline/quad points, layout and hit bounds remain in their own coordinates.
     pub rotation: Option<f32>,
-    /// 折线描边：按 points 顺序以固定宽度生成连续带状（无段间缺口、宽度均匀）。
+    /// Local-coordinate connected stroke; hit/semantic bounds still use the layout box.
     pub polyline: Option<Polyline>,
     pub filled_quad: Option<[crate::geometry::Point; 4]>,
     pub scrollbar: ScrollbarStyle,
@@ -583,7 +585,7 @@ impl Style {
         self
     }
 
-    /// 绘制旋转（弧度，绕元素中心）。不影响布局与命中。
+    /// Rotate rounded-rectangle fill/border preparation; other payloads keep their coordinates.
     #[must_use]
     pub fn rotation(mut self, radians: f32) -> Self {
         self.rotation = Some(radians);
@@ -620,7 +622,7 @@ impl Style {
         self
     }
 
-    /// 设置折线描边（连续带状渲染，宽度均匀、无段间缺口）。
+    /// Set a connected bevel stroke. Exact repeated endpoints close its join.
     #[must_use]
     pub fn polyline(mut self, points: Vec<crate::geometry::Point>, width: f32) -> Self {
         self.polyline = Some(Polyline { points, width });

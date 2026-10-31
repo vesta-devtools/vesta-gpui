@@ -32,16 +32,44 @@ impl<A> Default for UiOwnerRegistry<A> {
     }
 }
 impl<A: Clone + PartialEq> UiOwnerRegistry<A> {
+    /// Stage changed generations before publishing. Capacity failure preserves
+    /// the previous instance, cursor and all windows' references.
     pub fn update(
         &mut self,
         snapshot: &UiSnapshot,
         route: &ActionRoute<A>,
     ) -> Result<(), &'static str> {
-        if self.instance != snapshot.id.instance {
+        let changed_instance = self.instance != snapshot.id.instance;
+        let window = snapshot.id.window;
+        let mut next = self.next;
+        let mut staged = Vec::new();
+        for node in snapshot.nodes() {
+            let action = route.action_at(node.id).cloned();
+            let unchanged = !changed_instance
+                && self.entries.get(&(window, node.id)).is_some_and(|old| {
+                    old.action == action
+                        && old.role == node.role
+                        && old.name == node.name
+                        && old.parent == node.parent
+                });
+            if !unchanged {
+                next = next.checked_add(1).ok_or("owner_generation_exhausted")?;
+                staged.push((
+                    node.id,
+                    Owner {
+                        generation: next,
+                        action,
+                        role: node.role,
+                        name: node.name.clone(),
+                        parent: node.parent,
+                    },
+                ));
+            }
+        }
+        if changed_instance {
             self.entries.clear();
             self.instance = snapshot.id.instance;
         }
-        let window = snapshot.id.window;
         let live = snapshot
             .nodes()
             .iter()
@@ -49,30 +77,9 @@ impl<A: Clone + PartialEq> UiOwnerRegistry<A> {
             .collect::<std::collections::HashSet<_>>();
         self.entries
             .retain(|(w, id), _| *w != window || live.contains(id));
-        for node in snapshot.nodes() {
-            let action = route.action_at(node.id).cloned();
-            let unchanged = self.entries.get(&(window, node.id)).is_some_and(|old| {
-                old.action == action
-                    && old.role == node.role
-                    && old.name == node.name
-                    && old.parent == node.parent
-            });
-            if !unchanged {
-                self.next = self
-                    .next
-                    .checked_add(1)
-                    .ok_or("owner_generation_exhausted")?;
-                self.entries.insert(
-                    (window, node.id),
-                    Owner {
-                        generation: self.next,
-                        action,
-                        role: node.role,
-                        name: node.name.clone(),
-                        parent: node.parent,
-                    },
-                );
-            }
+        self.next = next;
+        for (element, owner) in staged {
+            self.entries.insert((window, element), owner);
         }
         Ok(())
     }
@@ -188,5 +195,126 @@ impl UiCommand {
             }
             _ => Ok(()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        Element, ElementKey, LayoutEngine, Semantic, SemanticRole, UiQueryLimits, UiSnapshotFrame,
+        UiSnapshotId, Viewport,
+    };
+
+    fn capture(
+        instance: u128,
+        window: UiWindowId,
+        ids: &[u64],
+        action: u8,
+        revision: u64,
+    ) -> (UiSnapshot, ActionRoute<u8>) {
+        let root = Element::container(ElementId::new(1), ElementKey::new("root")).children(
+            ids.iter().map(|id| {
+                Element::container(ElementId::new(*id), ElementKey::new(format!("node.{id}")))
+                    .semantic(Semantic::new(SemanticRole::Button, format!("Node {id}")))
+            }),
+        );
+        let route = ActionRoute::build(&root, [(ElementId::new(2), action)]).expect("route");
+        let layout = LayoutEngine
+            .compute(&root, Viewport::new(100.0, 100.0, 1.0))
+            .expect("layout");
+        let snapshot = UiSnapshot::capture(
+            UiSnapshotFrame {
+                id: UiSnapshotId {
+                    instance,
+                    window,
+                    revision,
+                },
+                root: &root,
+                layout: &layout,
+                route: &route,
+                focus: None,
+                modal_root: None,
+            },
+            UiQueryLimits::default(),
+            |_| None,
+            |_| false,
+        )
+        .expect("snapshot");
+        (snapshot, route)
+    }
+
+    fn baseline() -> UiOwnerRegistry<u8> {
+        let mut owners = UiOwnerRegistry::default();
+        for window in [UiWindowId(1), UiWindowId(2)] {
+            let (snapshot, route) = capture(42, window, &[2, 3], 7, 1);
+            owners.update(&snapshot, &route).expect("initial owners");
+        }
+        owners
+    }
+
+    #[test]
+    fn owner_capacity_failures_preserve_instance_cursor_and_every_window_reference() {
+        let main = UiWindowId(1);
+        let other = UiWindowId(2);
+        let mut corrupted = Vec::new();
+        for (instance, available_cursor) in [(42, u64::MAX - 1), (43, u64::MAX)] {
+            let mut owners = baseline();
+            let references = [main, other]
+                .into_iter()
+                .flat_map(|window| (1..=3).map(move |id| (window, ElementId::new(id))))
+                .map(|(window, id)| owners.reference(window, id).expect("live reference"))
+                .collect::<Vec<_>>();
+            owners.next = available_cursor;
+            let (changed, route) = capture(instance, main, &[2, 4], 99, 2);
+            assert_eq!(
+                owners.update(&changed, &route),
+                Err("owner_generation_exhausted")
+            );
+            if owners.instance != 42
+                || owners.next != available_cursor
+                || owners.entries.len() != references.len()
+                || !references.iter().all(|target| owners.contains(*target))
+            {
+                corrupted.push(instance);
+            }
+        }
+        assert!(
+            corrupted.is_empty(),
+            "failed owner update must preserve the previous reference set: {corrupted:?}"
+        );
+
+        let mut owners = baseline();
+        let unchanged = owners
+            .reference(other, ElementId::new(2))
+            .expect("foreign reference");
+        let removed = owners
+            .reference(main, ElementId::new(3))
+            .expect("removed reference");
+        let original = owners
+            .reference(main, ElementId::new(2))
+            .expect("old action");
+        owners.next = u64::MAX - 1;
+        let (changed, route) = capture(42, main, &[2, 3], 99, 2);
+        owners
+            .update(&changed, &route)
+            .expect("one remaining generation");
+        let replacement = owners
+            .reference(main, ElementId::new(2))
+            .expect("replacement");
+        assert!(!owners.contains(original) && owners.contains(unchanged));
+        assert_eq!(replacement.owner, u64::MAX);
+        owners
+            .update(&changed, &route)
+            .expect("unchanged repaint at capacity");
+        assert_eq!(owners.reference(main, ElementId::new(2)), Some(replacement));
+        let (trimmed, route) = capture(42, main, &[2], 99, 3);
+        owners
+            .update(&trimmed, &route)
+            .expect("removals need no generation");
+        assert!(!owners.contains(removed) && owners.contains(replacement));
+        assert!(owners.contains(unchanged));
+        owners.forget(other);
+        assert!(!owners.contains(unchanged) && owners.contains(replacement));
     }
 }

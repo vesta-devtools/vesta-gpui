@@ -282,6 +282,15 @@ The acceptance ledger binds their source and native artifact identities and
 preserves earlier failures. This qualifies the existing layout capability; it
 does not complete every OS interaction, text-editing, widget or renderer gate.
 
+## CPU render preparation
+
+The [complete preparation contract](../../docs/RENDER-PREPARATION.md) owns the
+Core render module's value/paint/vertex, image state and static-text boundary.
+`Polyline` names the existing Style field payload. Connected CPU strokes share
+ordinary inner edges and fill outer bevel joins; repeated endpoints close the
+join and short/self-crossing paths keep explicit overlap limits. The Host retains
+content, clipping, budgets and native target; no backend/runtime is added here.
+
 ## Explicit image fitting (ADR-0578)
 
 `Element::fitted_image` and `ElementKind::FittedImage` add explicit
@@ -470,6 +479,16 @@ business admission and existing typed handlers. `UiOwnerRegistry` derives curren
 repaints preserve tokens, while removed or changed owners invalidate them.
 Validate the registry token immediately before dispatch. No private Action value
 is an external command or permission grant.
+
+`UiOwnerRegistry::update` stages changed generations before publishing. Capacity
+failure returns the existing `owner_generation_exhausted` code while preserving
+instance, cursor and every window's reference set. Unchanged repaint and
+removals-only updates need no new generation and can succeed at capacity.
+Successful instance changes retain the existing all-window retirement semantics;
+`forget(window)` retires only that window and never reuses a generation. Supply
+one coherent snapshot/route from the Host's existing instance. Registry membership,
+command structural preflight and Host business authorization remain distinct
+checks; the SDK introduces no combined dispatcher or replacement action model.
 
 `UiSnapshot::changes_since` compares observations from one lifetime/window in
 stable tree order. It reports changed/added nodes and removals from the realized

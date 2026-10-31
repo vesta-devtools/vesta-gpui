@@ -69,6 +69,7 @@ Start with [structured UI access](docs/AGENT-ACCESS.md) and the API inventories:
 
 - [Package support and host boundaries](docs/SUPPORTED-API.md)
 - [Core UI](crates/vesta-gpui/SUPPORTED-API.md)
+- [CPU render payloads and preparation](docs/RENDER-PREPARATION.md)
 - [Widgets](crates/vesta-gpui-widgets/SUPPORTED-API.md)
 - [Native renderer and integration](crates/vesta-gpui-vulkan/SUPPORTED-API.md)
 - [Optional native WebView lifecycle and resources](docs/WEBVIEW.md)
