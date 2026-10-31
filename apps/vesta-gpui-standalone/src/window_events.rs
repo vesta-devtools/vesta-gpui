@@ -599,25 +599,36 @@ impl App {
             })
             .collect::<Vec<_>>();
         for (owner, container) in owners {
-            self.cancel_window_document_input(owner);
-            self.cancel_window_value_edits(owner);
-            self.cancel_workspace_drag_for_container(container);
-            if owner == STANDALONE_WINDOW {
-                self.input_ownership.cancel_capture();
-                self.pointer_click.cancel();
-                self.camera_drag = false;
-                self.camera_pan = false;
-                self.cancel_transform_drag();
-                self.cancel_floating_move();
-                self.last_title_click = None;
-            } else if let Some(host) = self
-                .native_windows
-                .values_mut()
-                .find(|host| host.ui_window == owner)
-            {
-                host.input.cancel_capture();
-                host.pointer_click.cancel();
-            }
+            self.cancel_unavailable_window_interactions(owner, container);
+        }
+    }
+
+    pub(super) fn cancel_unavailable_window_interactions(
+        &mut self,
+        owner: UiWindowId,
+        container: ContainerRef,
+    ) {
+        if let Some(bridge) = self.text_bridge_for(owner) {
+            bridge.clear_text_pointer();
+        }
+        self.cancel_window_document_input(owner);
+        self.cancel_window_value_edits(owner);
+        self.cancel_workspace_drag_for_container(container);
+        if owner == STANDALONE_WINDOW {
+            self.input_ownership.cancel_capture();
+            self.pointer_click.cancel();
+            self.camera_drag = false;
+            self.camera_pan = false;
+            self.cancel_transform_drag();
+            self.cancel_floating_move();
+            self.last_title_click = None;
+        } else if let Some(host) = self
+            .native_windows
+            .values_mut()
+            .find(|host| host.ui_window == owner)
+        {
+            host.input.cancel_capture();
+            host.pointer_click.cancel();
         }
     }
 }

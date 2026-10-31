@@ -866,7 +866,7 @@ impl App {
         self.end_window_ime_session(previous.window);
     }
 
-    fn text_bridge_for(&mut self, window: UiWindowId) -> Option<&mut TextInputBridge> {
+    pub(super) fn text_bridge_for(&mut self, window: UiWindowId) -> Option<&mut TextInputBridge> {
         if window == STANDALONE_WINDOW {
             Some(&mut self.text_bridge)
         } else {

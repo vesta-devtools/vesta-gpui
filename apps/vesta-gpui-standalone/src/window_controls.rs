@@ -332,75 +332,84 @@ impl App {
 
     /// Apply shared cancellation intents before a field transition can commit an old preview.
     pub(super) fn cancel_window_value_edits(&mut self, window: UiWindowId) {
-        self.finish_workspace_resize_for(window, false);
+        let mut shared_changed = self.finish_workspace_resize_for(window, false);
+        shared_changed |= self.can_edit_color(window);
         self.cancel_color_for(window);
         if window == STANDALONE_WINDOW {
-            self.cancel_number_scrub();
-            self.cancel_vector_scrub();
-            self.cancel_drawer_resize();
-            self.cancel_table_resize();
-            self.cancel_ramp_drag();
-            self.cancel_slider_edit();
+            shared_changed |= self.cancel_number_scrub();
+            shared_changed |= self.cancel_vector_scrub();
+            shared_changed |= self.cancel_drawer_resize();
+            shared_changed |= self.cancel_table_resize();
+            shared_changed |= self.cancel_ramp_drag();
+            shared_changed |= self.cancel_slider_edit();
             self.cancel_window_scrollbar_drag(window);
-            return;
-        }
-        let mut number_dirty = false;
-        let mut vector_axis = None;
-        if let Some(id) = self
-            .native_windows
-            .iter()
-            .find(|(_, host)| host.ui_window == window)
-            .map(|(id, _)| *id)
-        {
-            self.cancel_native_ramp_drag(id);
-        }
-        if let Some(host) = self
-            .native_windows
-            .values_mut()
-            .find(|host| host.ui_window == window)
-        {
-            if let Some(mut scrub) = host.number_scrub.take()
-                && let Some(PointerEditOutcome::Cancel { restore }) =
-                    scrub.finish(window, &self.demo.number, false)
+        } else {
+            let mut number_dirty = false;
+            let mut vector_axis = None;
+            if let Some(id) = self
+                .native_windows
+                .iter()
+                .find(|(_, host)| host.ui_window == window)
+                .map(|(id, _)| *id)
             {
-                self.demo.number = restore;
-                number_dirty = true;
+                shared_changed |= self.cancel_native_ramp_drag(id);
             }
-            if let Some(mut scrub) = host.vector_scrub.take() {
-                let index = usize::from(scrub.axis);
-                if let Some(PointerEditOutcome::Cancel { restore }) =
-                    scrub.finish(window, &self.demo.vector[index], false)
+            if let Some(host) = self
+                .native_windows
+                .values_mut()
+                .find(|host| host.ui_window == window)
+            {
+                if let Some(mut scrub) = host.number_scrub.take()
+                    && let Some(PointerEditOutcome::Cancel { restore }) =
+                        scrub.finish(window, &self.demo.number, false)
                 {
-                    self.demo.vector[index] = restore;
-                    vector_axis = Some(scrub.axis);
+                    self.demo.number = restore;
+                    number_dirty = true;
+                    shared_changed = true;
                 }
+                if let Some(mut scrub) = host.vector_scrub.take() {
+                    let index = usize::from(scrub.axis);
+                    if let Some(PointerEditOutcome::Cancel { restore }) =
+                        scrub.finish(window, &self.demo.vector[index], false)
+                    {
+                        self.demo.vector[index] = restore;
+                        vector_axis = Some(scrub.axis);
+                        shared_changed = true;
+                    }
+                }
+                if let Some(mut drag) = host.drawer_resize.take()
+                    && let Some(PointerEditOutcome::Cancel { restore }) =
+                        drag.finish(window, &self.demo.drawer_width, false)
+                {
+                    self.demo.drawer_width = restore;
+                    shared_changed = true;
+                }
+                shared_changed |= cancel_table_resize_session(
+                    window,
+                    &mut host.table_resize,
+                    &mut host.input,
+                    &mut self.demo.table_column_fractions,
+                );
+                if let Some(mut edit) = host.slider_drag.take()
+                    && let Some(PointerEditOutcome::Cancel { restore }) =
+                        edit.finish(window, &self.demo.slider, false)
+                {
+                    self.demo.slider = restore;
+                    shared_changed = true;
+                }
+                host.scrollbar_drag = None;
+                host.input.cancel_capture();
             }
-            if let Some(mut drag) = host.drawer_resize.take()
-                && let Some(PointerEditOutcome::Cancel { restore }) =
-                    drag.finish(window, &self.demo.drawer_width, false)
-            {
-                self.demo.drawer_width = restore;
+            if number_dirty {
+                self.reset_number_draft();
             }
-            cancel_table_resize_session(
-                window,
-                &mut host.table_resize,
-                &mut host.input,
-                &mut self.demo.table_column_fractions,
-            );
-            if let Some(mut edit) = host.slider_drag.take()
-                && let Some(PointerEditOutcome::Cancel { restore }) =
-                    edit.finish(window, &self.demo.slider, false)
-            {
-                self.demo.slider = restore;
+            if let Some(axis) = vector_axis {
+                self.reset_vector_draft(axis);
             }
-            host.scrollbar_drag = None;
-            host.input.cancel_capture();
         }
-        if number_dirty {
-            self.reset_number_draft();
-        }
-        if let Some(axis) = vector_axis {
-            self.reset_vector_draft(axis);
+        if shared_changed {
+            self.ui_query.invalidate_shared();
+            self.request_all_redraw();
         }
     }
 

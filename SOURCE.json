@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "9b4ee0795fa014a369ea183ed044397244447fef361d7f54ab177baec35d0fdd",
+  "tree_sha256": "650ca12aeb6d6582df735e6d7231f38476bbc936b71da93803228ac445f56b9b",
   "files": [
     {
       "path": ".gitattributes",
@@ -115,8 +115,13 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/frame_reflow_probe.rs",
-      "bytes": 28323,
-      "sha256": "5ff1b9027c5f0d95989d41177cce05dabc23a1cf721254f938cbdbf625a765c3"
+      "bytes": 30113,
+      "sha256": "4628d3b9263198183162d606ac657ac8952db2e3afc2e1318d48d05bd2ff4a38"
+    },
+    {
+      "path": "apps/vesta-gpui-standalone/src/frame_reflow_probe/cancellation.rs",
+      "bytes": 6479,
+      "sha256": "f2f03e4df88a3a096daa1e482aa95e784ed444d8614673e6c20f09a45cbed596"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/gallery.rs",
@@ -465,8 +470,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/text_fields.rs",
-      "bytes": 44373,
-      "sha256": "5bb0bba2ef1a89df5c8157ec5bd1ffaf6da5666b8253b833a0fff0cbd4481235"
+      "bytes": 44384,
+      "sha256": "fa87a1a2976a63f0ee9322925cd583be8e679ac4e2d343e75e75feb7dccc3d39"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/text_fields/tests/narrow_vector.rs",
@@ -535,8 +540,13 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/ui_query/tests.rs",
-      "bytes": 18548,
-      "sha256": "4d9e867e9a53cf928c413a3ad7a5d8e3b2c24d4d1abd3c1dbac90262722e21c7"
+      "bytes": 18566,
+      "sha256": "e292494907c249827f446bab2053ad7dfedf038c42d02ea3dfe5bfcc2b7fac07"
+    },
+    {
+      "path": "apps/vesta-gpui-standalone/src/ui_query/tests/cancellation.rs",
+      "bytes": 6393,
+      "sha256": "b8c8381c2dd5f7ca63c8e4d0ab35b40925ed6ba20f3f8f05cde87d4232cc28c1"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/ui_query/wire.rs",
@@ -560,8 +570,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_controls.rs",
-      "bytes": 21671,
-      "sha256": "196b3995ad60b9f00b53821b68571cb799337929feb8fc3c26ed2610bb410992"
+      "bytes": 22424,
+      "sha256": "db44fe8c69c4fc47eb4b6f19007a561bcfd476d722a3b66ba8f92889fc53607a"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_documents.rs",
@@ -590,8 +600,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_events.rs",
-      "bytes": 27507,
-      "sha256": "9058448a8e4bd6bf20d2a1e914a9183728b3cdc949160e6e1eb1650ecf77410b"
+      "bytes": 27769,
+      "sha256": "5690b8ce99f049dc260e872b8ef2bf99fe4d092889facd02c7be7be245e5a93f"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_focus.rs",
@@ -2015,8 +2025,8 @@
     },
     {
       "path": "docs/REFINEMENT.md",
-      "bytes": 20249,
-      "sha256": "f4e4af0017002b90346f9620d4e1e83b1400b35bb59466ebb0b29004f58ee710"
+      "bytes": 22477,
+      "sha256": "866b590620011e826d703c9613d8327b93c34db55dac69acc8974994970791dc"
     },
     {
       "path": "docs/RELEASING.md",
@@ -2089,6 +2099,11 @@
       "sha256": "717cfe3927b94fef843019715890c3094928af048bd8eb8a17bcc0ed5d5236f7"
     },
     {
+      "path": "docs/decisions/0011-Unavailable-Input-Sequences-And-Shared-Preview-Cancellation.md",
+      "bytes": 5060,
+      "sha256": "57ce72a51aa16cebc42d8d8c65b9af008fd80735e582b9efc7518db286d4320b"
+    },
+    {
       "path": "release/0.1.0-rc.1.md",
       "bytes": 1749,
       "sha256": "70f2d9dd4dac7f66c3b66003bad71719f5a0308ead3ce68dc958ba54f5a38868"
@@ -2135,8 +2150,8 @@
     },
     {
       "path": "tools/verify/frame_settlement.mjs",
-      "bytes": 5755,
-      "sha256": "de95c80f859799d47c29e6915186fe7208802f5bcbcf5abc11cb6dd96f812835"
+      "bytes": 6112,
+      "sha256": "7d62a7d3ca32cc4b625dab1d48a4dda4f56d46287f10d98306484bd2cc6d0b79"
     },
     {
       "path": "tools/verify/gpui_profile.mjs",

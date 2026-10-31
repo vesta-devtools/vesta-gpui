@@ -1,6 +1,7 @@
 //! Explicit hidden native split/reflow workload, never a physical input claim.
 use super::*;
 use std::path::PathBuf;
+mod cancellation;
 
 const PREFIX: &str = "--probe-frame-reflow=";
 const STEPS: usize = 64;
@@ -13,6 +14,7 @@ enum Case {
     Focus,
     Deferred,
     Budget,
+    Cancellation,
 }
 
 impl Case {
@@ -30,6 +32,7 @@ impl Case {
             "focus" => Ok(Self::Focus),
             "deferred" if cfg!(feature = "gpu-fault-injection") => Ok(Self::Deferred),
             "budget" => Ok(Self::Budget),
+            "cancellation" => Ok(Self::Cancellation),
             _ => Err("frame_reflow_invalid_case"),
         }
     }
@@ -40,6 +43,10 @@ impl Case {
         } else {
             "gallery.inputs"
         }
+    }
+
+    fn is_budget(self) -> bool {
+        matches!(self, Self::Budget | Self::Cancellation)
     }
 }
 
@@ -53,7 +60,14 @@ pub(super) fn requested() -> bool {
 pub(super) fn layout_pass_limit() -> u8 {
     static LIMIT: std::sync::OnceLock<u8> = std::sync::OnceLock::new();
     *LIMIT.get_or_init(|| {
-        if requested() && std::env::args().any(|arg| arg == "--probe-frame-case=budget") {
+        if requested()
+            && std::env::args().any(|arg| {
+                matches!(
+                    arg.as_str(),
+                    "--probe-frame-case=budget" | "--probe-frame-case=cancellation"
+                )
+            })
+        {
             1
         } else {
             FRAME_LAYOUT_PASS_LIMIT
@@ -262,6 +276,24 @@ impl Probe {
             return Ok(false);
         }
         if self.warm > 0 || self.recover_after.is_some() {
+            if self.case == Case::Cancellation && self.step == 0 && self.warm == 8 {
+                let other = app
+                    .native_windows
+                    .get(&id)
+                    .ok_or("frame_cancel_float_lost")?;
+                let owner = other.ui_window;
+                let field = other.scopes.gallery.element(NUMBER_FIELD);
+                app.set_window_focus(
+                    STANDALONE_WINDOW,
+                    Some(app.scopes.gallery.element(NUMBER_FIELD)),
+                );
+                app.reveal_window_focus(
+                    STANDALONE_WINDOW,
+                    app.scopes.gallery.element(NUMBER_FIELD),
+                );
+                app.set_window_focus(owner, Some(field));
+                app.reveal_window_focus(owner, field);
+            }
             app.redraw();
             app.redraw_native_window(id);
             self.warm = self.warm.saturating_sub(1);
@@ -269,7 +301,7 @@ impl Probe {
                 .recover_after
                 .is_some_and(|before| app.ui_query.next(before.window) != Some(before))
             {
-                if self.case == Case::Budget {
+                if self.case.is_budget() {
                     let native = if self
                         .recover_after
                         .is_some_and(|before| before.window == STANDALONE_WINDOW)
@@ -389,7 +421,7 @@ impl Probe {
         };
         let ratio = 0.15
             + position as f32 * 0.006
-            + if self.case == Case::Budget && step >= STEPS / 2 {
+            + if self.case.is_budget() && step >= STEPS / 2 {
                 0.003
             } else {
                 0.0
@@ -422,7 +454,7 @@ impl Probe {
                     .ui_window
             };
             let before_presented = app.ui_query.next(owner);
-            let budget_target = if self.case == Case::Budget {
+            let budget_target = if self.case.is_budget() {
                 let gallery = if source == 0 {
                     app.scopes.gallery
                 } else {
@@ -432,7 +464,11 @@ impl Probe {
                         .scopes
                         .gallery
                 };
-                let element = gallery.element(TEXT_AREA);
+                let element = gallery.element(if self.case == Case::Cancellation {
+                    NUMBER_FIELD
+                } else {
+                    TEXT_AREA
+                });
                 let instance = before_presented
                     .ok_or("frame_budget_missing_presentation")?
                     .instance;
@@ -445,22 +481,7 @@ impl Probe {
                     },
                 )
                 .map_err(|e| format!("frame_budget_commands: {e}"))?;
-                let target = commands["commands"]
-                    .as_array()
-                    .and_then(|commands| {
-                        commands.iter().find(|command| {
-                            command["element"].as_str() == Some(&element.get().to_string())
-                        })
-                    })
-                    .and_then(|command| command["owner"].as_str())
-                    .and_then(|owner| owner.parse::<u64>().ok())
-                    .map(|generation| vesta_gpui::UiTargetRef {
-                        instance,
-                        window: owner,
-                        element,
-                        owner: generation,
-                    })
-                    .ok_or("frame_budget_missing_area_owner")?;
+                let target = command_target(&commands, instance, owner, element)?;
                 app.set_window_focus(owner, Some(element));
                 let target_input = InputTarget {
                     window: owner,
@@ -481,6 +502,16 @@ impl Probe {
             vesta_gpui::trace::counter("fixture", "reflow.index", step as f64);
             vesta_gpui::trace::counter("fixture", "reflow.ratio", f64::from(ratio));
             vesta_gpui::trace::counter("fixture", "reflow.case", self.case as u8 as f64);
+            let cancellation = if self.case == Case::Cancellation {
+                Some(cancellation::Armed::new(
+                    app,
+                    event_loop,
+                    id,
+                    budget_target.ok_or("frame_cancel_target_missing")?,
+                )?)
+            } else {
+                None
+            };
             #[cfg(feature = "gpu-fault-injection")]
             if self.case == Case::Deferred {
                 let gpu = if source == 0 {
@@ -501,6 +532,9 @@ impl Probe {
                 app.redraw_native_window(id);
             }
             if let Some(target) = budget_target {
+                if let Some(cancellation) = cancellation {
+                    cancellation.verify(app, event_loop, source, step)?;
+                }
                 let native_id = if source == 0 {
                     app.window.as_ref().ok_or("frame_budget_main_lost")?.id()
                 } else {
@@ -726,4 +760,28 @@ fn control(
         (_, ui_query::Reply::Control(value)) => Ok(value),
         _ => Err("frame_probe_unexpected_reply"),
     }
+}
+
+fn command_target(
+    commands: &serde_json::Value,
+    instance: u128,
+    window: UiWindowId,
+    element: ElementId,
+) -> Result<vesta_gpui::UiTargetRef, &'static str> {
+    let owner = commands["commands"]
+        .as_array()
+        .and_then(|commands| {
+            commands
+                .iter()
+                .find(|command| command["element"].as_str() == Some(&element.get().to_string()))
+        })
+        .and_then(|command| command["owner"].as_str())
+        .and_then(|owner| owner.parse::<u64>().ok())
+        .ok_or("frame_reflow_missing_control_owner")?;
+    Ok(vesta_gpui::UiTargetRef {
+        instance,
+        window,
+        element,
+        owner,
+    })
 }

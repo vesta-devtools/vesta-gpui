@@ -1,4 +1,5 @@
 use super::*;
+mod cancellation;
 
 #[test]
 fn semantic_commands_share_editor_undo_and_deduplicate_requests_without_using_repaint_as_revision()

@@ -22,7 +22,7 @@ exits, not estimated feature percentages or the number of tests.
 | GF01 — Architecture authority | Current eight-library graph, state/lifecycle ownership map, resolved dependency boundary gate and corruption checks | Completed 2026-10-31: actual all-feature Cargo metadata accepted; corruption contract rejects reverse/optional/target/build/transitive native and UI leaks; no new Rust/native qualification |
 | GF02 — API and module reduction | Audit actual public surfaces against current documentation and callers; remove unjustified wrappers/exports, untangle mixed responsibilities, provide migrations for changed public contracts | In progress; text/ownership/composition, private fixture and API-authority changes qualified; remaining families open |
 | GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | In progress; Main/Float reflow, deferred geometry and controlled budget exits qualified; Builder ordinary frame bridge qualified on its existing SDK pin; consumer budget/fault review and integration remain open |
-| GF04 — Interaction and lifecycle | Close concrete existing input/text/IME/focus/popup/selection/resource gaps; make transport, cancellation, error and ownership limits explicit; preserve existing accepted scenarios | Open |
+| GF04 — Interaction and lifecycle | Close concrete existing input/text/IME/focus/popup/selection/resource gaps; make transport, cancellation, error and ownership limits explicit; preserve existing accepted scenarios | In progress; unavailable-window click history and shared-preview publication defects reproduced and qualified; remaining interaction/transport audit open |
 | GF05 — Performance and diagnostics | Reproducible static/resize/text/collection workloads, disabled/enabled trace cost, bounds/retention/idle checks; select and fix measured bottlenecks with comparable evidence | Open |
 | GF06 — Usability and delivery | Small reusable host recipe, capability-oriented docs, matching exports, clean feature checks and CI, exact SDK source identity and immutable Vesta consumer validation | Open |
 
@@ -254,10 +254,42 @@ or remove those unused scopes before signing diagnostics; the separate existing
 product recorder is not evidence that these scopes were collected. No trace cost
 or performance improvement is signed by this functional checkpoint.
 
-GF04 also retains two source-audit leads at unavailable-window cancellation:
-the text bridge's click history is separate from `PointerClick`/capture, and a
-shared value-preview rollback must invalidate/redraw the other window. Reproduce
-and trace their existing reset/notification paths before changing or signing them.
+### GF04 current findings and evidence
+
+[Decision 0011](decisions/0011-Unavailable-Input-Sequences-And-Shared-Preview-Cancellation.md)
+closes the two cancellation leads with actual failures. A headless baseline
+restored the shared slider from 0.91 to 0.52 yet kept the other window's query
+current, and interpreted the next press as `Word`. Unavailable retirement now
+clears only its existing text-bridge click sequence. The value-cancellation
+coordinator aggregates real retirement outcomes and invalidates/redraws shared
+projections once; empty or foreign cleanup does not create a redraw loop.
+Native-ID resolution delegates to one private logical-window retirement body.
+There is no new public API, freshness flag, document model or cancellation runtime.
+
+The same focused contract preserves foreign click history, text/logical focus,
+historical snapshots and valid ordinary click pairs. It rejects the old shared
+command until a fresh presentation, and checks idempotent/foreign cleanup. The
+initial private-method access compile failure remains recorded; the production
+owner reuses its internal bridge selector and the test uses existing command
+dispatch. Frozen cancel01 passed 213 contracts across 32 harnesses, documentation,
+all/base strict checks, tools, format and both default standard builds.
+
+The new private native report case `cancellation` separately requires all three
+new observations. Actual Main/Float each passed 64 controlled one-pass exits,
+scoped click reset, live numeric preview rollback, rejected old command in the
+other window, and actual presentation recovery. There are 132 budget markers
+including four warm-up exits. Eight actual-report/corruption checks reject stale
+clicks, missing samples/rollback/shared pending and a foreign PID, while retaining
+the historical budget report's older scope and original red result.
+
+The final standard build has a different executable identity from the first
+native run, with identical Rust inputs. It was therefore reverified directly at
+`f4ff1a36…` / PID 67812: both windows again passed every step. Earlier PID 11056
+retains its actual `9a47fc8b…` identity. This is controlled native CPU/window-path
+qualification, with no physical input, natural eight-pass exhaustion, display
+timing, Root adoption or remote CI claim. Evidence is in
+`target/research/input-cancellation-20261031` and the related frame/software runs.
+
 The known stdio callers opt in once at native startup, matching the documented
 process-lifetime transport. No current consumer requirement justifies a generic
 transport runtime; retain the explicit no-join/no-cancel limit while reviewing

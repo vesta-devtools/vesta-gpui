@@ -27,13 +27,14 @@ const failures = [];
 const cases = new Set();
 let cpuReadinessSamples = 0;
 let cursorSamples = 0;
+let cancellationSamples = 0;
 for (const step of steps) {
   const within = event => event.ts >= step.ts && event.ts <= step.ts + step.dur + .01;
   const counters = data.traceEvents.filter(e => e.ph === 'C' && within(e));
   const value = name => counters.find(e => e.name === name)?.args?.value;
   const source = value('reflow.source'), index = value('reflow.index');
   const content = value('reflow.case') ?? 0;
-  assert.ok([0, 1, 2, 3, 4].includes(content), 'known case required');
+  assert.ok([0, 1, 2, 3, 4, 5].includes(content), 'known case required');
   cases.add(content);
   assert.ok(source === 0 || source === 1, 'source counter required');
   const row = results[source];
@@ -49,8 +50,9 @@ for (const step of steps) {
   row.renderer += renderer;
   row.submitted += Number(frame.markers.some(marker => marker.name === 'present.submitted'));
   row.max_passes = Math.max(row.max_passes, passes);
-  if (renderer !== (content === 4 ? 0 : 1) || passes < 1 || passes > 8) failures.push({source, index, renderer, passes});
-  if (content === 3 || content === 4) {
+  const budget = content === 4 || content === 5;
+  if (renderer !== (budget ? 0 : 1) || passes < 1 || passes > 8) failures.push({source, index, renderer, passes});
+  if (content === 3 || budget) {
     if (content === 3) {
       assert.equal(value('reflow.geometry_agrees'), 1, 'deferred text and current hit bounds must agree');
       if (value('reflow.cpu_input_ready') !== undefined) {
@@ -58,7 +60,7 @@ for (const step of steps) {
         cpuReadinessSamples++;
       }
     }
-    if (content === 4) {
+    if (budget) {
       assert.equal(passes, 1, 'isolated reduced budget required');
       assert.equal(data.traceEvents.filter(e => e.name === 'frame.skipped.layout_budget' && within(e)).length, 1);
       for (const name of ['reflow.input_blocked', 'reflow.capture_released', 'reflow.command_blocked', 'reflow.logical_blocked', 'reflow.lifecycle_allowed', 'reflow.focus_preserved']) assert.equal(value(name), 1, name);
@@ -66,6 +68,10 @@ for (const step of steps) {
         assert.equal(value('reflow.cursor_cached'), 1, 'blocked motion must preserve the latest cursor position');
         cursorSamples++;
       }
+    }
+    if (content === 5) {
+      for(const name of ['reflow.cancel_click_scoped','reflow.cancel_value_restored','reflow.cancel_other_pending'])assert.equal(value(name),1,name);
+      cancellationSamples++;
     }
     assert.equal(value('reflow.presented_unchanged'), 1, 'deferred CPU preparation cannot publish a presented snapshot');
     assert.ok(!frame.markers.some(marker => marker.name === 'present.submitted'), 'deferred draw cannot submit');
@@ -83,11 +89,12 @@ assert.equal(cases.size, 1, 'one isolated case per report');
 assert.ok(cpuReadinessSamples === 0 || cpuReadinessSamples === 128, 'readiness observations must be complete when supplied');
 assert.ok(cursorSamples === 0 || cursorSamples === 128, 'cursor observations must be complete when supplied');
 const budget_skips = data.traceEvents.filter(e => e.name === 'frame.skipped.layout_budget').length;
-const result = {status: failures.length || (budget_skips && !cases.has(4)) ? 'failed' : 'passed', windows: results,
+const result = {status: failures.length || (budget_skips && !cases.has(4) && !cases.has(5)) ? 'failed' : 'passed', windows: results,
   native_pid: nativePid,
-  case: ['inputs', 'documents', 'focus', 'deferred', 'budget'][[...cases][0]],
+  case: ['inputs', 'documents', 'focus', 'deferred', 'budget', 'cancellation'][[...cases][0]],
   failures, budget_skips, cpu_input_readiness_observed: cpuReadinessSamples === 128,
   cursor_cache_observed: cursorSamples === 128,
+  cancellation_observed: cancellationSamples === 128,
   physical_input: false, gpu_or_display_latency: false};
 console.log(JSON.stringify(result, null, 2));
 if (result.status !== 'passed') process.exitCode = 1;
