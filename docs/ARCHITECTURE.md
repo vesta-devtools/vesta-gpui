@@ -100,6 +100,11 @@ in the examples. Optional renderer/preview/browser capabilities remain explicit.
 
 ## Standalone composition
 
+The package's [native host recipe](HOSTING.md) is a small external-style consumer
+of the same public APIs. Its private window/editor state does not enter a library
+or replace the official applications. Its fixed single-field CPU projection and
+finite smoke are explicit example policies, not shared scheduling abstractions.
+
 The acceptance example has one `App` owner. Its root declares that owner, stable
 IDs and composition; sibling modules borrow the same state rather than running
 independent controllers. These are private binary modules, not SDK exports.

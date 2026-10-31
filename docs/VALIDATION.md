@@ -27,6 +27,20 @@ actually run successfully before it can be reported as passing.
 
 ## Refinement checkpoint — 2026-10-31
 
+The native-host recipe checkpoint adds one genuine Cargo example, not another
+library/runtime or an executable workaround. Frozen full01 passed 217 contracts /
+35 harnesses, CPU workload smoke, documentation, all/base strict checks, six Node
+contracts, format, two standard application builds and the example build.
+Final actual `6a0900c6…` / PID 33224 passed five native forward/reverse widths,
+logical text/Core Undo, matching CPU/painter text geometry and normal GPU
+retirement/exit0. Nine frame attempts / 114 trace events are complete and
+PID-bound. Nine report/corruption checks reject the old failed scopes, including
+native03's exit0 with a stderr panic; it was not accepted after review. Original
+helper, hidden-redraw, strict and closing-callback failures remain under
+`target/research/native-host-recipe-20261031`. [The recipe](HOSTING.md) states
+its fixed-field, platform and host duties. This does not close full-family API
+reviews, physical IME/reader, device recovery, remote CI or immutable adoption.
+
 The GF04 transport checkpoint reproduces a 25 ms read-only condition wait taking
 10.0106849 seconds and falsely retiring stdio. The same reply function now spends
 one deadline and distinguishes wait expiry from actual reply disconnection.

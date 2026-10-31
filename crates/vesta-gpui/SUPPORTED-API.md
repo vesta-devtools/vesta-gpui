@@ -1,5 +1,22 @@
 # GPUI Core supported source contracts — 0.1
 
+The [package boundary](../../docs/SUPPORTED-API.md) defines candidate support.
+This page organizes the existing source contracts by capability; dated additions
+retain their original qualification scope. Actual public exports are defined by
+the crate and rustdoc, not by a second handwritten type list. Start native
+integration with [the host recipe](../../docs/HOSTING.md).
+
+| Capability | Contract |
+| --- | --- |
+| Stable IDs, scopes and ownership | [Identity and ownership](#identity-and-ownership) |
+| Typed routes, inspection and command references | [Typed dispatch](#typed-dispatch) |
+| Menu descriptors | [Menu contract](#menu-descriptors--01-source-contract) |
+| Dependency and injected services | [Service boundary](#dependency-and-service-boundary) |
+| Layout, constraints and current text geometry | [Layout and measurement](#layout-and-measurement) |
+| Image placement | [Explicit fitting](#explicit-image-fitting-adr-0578) |
+| Shaping, editing and text sessions | [Text contract](#text-shaping-and-editing--01-source-contract) |
+| Bounded frame/timer data | [Tracing](../../docs/TRACING.md) |
+
 ## Additive process-local trace — 2026-10-30
 
 `trace::{TraceCapture, TraceConfig, TraceSnapshot, TraceStats, TraceSpan, TraceError}`
@@ -17,7 +34,7 @@ no event stores input text, element labels, window titles or automatic files.
 This is not CPU utilization, stack sampling or GPU execution time. Native latency
 and consuming-product deployment are separate qualification.
 
-Status: **0.1 identity, typed Action and dependency-isolation contract frozen on
+Historical baseline: **0.1 identity, typed Action and dependency-isolation contract frozen on
 2026-10-14**. The existing layout contract is also frozen on2026-10-14 after
 GPL01–05 qualification. Both are recorded in the repository's GPUI
 Core/layout/basic-control acceptance ledger. This is a source contract baseline;

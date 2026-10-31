@@ -20,16 +20,49 @@ exits, not estimated feature percentages or the number of tests.
 | Gate | Required result | Evidence and status |
 | --- | --- | --- |
 | GF01 — Architecture authority | Current eight-library graph, state/lifecycle ownership map, resolved dependency boundary gate and corruption checks | Completed 2026-10-31: actual all-feature Cargo metadata accepted; corruption contract rejects reverse/optional/target/build/transitive native and UI leaks; no new Rust/native qualification |
-| GF02 — API and module reduction | Audit actual public surfaces against current documentation and callers; remove unjustified wrappers/exports, untangle mixed responsibilities, provide migrations for changed public contracts | In progress; text/ownership/composition, private fixture and API-authority changes qualified; remaining families open |
+| GF02 — API and module reduction | Audit actual public surfaces against current documentation and callers; remove unjustified wrappers/exports, untangle mixed responsibilities, provide migrations for changed public contracts | In progress; text/ownership/composition, private fixture and API-authority changes qualified; capability navigation and native recipe implemented; finite family reviews below remain open |
 | GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | In progress; Main/Float and native Agent CPU/deferral/controlled-budget contracts qualified at recorded inputs; Builder ordinary bridge qualified; Builder budget/fault and current joint integration remain open |
 | GF04 — Interaction and lifecycle | Close concrete existing input/text/IME/focus/popup/selection/resource gaps; make transport, cancellation, error and ownership limits explicit; preserve existing accepted scenarios | In progress; click/shared-preview cancellation and stdio deadline/lifetime contracts qualified; remaining interaction/resource audit open |
 | GF05 — Performance and diagnostics | Reproducible static/resize/text/collection workloads, disabled/enabled trace cost, bounds/retention/idle checks; select and fix measured bottlenecks with comparable evidence | In progress; four bounded CPU workloads and strict evidence verifier implemented; repeated cost comparison removes duplicate recorder checks; native/consumer/resource review remains open |
-| GF06 — Usability and delivery | Small reusable host recipe, capability-oriented docs, matching exports, clean feature checks and CI, exact SDK source identity and immutable Vesta consumer validation | Open |
+| GF06 — Usability and delivery | Small reusable host recipe, capability-oriented docs, matching exports, clean feature checks and CI, exact SDK source identity and immutable Vesta consumer validation | In progress; native recipe/capability navigation qualified at recorded source and artifact; remote CI and immutable consumer delivery remain open |
 
 Each gate is split into concrete findings as its review runs. New findings must
 state source location, failure/redundancy, intended owner, minimal change and
 acceptance; additions to scope require a recorded reason. Gate completion does
 not erase earlier failed runs, waived scenarios or unsupported platform limits.
+
+## Remaining public-family reviews
+
+These are the finite remaining GF02 family reviews, not new feature promises or
+a second export registry. For each row, map actual current exports/modules to
+the capability contract and real callers, document ownership/failure limits,
+and resolve demonstrated duplication. An absent product caller alone does not
+justify removing a useful SDK interface. Record any new concrete defect against
+its existing gate and evidence, rather than expanding a widget catalogue.
+
+| Family | Qualified work retained | Remaining review target |
+| --- | --- | --- |
+| Core | Identity/dependency authority; text/context ownership; error interoperability; frame/trace and inspection contracts | Style/render payload ownership and detailed contract coverage against current exports |
+| Widgets | Existing controlled widget contracts, temporary-editor/tree/suggestion and cancellation evidence | Remaining gallery composition and controlled editing/collection/popup public state boundaries |
+| Native adapter | Registered text ownership; typed error causes; stdio deadline/process lifetime | Remaining automation/context/capture and platform-service exported boundaries |
+| Vulkan renderer | CPU preparation, scene admission, frame/retirement contracts; native recipe consumes async tickets | Capture/recovery/profile/resource lifetimes and actual public contract coverage |
+| Workspace model | Stable model authority and legacy qualified/waived scope | Current serialized model/error/session exports and caller responsibilities |
+| Workspace projection | Dependency/authority boundary and original Dock contracts | Public gesture/view geometry ownership against the current model/callers |
+| WebView | Existing optional carrier/asset contracts | Public browser callback/profile/asset lifetime and permission boundaries |
+| Viewport | Neutral dependency boundary and private demo-fixture removal | Public display/render/lighting ownership and optional renderer-facing contract coverage |
+
+[Decision 0015](decisions/0015-Minimal-Native-Host-And-Capability-Navigation.md)
+adds the complete [native host recipe](HOSTING.md) and current capability
+navigation without another library layer. The recipe's bounded native result is
+recorded separately from these full-family reviews and from immutable adoption.
+Frozen native-host-recipe/full01 passed 217 contracts / 35 harnesses, workload
+smoke, doc/strict/tool/format and all three ordinary executable builds. Final
+example `6a0900c6…` / PID 33224 passed five native width steps, logical edit/Undo,
+CPU/painter geometry, GPU retirement and normal exit0 with nine complete frame
+attempts / 114 events. Nine report/corruption checks retain the original hidden
+redraw and close-callback failures, including a green exit later rejected by
+stderr review. The eight remaining family reviews above are still open; the
+recipe does not supply physical input, reader, remote CI or Vesta adoption.
 
 ## GF05 bounded CPU checkpoint
 

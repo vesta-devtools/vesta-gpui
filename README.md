@@ -15,6 +15,10 @@ sidecar for the evidence applicable to that exact source.
 
 ## Run the examples
 
+For a small complete native consumer, start with the
+[single-window host recipe](docs/HOSTING.md). Standalone below provides the wider
+demonstration/acceptance gallery.
+
 From this repository root, with Node.js 22+ and the pinned Rust toolchain:
 
 ```powershell

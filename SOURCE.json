@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "b7614ad49a185534cb5f095977bf9af0611a58b5cd8915861d2c632855140928",
+  "tree_sha256": "6b7f5c477e9c1e363d303e297b8a433ceb8c5e429c22c10fd40d1ea7b864f519",
   "files": [
     {
       "path": ".gitattributes",
@@ -45,8 +45,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 4510,
-      "sha256": "21e3f67dc95bf4ab7fff2ae723dc7cc91e7b68dcb8cf24215036933d4549892d"
+      "bytes": 4680,
+      "sha256": "0430359a31b80a9f255cf54f942173b6017224ccec426c9236a8dc9895c55040"
     },
     {
       "path": "apps/vesta-gpui-standalone/Cargo.toml",
@@ -55,8 +55,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/README.md",
-      "bytes": 28151,
-      "sha256": "cd127a11a84a03a717146f38e40fef505c7dd5f6376e8125eaea6b0acaa9316c"
+      "bytes": 28389,
+      "sha256": "e6949aa29fb91cd6304a6bbc0bf89561ae624e4a0661b7554ea1fc6162a5a732"
     },
     {
       "path": "apps/vesta-gpui-standalone/benches/ui_workloads.rs",
@@ -67,6 +67,11 @@
       "path": "apps/vesta-gpui-standalone/benches/ui_workloads/fixture.rs",
       "bytes": 10531,
       "sha256": "b1cf5e921adfe2519b295abecb771672c69139fa3ed539d7811e9b999b802850"
+    },
+    {
+      "path": "apps/vesta-gpui-standalone/examples/native_host.rs",
+      "bytes": 22082,
+      "sha256": "89a8eb9d09ce6a99fa47491d9a61a4c2eb7f78691c5b33053878449c369d06e1"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/application_chrome.rs",
@@ -975,8 +980,8 @@
     },
     {
       "path": "crates/vesta-gpui-widgets/SUPPORTED-API.md",
-      "bytes": 59305,
-      "sha256": "042389abdb1e47a7341ff3e90a7f9b77b909fc152fecce869f0a08f77b179a7c"
+      "bytes": 61222,
+      "sha256": "4606b95bc3d701a02ae9e8a001503bc50180a704449ec07ddfea384c08f0ae47"
     },
     {
       "path": "crates/vesta-gpui-widgets/examples/composite_collections.rs",
@@ -1655,8 +1660,8 @@
     },
     {
       "path": "crates/vesta-gpui/SUPPORTED-API.md",
-      "bytes": 29165,
-      "sha256": "3a9905e06ec758c99be901db6a57fde381b9e9af864f30943a4fb09f0f9908dd"
+      "bytes": 30286,
+      "sha256": "454ecdef8545b5ab15db708e23935d759bf12d1e43b8bd848f412f2f6249f5df"
     },
     {
       "path": "crates/vesta-gpui/examples/editor_outline.rs",
@@ -2040,8 +2045,13 @@
     },
     {
       "path": "docs/ARCHITECTURE.md",
-      "bytes": 9393,
-      "sha256": "cc8ce26a3174543d50c16197c909074c966e551429a4e282bf6664d97749675c"
+      "bytes": 9718,
+      "sha256": "fde1562792adaa8ab6a45f354f11a5934bd14f43ea37c5d686884bc04b733e5d"
+    },
+    {
+      "path": "docs/HOSTING.md",
+      "bytes": 5041,
+      "sha256": "a890c9d21cdd34f42ec3551c3ca2d871b414bb3d8660e31623d26dbc4f1aeb92"
     },
     {
       "path": "docs/MAINTENANCE.md",
@@ -2055,8 +2065,8 @@
     },
     {
       "path": "docs/REFINEMENT.md",
-      "bytes": 27827,
-      "sha256": "b4940f1bd09c0be38f0c052721a1be63d7bedb787a0bfef86b62694097314658"
+      "bytes": 30989,
+      "sha256": "40f2fcf5e8844b18bd4c243cc13dcf19749110c214673d288d6c387da1b00c65"
     },
     {
       "path": "docs/RELEASING.md",
@@ -2065,8 +2075,8 @@
     },
     {
       "path": "docs/SUPPORTED-API.md",
-      "bytes": 9567,
-      "sha256": "9c20f7b0ce9e301edcab9794416d1f1c1fad3ec1d595f8ef55e2007d47d60c22"
+      "bytes": 10993,
+      "sha256": "15d05e12eee5f61bf92054332b7ac7e3526d513171f2a2735b4e4a2a2e33a638"
     },
     {
       "path": "docs/TRACING.md",
@@ -2075,8 +2085,8 @@
     },
     {
       "path": "docs/VALIDATION.md",
-      "bytes": 14760,
-      "sha256": "d63daaf8b97a1e8378556464d1d5c949fabe98502e39a4ffef21b6808884a258"
+      "bytes": 15780,
+      "sha256": "ca3c7c9e8cbc744e83338ccaa2cba4c448cdef5c64172cb8342be918e52ca951"
     },
     {
       "path": "docs/decisions/0001-Headless-Preparation-And-Scene-Views.md",
@@ -2149,14 +2159,19 @@
       "sha256": "d693f1f720477cc5d3ea16c416e427f14a93a7151c3d05daa66e68cf55b97f92"
     },
     {
+      "path": "docs/decisions/0015-Minimal-Native-Host-And-Capability-Navigation.md",
+      "bytes": 4619,
+      "sha256": "3b6bd602b6af544fb130cb20d9cd5103ee12a35ce14025010c8e6fef35cddf9a"
+    },
+    {
       "path": "release/0.1.0-rc.1.md",
       "bytes": 1749,
       "sha256": "70f2d9dd4dac7f66c3b66003bad71719f5a0308ead3ce68dc958ba54f5a38868"
     },
     {
       "path": "release/0.1.0-rc.2.md",
-      "bytes": 3807,
-      "sha256": "eff68aa679e91e381f6a545a6ecb06fb5f45a801e5bfd054f6ef3370f04e76a2"
+      "bytes": 4194,
+      "sha256": "cc9dcbed73a086e6870a7cdbbe64b04a0b9fa1718cf44fbd0b07294748c73d3e"
     },
     {
       "path": "rust-toolchain.toml",

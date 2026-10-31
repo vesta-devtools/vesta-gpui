@@ -1,5 +1,25 @@
 # GPUI basic controls and feedback — 0.1 source contract
 
+The [package boundary](../../docs/SUPPORTED-API.md) owns current candidate support;
+the dates below retain their original evidence scope. Actual exports are defined
+by this crate/rustdoc. Choose a capability below rather than treating a historical
+exit label as a later SDK qualification.
+
+| Capability | Contract |
+| --- | --- |
+| Identity and controlled composition | [Composition](#composition-identities-and-state) |
+| Buttons, choices and basic presentations | [Commands and choices](#basic-commands-and-choices) |
+| Text/images, progress and ordinary feedback | [Text and feedback](#text-images-and-feedback) |
+| Tooltip and notification lifetime | [Tooltips](#ordinary-metadata-tooltips), [notifications](#notifications) |
+| Focus and popup routing | [Focus](#focus-and-routing--01-source-contract), [menus/popovers](#menus-and-popovers--01-source-contract) |
+| Numeric, property and color editing | [Composite editing](#numeric-and-composite-editing--01-source-contract-gpn0106) |
+| Borrowed editor and asynchronous suggestions | [Temporary editor](#temporary-editor), [suggestions](#editable-suggestions) |
+| Scroll geometry and captured sessions | [Scrolling](#scroll-geometry-and-propagation--01-source-contract-gps01gps02) |
+| Controlled List, Tree, Table and Tile | [Typed content](#typed-collection-content--01-source-contract-gpv01), [selection](#collection-selection-and-navigation--01-source-contract-gpv02) |
+| Tree mutation, reveal and focus | [Tree controller](#controlled-tree-interactions--adr-0657) |
+
+<a id="temporary-editor"></a>
+
 The temporary editor (ADR-0653) adds `TemporaryEditorState<T>::exchange_in`
 and `finish_into`, returning `TemporaryEditorExchange<T>`. A host can move an
 entire editor into suspension and restore it once without cloning or reducing it
@@ -15,6 +35,8 @@ foreign sources and modified chords remain with the host text bridge.
 See [the temporary-editor ledger (historical context)](../../docs/VALIDATION.md#historical-evidence)
 for the exact source-workspace qualification; platform and SDK gates are separate.
 
+<a id="editable-suggestions"></a>
+
 The additive Editable Suggestions module (ADR-0634, qualified on2026-10-28)
 provides `SuggestionState<K>`, exact owner/query `SuggestionRequest` tickets with
 caller-monotonic `SuggestionRequestId`, `SuggestionOption<K>` and the controlled
@@ -28,7 +50,7 @@ The six source-workspace exits pass with public296 and actual Main/Float coverag
 Native, physical/Reader and immutable SDK qualification retain their own scope in
 [the module ledger (historical context)](../../docs/VALIDATION.md#historical-evidence).
 
-Status: **frozen on2026-10-15 after GPB01–05 qualification** in the
+Historical Basic baseline: **frozen on2026-10-15 after GPB01–05 qualification** in the
 [completion ledger (historical context)](../../docs/VALIDATION.md#historical-evidence).
 This inventory covers the existing basic capability. Advanced collections,
 editors, rich tooltip content, Workspace and renderer release qualification
@@ -285,7 +307,12 @@ projection are separate from native capture, platform focus and reader evidence.
 
 ## Compatibility and adoption
 
-### Numeric and composite editing — 0.1 source contract (GPN01–06)
+Existing constructors retain their documented behavior unless a migration is
+explicitly listed in [candidate notes](../../release/0.1.0-rc.2.md). The advanced
+capabilities below have their own contracts and dated qualification; they are
+not subordinate compatibility shims or a blanket extension of the Basic baseline.
+
+## Numeric and composite editing — 0.1 source contract (GPN01–06)
 
 The original GPN01 typed-draft/validation/terminal exit is qualified as of
 2026-10-21. Its [source and dated native review (historical context)](../../docs/VALIDATION.md#historical-evidence)
@@ -424,7 +451,7 @@ returns to the admitted opener only when it still exists. Native records retain
 their dates/artifacts; no new platform eyedropper, Core color transform, per-
 channel native matrix or immutable SDK guarantee is added.
 
-### Scroll geometry and propagation — 0.1 source contract (GPS01/GPS02)
+## Scroll geometry and propagation — 0.1 source contract (GPS01/GPS02)
 
 The complete original GPS01/GPS02 geometry, clipping/extents and nested two-axis
 propagation exits are qualified as of2026-10-21. The [source/consumer/native review (historical context)](../../docs/VALIDATION.md#historical-evidence)
@@ -495,7 +522,7 @@ are preserved. An already built input path is not a subscription to later tree
 changes; the Host rebuilds it for each admitted current event and owns the
 window's retained state. [Geometry authority](src/state.rs).
 
-### Captured scrollbar sessions and loss — qualified original GPS04
+## Captured scrollbar sessions and loss — qualified original GPS04
 
 The complete original GPS04 exit is qualified as of2026-10-21 by the
 [source/consumer/native review (historical context)](../../docs/VALIDATION.md#historical-evidence).
@@ -526,7 +553,7 @@ is qualified composition of those boundaries; the dated slider Escape records
 retain their control scope. No new physical held-scrollbar Escape or held-DPI
 transition run is claimed, and no all-widget/loss/DPI cross-product is implied.
 
-### Current focus and caret reveal — qualified original GPS03
+## Current focus and caret reveal — qualified original GPS03
 
 The complete original GPS03 exit is qualified as of2026-10-21 by the
 [five-requirement review (historical context)](../../docs/VALIDATION.md#historical-evidence).
@@ -557,7 +584,7 @@ reveals the first line. Startup fixture data is command-origin preparation,
 not OS IME. The complete scrolling contract below reconciles the original GPS
 exits; numeric and collection qualification remain separately scoped.
 
-### Narrow nowrap projection — qualified original GPS05
+## Narrow nowrap projection — qualified original GPS05
 
 The complete original GPS05 narrow-nowrap/floating/relevant-DPI exit is
 qualified by the same [dated source/native review (historical context)](../../docs/VALIDATION.md#historical-evidence).
@@ -574,7 +601,7 @@ split. Restoring width releases the excess horizontal range. These source
 contracts preserve the existing Core layout contract and are not an immutable
 SDK or a universal OS wheel-unit/atomic-vector/RTL-by-DPI guarantee.
 
-### Complete scrolling integration — 0.1 source contract (GPS06)
+## Complete scrolling integration — 0.1 source contract (GPS06)
 
 All original GPS01–06 exits are qualified by the
 [completion review (historical context)](../../docs/VALIDATION.md#historical-evidence).
@@ -595,7 +622,7 @@ supported change requires the documented version migration. Numeric/collection
 completion, immutable SDK publication and broader renderer/platform/performance
 guarantees remain separate.
 
-### Typed collection content — 0.1 source contract (GPV01)
+## Typed collection content — 0.1 source contract (GPV01)
 
 The full original GPV01 typed-content exit is qualified as of2026-10-21. The
 [source and consumer review (historical context)](../../docs/VALIDATION.md#historical-evidence)
@@ -625,7 +652,7 @@ logical source windows, stable rebuild/reorder/edit/deletion and bounded lazy
 composition with real child actions/editors. This is source/portable evidence;
 it is not a new native collection or exhaustive future-custom-editor claim.
 
-### Collection selection and navigation — 0.1 source contract (GPV02)
+## Collection selection and navigation — 0.1 source contract (GPV02)
 
 The full original GPV02 exit is qualified by the
 [source/consumer/native review (historical context)](../../docs/VALIDATION.md#historical-evidence).
@@ -670,7 +697,7 @@ caller-owned. The complete GPV01–06 source contract is qualified by the
 [whole collection review (historical context)](../../docs/VALIDATION.md#historical-evidence);
 the bounded constructors below retain their own documented preconditions.
 
-### Table projection and complex editing — 0.1 source contract (GPV05)
+## Table projection and complex editing — 0.1 source contract (GPV05)
 
 The full original GPV05 exit is qualified as of2026-10-21. The
 [source/consumer/dated native review (historical context)](../../docs/VALIDATION.md#historical-evidence)
@@ -725,7 +752,7 @@ alone does not create an always-follow intent. GPV02/GPV06 and whole collection
 freeze retain their separate requirements. Ordinary Table content is separate
 from document Markdown table rendering, including UI-DOC-TABLE-001.
 
-### Tile range, content and retained focus — 0.1 source contract (GPV04)
+## Tile range, content and retained focus — 0.1 source contract (GPV04)
 
 The full original GPV04 exit is qualified as of2026-10-21. The
 [requirement and dated native review (historical context)](../../docs/VALIDATION.md#historical-evidence)
@@ -768,7 +795,7 @@ full exits; this signing does not assert a native10000-record performance bound,
 global RTL platform matrix or reader focus result. It is not an immutable SDK;
 portable bounds/retained-child checks remain distinct from actual native input.
 
-### Fixed and variable-height typed lists — 0.1 source contract (GPV03)
+## Fixed and variable-height typed lists — 0.1 source contract (GPV03)
 
 The original GPV03 fixed/variable bounded-virtualization exit is qualified as of
 2026-10-21. The [source and dated native evidence (historical context)](../../docs/VALIDATION.md#historical-evidence)
@@ -822,7 +849,7 @@ This is the complete original GPV03 source contract, not an immutable SDK
 publication or completion of the other GPV01–06 exits. [Implementation](src/virtual_list.rs),
 [measured geometry](src/virtual_list/variable.rs).
 
-### Affected consumers — ADR-0465 source qualification
+## Affected consumers — ADR-0465 source qualification
 
 The numeric/property interaction consumer and the ordinary/lazy typed collection
 consumer exercise the current public composition boundary. Standalone supplies
@@ -859,7 +886,7 @@ compatible fixes need explicit patch adoption. This
 source inventory does not publish an immutable SDK, certify every exported
 widget or imply completion of the original platform/52-family gates.
 
-### Controlled tree interactions — ADR-0657
+## Controlled tree interactions — ADR-0657
 
 `TreeViewController<'a, K>` borrows the existing `TreeExpansionState<K>` and
 `ListSelectionState<K>` against immutable host preorder entries. `new` validates

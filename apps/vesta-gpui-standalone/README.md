@@ -1,5 +1,9 @@
 # Vesta GPUI Standalone
 
+The [native host recipe](../../docs/HOSTING.md) is a separate normal Cargo example
+in this package. It demonstrates one editor and the existing window/GPU lifetime
+without carrying the full gallery or adding another framework layer.
+
 The bounded public-API CPU workloads and recorder-cost comparison are documented
 in [the performance procedure](../../docs/PERFORMANCE.md). They require no GUI
 or manual input and keep normal application entry points unchanged.
