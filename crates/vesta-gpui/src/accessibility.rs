@@ -255,7 +255,9 @@ impl Semantic {
     }
 }
 
-/// Retains platform node identity across declarative rebuilds. One instance belongs to one window.
+/// Retains platform identity while an element remains in the complete layout tree,
+/// including clipping. Absent owners retire; returning owners get fresh node IDs.
+/// One instance belongs to one window; caller-owned ElementIds remain unchanged.
 pub struct AccessibilityTree {
     ids: HashMap<ElementId, NodeId>,
     live: HashSet<ElementId>,
@@ -366,6 +368,8 @@ impl AccessibilityTree {
         title: &str,
     ) -> TreeUpdate {
         let _trace = crate::trace::span("gpui.accessibility", "accessibility.build");
+        self.ids
+            .retain(|element, _| layout.node(*element).is_some());
         self.live.clear();
         self.focusable.clear();
         self.published_actions.clear();
@@ -610,6 +614,86 @@ mod tests {
     use crate::{Dimension, ElementKey, LayoutEngine, Style, TextEditKind, Viewport};
 
     use super::*;
+
+    #[test]
+    fn semantic_mappings_follow_realized_owners_without_losing_clipped_identity() {
+        let scope = crate::ElementIdAllocator
+            .allocate_scope()
+            .expect("row scope");
+        let page = |first: u32| {
+            Element::container(scope.element(0), ElementKey::new("page"))
+                .styled(Style::default().size(Dimension::Px(100.0), Dimension::Px(80.0)))
+                .children((first..first + 8).map(|index| {
+                    Element::container(
+                        scope.element(index),
+                        ElementKey::new(format!("row-{index}")),
+                    )
+                    .styled(
+                        Style::default()
+                            .absolute(0.0, 0.0)
+                            .size(Dimension::Px(80.0), Dimension::Px(16.0)),
+                    )
+                    .semantic(Semantic::new(SemanticRole::ListItem, "Row"))
+                }))
+        };
+        let mut semantics = AccessibilityTree::default();
+        let mut first_id = None;
+        for first in (1..=121).step_by(8) {
+            let tree = page(first);
+            let layout = LayoutEngine
+                .compute(&tree, Viewport::new(100.0, 80.0, 1.0))
+                .expect("page layout");
+            semantics.build(&tree, &layout, None, "Test");
+            let current = semantics
+                .node_for_element(scope.element(first))
+                .expect("current row");
+            if first == 1 {
+                first_id = Some(current);
+            }
+            if first != 1 {
+                assert_eq!(
+                    semantics.element_for_node(first_id.expect("first page ID")),
+                    None
+                );
+            }
+            assert_eq!(
+                semantics.ids.len(),
+                8,
+                "platform mappings must not retain removed pages"
+            );
+        }
+        let tree = page(1);
+        let layout = LayoutEngine
+            .compute(&tree, Viewport::new(100.0, 80.0, 1.0))
+            .expect("return layout");
+        semantics.build(&tree, &layout, None, "Test");
+        let returned = semantics
+            .node_for_element(scope.element(1))
+            .expect("returned row");
+        assert_ne!(
+            Some(returned),
+            first_id,
+            "a retired platform ID must not revive"
+        );
+        let mut clipped = tree.clone();
+        clipped.children[0].style.position = crate::PositionMode::Absolute;
+        clipped.children[0].style.top = Some(200.0);
+        let layout = LayoutEngine
+            .compute(&clipped, Viewport::new(100.0, 80.0, 1.0))
+            .expect("clipped layout");
+        semantics.build(&clipped, &layout, None, "Test");
+        assert_eq!(semantics.node_for_element(scope.element(1)), None);
+        assert_eq!(semantics.ids.get(&scope.element(1)), Some(&returned));
+        let layout = LayoutEngine
+            .compute(&tree, Viewport::new(100.0, 80.0, 1.0))
+            .expect("reveal layout");
+        semantics.build(&tree, &layout, None, "Test");
+        assert_eq!(semantics.node_for_element(scope.element(1)), Some(returned));
+        assert_eq!(
+            semantics.element_for_node(first_id.expect("first page ID")),
+            None
+        );
+    }
 
     #[test]
     fn semantic_identity_survives_rebuild_and_disabled_subtree_has_no_actions() {
@@ -1170,7 +1254,14 @@ mod tests {
             &mut context,
             Point::default(),
         );
-        assert_eq!(semantics.node_for_element(field), Some(field_node));
+        let returned_node = semantics
+            .node_for_element(field)
+            .expect("returned editor owner");
+        assert_ne!(
+            returned_node, field_node,
+            "an absent owner retires its platform ID"
+        );
+        assert_eq!(semantics.element_for_node(field_node), None);
         assert!(
             semantics
                 .resolve_text_input_selection(field, &mut input, &mut context, &retired_selection)
@@ -1180,7 +1271,7 @@ mod tests {
         let current_selection = *returned
             .nodes
             .iter()
-            .find(|(id, _)| *id == field_node)
+            .find(|(id, _)| *id == returned_node)
             .expect("returned editor")
             .1
             .text_selection()

@@ -15,6 +15,7 @@ integration with [the host recipe](../../docs/HOSTING.md).
 | Layout, constraints and current text geometry | [Layout and measurement](#layout-and-measurement) |
 | Image placement | [Explicit fitting](#explicit-image-fitting-adr-0578) |
 | Shaping, editing and text sessions | [Text contract](#text-shaping-and-editing--01-source-contract) |
+| Text/semantic resources and observation lifetimes | [Ownership, budgets and failure limits](../../docs/TEXT-AND-OBSERVATION.md) |
 | Bounded frame/timer data | [Tracing](../../docs/TRACING.md) |
 
 ## Additive process-local trace — 2026-10-30
@@ -402,11 +403,22 @@ alone do not constitute native focus qualification.
 
 Semantic read-only Slider/SpinButton nodes retain their numeric values and focus
 action but do not advertise SetValue. A window tree releases a text-run projection
-when its element is no longer published. Reappearance preserves the element's
-platform owner identity and creates fresh text runs; a range from before removal
-is rejected. Continuously published text runs keep their existing identity. This
+when its element is no longer published. Clipping retains its platform owner
+identity while it remains in the complete layout and creates fresh text runs;
+a range from before removal is rejected. Decision 0022 intentionally retires
+the platform owner ID too when absent from that complete layout, bounding maps
+across page/virtual-row churn. A returning owner keeps its Core ElementId but
+gets a fresh platform ID; old node IDs cannot address it. Continuously published
+text runs keep their existing identity. This
 retirement rule leaves direct single-projection compatibility and other windows'
 maps independent (ADR-0293 maintenance,2026-10-23).
+
+The complete [text/semantic resource contract](../../docs/TEXT-AND-OBSERVATION.md)
+defines current source ownership, styled-font admission, bitmap/atlas input
+limits, callback atomicity, cache retention and infallible semantic allocator
+capacity. Raster callers handling errors exhaustively must include the new
+`TextRasterError::GlyphBudgetExceeded` variant. The Core source-family review is
+separate from native reader/DPI qualification and immutable product adoption.
 
 `FocusScope::accessible_target` also requires that the current window projection
 actually publishes the requested Focus/Click/SetValue/SetTextSelection action.

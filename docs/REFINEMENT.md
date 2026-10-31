@@ -42,7 +42,7 @@ its existing gate and evidence, rather than expanding a widget catalogue.
 
 | Family | Qualified work retained | Remaining review target |
 | --- | --- | --- |
-| Core | Identity/dependency authority; text/context ownership; reviewed errors/frame/trace/inspection; finite geometry/layout (decision 0020); complete render preparation and owner-capacity boundary qualified below (decision 0021) | Complete current export/caller and resource review remains open, including text/semantic/inspection/trace/raster boundaries; those source-review leads have not inherited the render/owner qualification |
+| Core | Complete current 41-module/eight-group export/caller review; finite geometry/layout (decision 0020), render/owner boundary (decision 0021), text/semantic resource ownership and limits (decision 0022); [contract](TEXT-AND-OBSERVATION.md) | Local source-family/software/native qualification recorded below; product adoption, remaining native/consumer/performance programme exits retain their own scope |
 | Widgets | Existing controlled widget contracts, temporary-editor/tree/suggestion and cancellation evidence | Remaining gallery composition and controlled editing/collection/popup public state boundaries |
 | Native adapter | Registered text ownership; typed error causes; stdio deadline/process lifetime | Remaining automation/context/capture and platform-service exported boundaries |
 | Vulkan renderer | CPU preparation, scene admission, frame/retirement contracts; native recipe consumes async tickets | Capture/recovery/profile/resource lifetimes and actual public contract coverage |
@@ -63,6 +63,36 @@ attempts / 114 events. Nine report/corruption checks retain the original hidden
 redraw and close-callback failures, including a green exit later rejected by
 stderr review. At that checkpoint all eight family reviews were still open; the
 recipe does not supply physical input, reader, remote CI or Vesta adoption.
+
+## GF02 / GF04 / GF05 Core text and semantic review
+
+Core's remaining [text/semantic/observation contract](TEXT-AND-OBSERVATION.md)
+has now been reconciled across every current production source module and actual
+SDK/Agent/Builder callers. Decision 0022 preserves three actual runtime reds:
+historical mappings grew on the second eight-row page, seventeen invalid raster
+input/path combinations were accepted, and all five invalid styled font sizes
+were accepted. Focused01 also preserves the old fully-removed platform-ID
+restoration assertion, whose explicit preview migration is documented. The
+other original selection/foreign-run assertions remain. Focused02 passed the
+relevant runtime contracts but strict rejected two new fixture unwraps; these
+are corrected and that failed run remains evidence.
+
+Final frozen full01 passed 232 contracts / 38 harnesses, CPU workload smoke, two
+existing compile-fail docs, all/base strict, six tool groups, format and both
+ordinary standard builds. The runtime byte inputs remained unchanged. Actual
+ordinary Standalone `0d17deb5…` / PID 20340 completed the existing inputs fixture
+with 64 submitted Main and 64 submitted Float steps, no injection, then normal
+exit0, no live descendants or observation errors. It was hidden/nonactive with
+zero OS input; CPU resource contracts and native integration remain distinct
+evidence. Owned commands/processes and executable locks are checked at final
+qualification under `target/research/core-text-resources-20261031`.
+
+The complete Core source-family review is locally closed alongside Workspace
+model/projection and WebView. Widgets, Native adapter, Vulkan renderer and
+Viewport reviews remain open. This does not close GF03–GF06, add an original
+physical/reader/DPI scene or adopt the SDK in a product. The previous b2d7ab7
+revision's actual Windows CI run 41179543727 passed; changed source requires its
+own delivery/CI evidence and cannot inherit that green check.
 
 ## GF02 / GF04 WebView family checkpoint
 

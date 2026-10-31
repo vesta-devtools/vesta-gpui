@@ -1,5 +1,9 @@
 # CPU render preparation and payload ownership
 
+The [text/semantic resource contract](TEXT-AND-OBSERVATION.md) defines the shared
+CPU raster viewport/run admission, glyph and bitmap budgets, callback atomicity,
+and cache ownership used by the renderer's existing text path.
+
 Core `vesta_gpui::render` prepares backend-neutral CPU data. The Vulkan package
 owns GPU resources/submission; the application owns its Elements, image sources,
 fonts, native target and frame lifetime. This module creates no window, renderer,

@@ -29,7 +29,9 @@ This is not yet a guarantee for every exported failure. The projection review
 found the additional Core `ElementScopeExhausted` gap; its existing unit type
 now supports the same standard trait boundary. Its external compile red is
 retained under [decision 0020](decisions/0020-Core-Geometry-Admission-And-Failure-Identity.md).
-The complete Core family review remains separate from these specific errors.
+The complete [Core text/semantic resource contract](TEXT-AND-OBSERVATION.md)
+reconciles those APIs with current exports and consumers; its local qualification
+is recorded in the programme rather than inferred from these specific errors.
 
 ## Package boundaries
 

@@ -162,6 +162,14 @@ become a shared frame scheduler or a second text/workspace implementation.
 
 ## Remaining audit
 
+Core's [text/semantic/observation contract](TEXT-AND-OBSERVATION.md) assigns fonts,
+editing, immutable geometry, CPU raster caches, window semantics, bounded
+inspection and opt-in recording to their existing owners. One private checked
+raster viewport and prepared run serve both outputs. Platform mappings retain
+only current layout owners; no historical identity map, reuse pool or new
+runtime is introduced. Caller-owned source/freshness and typed failures remain
+explicit; the finite programme records actual family qualification separately.
+
 The Standalone package also owns the headless CPU benchmark fixture. It consumes
 the real public pipeline without exporting fixture data or a scheduling API.
 [Performance evidence](PERFORMANCE.md) is checked by the tool-side verifier;

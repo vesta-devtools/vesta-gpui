@@ -34,13 +34,17 @@ pub struct TextInputBitmap {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TextRasterError {
+    /// Invalid geometry/scale, unrepresentable pixel coordinates or bitmap extent.
     InvalidViewport,
+    /// Physical font em or one complete prepared run exceeds its resource budget.
+    GlyphBudgetExceeded,
 }
 
 impl std::fmt::Display for TextRasterError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InvalidViewport => f.write_str("invalid or oversized text raster viewport"),
+            Self::GlyphBudgetExceeded => f.write_str("text raster glyph budget exceeded"),
         }
     }
 }
@@ -54,6 +58,62 @@ const GLYPH_RUN_CACHE_BYTES: usize = 8 * 1024 * 1024;
 const BITMAP_CACHE_ENTRIES: usize = 64;
 const BITMAP_CACHE_BYTES: usize = 16 * 1024 * 1024;
 const MAX_BITMAP_PIXELS: f32 = 4_194_304.0;
+const MAX_GLYPH_EM_PIXELS: f32 = 2048.0;
+
+/// One checked bounds-relative physical coordinate system for both raster paths.
+struct RasterViewport {
+    origin: crate::Point,
+    clip: Rect,
+    width: f32,
+    height: f32,
+}
+
+impl RasterViewport {
+    fn new(view: TextInputViewport, scale: f32) -> Result<Self, TextRasterError> {
+        if !scale.is_finite()
+            || scale <= 0.0
+            || !view.bounds.is_valid()
+            || !view.clip.is_valid()
+            || !view.origin.x.is_finite()
+            || !view.origin.y.is_finite()
+        {
+            return Err(TextRasterError::InvalidViewport);
+        }
+        let physical = |value: f64| {
+            let value = value * f64::from(scale);
+            if value.is_finite() && (f64::from(i32::MIN)..=f64::from(i32::MAX)).contains(&value) {
+                Ok(value as f32)
+            } else {
+                Err(TextRasterError::InvalidViewport)
+            }
+        };
+        let width = physical(f64::from(view.bounds.width))?.ceil();
+        let height = physical(f64::from(view.bounds.height))?.ceil();
+        let origin = crate::Point::new(
+            physical(f64::from(view.origin.x) - f64::from(view.bounds.x))?,
+            physical(f64::from(view.origin.y) - f64::from(view.bounds.y))?,
+        );
+        let clip = if let Some(clip) = view.clip.intersection(view.bounds) {
+            Rect::new(
+                physical(f64::from(clip.x) - f64::from(view.bounds.x))?,
+                physical(f64::from(clip.y) - f64::from(view.bounds.y))?,
+                physical(f64::from(clip.width))?,
+                physical(f64::from(clip.height))?,
+            )
+        } else {
+            Rect::default()
+        };
+        if !clip.is_valid() {
+            return Err(TextRasterError::InvalidViewport);
+        }
+        Ok(Self {
+            origin,
+            clip,
+            width,
+            height,
+        })
+    }
+}
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct BitmapKey {
@@ -173,6 +233,12 @@ pub struct RasterGlyph {
 }
 
 impl RasterGlyph {
+    fn retained_bytes(&self) -> usize {
+        std::mem::size_of::<Self>()
+            .saturating_add(self.key.coords.len() * std::mem::size_of::<i16>())
+            .saturating_add(self.image.data.len())
+    }
+
     /// Straight-alpha RGBA, preserving color emoji and applying text opacity.
     #[must_use]
     pub fn rgba(&self, color: Color) -> Vec<u8> {
@@ -186,27 +252,22 @@ impl RasterGlyph {
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct GlyphRunKey {
     snapshot: usize,
-    bounds_size: [u32; 2],
     clip: [u32; 4],
     origin: [u32; 2],
     scale: u32,
 }
 
 impl GlyphRunKey {
-    fn new(snapshot: &TextInputSnapshot, view: TextInputViewport, scale: f32) -> Self {
+    fn new(snapshot: &TextInputSnapshot, view: &RasterViewport, scale: f32) -> Self {
         Self {
             snapshot: Arc::as_ptr(&snapshot.0) as usize,
-            bounds_size: [view.bounds.width.to_bits(), view.bounds.height.to_bits()],
             clip: [
-                (view.clip.x - view.bounds.x).to_bits(),
-                (view.clip.y - view.bounds.y).to_bits(),
+                view.clip.x.to_bits(),
+                view.clip.y.to_bits(),
                 view.clip.width.to_bits(),
                 view.clip.height.to_bits(),
             ],
-            origin: [
-                (view.origin.x - view.bounds.x).to_bits(),
-                (view.origin.y - view.bounds.y).to_bits(),
-            ],
+            origin: [view.origin.x.to_bits(), view.origin.y.to_bits()],
             scale: scale.to_bits(),
         }
     }
@@ -242,11 +303,7 @@ impl GlyphRunCache {
         glyphs: Vec<RasterGlyph>,
     ) -> Arc<Vec<RasterGlyph>> {
         let bytes = glyphs.iter().fold(0usize, |total, glyph| {
-            total.saturating_add(
-                std::mem::size_of::<RasterGlyph>()
-                    + glyph.key.coords.len() * std::mem::size_of::<i16>()
-                    + glyph.image.data.len(),
-            )
+            total.saturating_add(glyph.retained_bytes())
         });
         let glyphs = Arc::new(glyphs);
         if glyphs.len() > GLYPH_RUN_CACHE_GLYPHS || bytes > GLYPH_RUN_CACHE_BYTES {
@@ -311,6 +368,8 @@ impl GlyphCache {
 }
 
 #[derive(Default)]
+/// Host-local CPU raster preparation with bounded caches. Drop releases its
+/// cache ownership; returned images/snapshots can outlive it through their Arcs.
 pub struct TextRasterizer {
     scale: ScaleContext,
     glyphs: GlyphCache,
@@ -342,46 +401,46 @@ impl TextRasterizer {
         caret_visible: bool,
         colors: TextInputColors,
     ) -> Result<Arc<TextInputBitmap>, TextRasterError> {
+        let physical = RasterViewport::new(view, scale)?;
+        if !(1.0..=8192.0).contains(&physical.width)
+            || !(1.0..=8192.0).contains(&physical.height)
+            || physical.width * physical.height > MAX_BITMAP_PIXELS
+        {
+            return Err(TextRasterError::InvalidViewport);
+        }
         let key = BitmapKey::new(snapshot, view, scale, focused, caret_visible, colors);
         if let Some(bitmap) = self.bitmaps.find(&key) {
             return Ok(bitmap);
         }
-        let bitmap = Arc::new(self.render_uncached(
+        let glyphs = self.glyph_run(snapshot, scale, &physical)?;
+        let bitmap = Arc::new(Self::compose_bitmap(
             snapshot,
-            view,
             scale,
+            physical,
             focused,
             caret_visible,
             colors,
-        )?);
+            &glyphs,
+        ));
         self.bitmaps.insert(key, snapshot.clone(), bitmap.clone());
         Ok(bitmap)
     }
 
-    fn render_uncached(
-        &mut self,
+    fn compose_bitmap(
         snapshot: &TextInputSnapshot,
-        view: TextInputViewport,
         scale: f32,
+        physical: RasterViewport,
         focused: bool,
         caret_visible: bool,
         colors: TextInputColors,
-    ) -> Result<TextInputBitmap, TextRasterError> {
-        if !scale.is_finite()
-            || scale <= 0.0
-            || !view.bounds.width.is_finite()
-            || !view.bounds.height.is_finite()
-        {
-            return Err(TextRasterError::InvalidViewport);
-        }
-        let width = (view.bounds.width * scale).ceil();
-        let height = (view.bounds.height * scale).ceil();
-        if !(1.0..=8192.0).contains(&width)
-            || !(1.0..=8192.0).contains(&height)
-            || width * height > MAX_BITMAP_PIXELS
-        {
-            return Err(TextRasterError::InvalidViewport);
-        }
+        glyphs: &[RasterGlyph],
+    ) -> TextInputBitmap {
+        let RasterViewport {
+            origin,
+            clip,
+            width,
+            height,
+        } = physical;
         let mut image = TextInputBitmap {
             width: width as u32,
             height: height as u32,
@@ -389,18 +448,12 @@ impl TextRasterizer {
         };
         let transform = |r: Rect| {
             Rect::new(
-                (view.origin.x - view.bounds.x + r.x) * scale,
-                (view.origin.y - view.bounds.y + r.y) * scale,
+                origin.x + r.x * scale,
+                origin.y + r.y * scale,
                 r.width * scale,
                 r.height * scale,
             )
         };
-        let clip = Rect::new(
-            (view.clip.x - view.bounds.x) * scale,
-            (view.clip.y - view.bounds.y) * scale,
-            view.clip.width * scale,
-            view.clip.height * scale,
-        );
         for r in snapshot.selection_rectangles() {
             let mut color = colors.selection;
             if !focused {
@@ -409,7 +462,7 @@ impl TextRasterizer {
             fill(&mut image, transform(*r), clip, rgba(color));
         }
         let foreground = rgba(colors.text);
-        self.visit_glyphs(snapshot, view, scale, |glyph| {
+        for glyph in glyphs {
             for y in 0..glyph.height {
                 for x in 0..glyph.width {
                     let at = (y * glyph.width + x) as usize;
@@ -423,7 +476,7 @@ impl TextRasterizer {
                     );
                 }
             }
-        })?;
+        }
         if focused {
             for r in &snapshot.0.compose {
                 let mut underline = transform(*r);
@@ -437,7 +490,7 @@ impl TextRasterizer {
                 fill(&mut image, caret, clip, rgba(colors.caret));
             }
         }
-        Ok(image)
+        image
     }
 
     /// Visit exactly the glyph images and positions used by bitmap rendering.
@@ -451,7 +504,8 @@ impl TextRasterizer {
         self.visit_glyph_refs(snapshot, view, scale, |glyph| visit(glyph.clone()))
     }
 
-    /// Borrow cached glyphs without cloning their keys and image handles.
+    /// Borrow a complete checked run without cloning keys/images. Invalid
+    /// viewport or glyph-budget failure invokes no callbacks; empty clip is a no-op.
     pub fn visit_glyph_refs(
         &mut self,
         snapshot: &TextInputSnapshot,
@@ -459,23 +513,42 @@ impl TextRasterizer {
         scale: f32,
         mut visit: impl FnMut(&RasterGlyph),
     ) -> Result<(), TextRasterError> {
-        if !scale.is_finite() || scale <= 0.0 {
-            return Err(TextRasterError::InvalidViewport);
+        let physical = RasterViewport::new(view, scale)?;
+        let glyphs = self.glyph_run(snapshot, scale, &physical)?;
+        for glyph in glyphs.iter() {
+            visit(glyph);
         }
-        let key = GlyphRunKey::new(snapshot, view, scale);
+        Ok(())
+    }
+
+    fn glyph_run(
+        &mut self,
+        snapshot: &TextInputSnapshot,
+        scale: f32,
+        physical: &RasterViewport,
+    ) -> Result<Arc<Vec<RasterGlyph>>, TextRasterError> {
+        if physical.clip.is_empty() {
+            return Ok(Arc::new(Vec::new()));
+        }
+        let key = GlyphRunKey::new(snapshot, physical, scale);
         if let Some(glyphs) = self.glyph_runs.find(&key) {
-            for glyph in glyphs.iter() {
-                visit(glyph);
-            }
-            return Ok(());
+            return Ok(glyphs);
+        }
+        if snapshot
+            .0
+            .layout
+            .lines()
+            .flat_map(|line| line.runs())
+            .any(|run| {
+                let em = run.font_size() * scale;
+                !em.is_finite() || em <= 0.0 || em > MAX_GLYPH_EM_PIXELS
+            })
+        {
+            return Err(TextRasterError::GlyphBudgetExceeded);
         }
         let mut glyphs = Vec::new();
-        let clip = Rect::new(
-            (view.clip.x - view.bounds.x) * scale,
-            (view.clip.y - view.bounds.y) * scale,
-            view.clip.width * scale,
-            view.clip.height * scale,
-        );
+        let mut glyph_bytes = 0usize;
+        let RasterViewport { origin, clip, .. } = *physical;
         for line in snapshot.0.layout.lines() {
             for item in line.items() {
                 let PositionedLayoutItem::GlyphRun(glyph_run) = item else {
@@ -496,9 +569,8 @@ impl TextRasterizer {
                     .build();
                 let mut x = glyph_run.offset();
                 for glyph in glyph_run.glyphs() {
-                    let px = (view.origin.x - view.bounds.x + x + glyph.x) * scale;
-                    let py =
-                        (view.origin.y - view.bounds.y + glyph_run.baseline() - glyph.y) * scale;
+                    let px = origin.x + (x + glyph.x) * scale;
+                    let py = origin.y + (glyph_run.baseline() - glyph.y) * scale;
                     x += glyph.advance;
                     // Skip clipped glyphs before raster work, keeping long single lines bounded.
                     if py + run.font_size() * scale * 3.0 < clip.y
@@ -534,24 +606,30 @@ impl TextRasterizer {
                     }) else {
                         continue;
                     };
-                    let left = px.floor() as i32 + glyph_image.placement.left;
-                    let top = py.floor() as i32 - glyph_image.placement.top;
-                    glyphs.push(RasterGlyph {
+                    let left = (px.floor() as i32)
+                        .checked_add(glyph_image.placement.left)
+                        .ok_or(TextRasterError::InvalidViewport)?;
+                    let top = (py.floor() as i32)
+                        .checked_sub(glyph_image.placement.top)
+                        .ok_or(TextRasterError::InvalidViewport)?;
+                    let glyph = RasterGlyph {
                         key,
                         left,
                         top,
                         width: glyph_image.placement.width,
                         height: glyph_image.placement.height,
                         image: glyph_image,
-                    });
+                    };
+                    glyph_bytes = glyph_bytes.saturating_add(glyph.retained_bytes());
+                    if glyphs.len() == GLYPH_RUN_CACHE_GLYPHS || glyph_bytes > GLYPH_RUN_CACHE_BYTES
+                    {
+                        return Err(TextRasterError::GlyphBudgetExceeded);
+                    }
+                    glyphs.push(glyph);
                 }
             }
         }
-        let glyphs = self.glyph_runs.insert(key, snapshot.clone(), glyphs);
-        for glyph in glyphs.iter() {
-            visit(glyph);
-        }
-        Ok(())
+        Ok(self.glyph_runs.insert(key, snapshot.clone(), glyphs))
     }
 }
 
@@ -620,6 +698,197 @@ fn blend(image: &mut TextInputBitmap, x: i32, y: i32, clip: Rect, source: [u8; 4
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn raster_admission_rejects_invalid_geometry_before_work_and_recovers() {
+        let snapshot = TextInputSnapshot::default();
+        let bounds = Rect::new(0.0, 0.0, 100.0, 40.0);
+        let view = TextInputViewport {
+            bounds,
+            clip: bounds,
+            origin: crate::Point::default(),
+            caret: None,
+            scroll_x: 0.0,
+            scroll_y: 0.0,
+        };
+        let colors = TextInputColors {
+            text: Color::rgb8(255, 255, 255),
+            selection: Color::rgb8(255, 255, 255),
+            caret: Color::rgb8(255, 255, 255),
+        };
+        let mut rasterizer = TextRasterizer::default();
+        let mut accepted = Vec::new();
+        for (name, candidate) in [
+            (
+                "nan-origin",
+                TextInputViewport {
+                    origin: crate::Point::new(f32::NAN, 0.0),
+                    ..view
+                },
+            ),
+            (
+                "infinite-bounds",
+                TextInputViewport {
+                    bounds: Rect::new(f32::INFINITY, 0.0, 100.0, 40.0),
+                    ..view
+                },
+            ),
+            (
+                "negative-bounds",
+                TextInputViewport {
+                    bounds: Rect::new(0.0, 0.0, -1.0, 40.0),
+                    ..view
+                },
+            ),
+            (
+                "nan-clip",
+                TextInputViewport {
+                    clip: Rect::new(0.0, f32::NAN, 100.0, 40.0),
+                    ..view
+                },
+            ),
+            (
+                "negative-clip",
+                TextInputViewport {
+                    clip: Rect::new(0.0, 0.0, -1.0, 40.0),
+                    ..view
+                },
+            ),
+            (
+                "unrepresentable-origin",
+                TextInputViewport {
+                    origin: crate::Point::new(f32::MAX, 0.0),
+                    ..view
+                },
+            ),
+        ] {
+            let mut callbacks = 0;
+            if rasterizer.visit_glyph_refs(&snapshot, candidate, 1.0, |_| callbacks += 1)
+                != Err(TextRasterError::InvalidViewport)
+            {
+                accepted.push(format!("borrowed:{name}"));
+            }
+            if rasterizer.visit_glyphs(&snapshot, candidate, 1.0, |_| callbacks += 1)
+                != Err(TextRasterError::InvalidViewport)
+            {
+                accepted.push(format!("owned:{name}"));
+            }
+            if rasterizer
+                .render_shared(&snapshot, candidate, 1.0, false, false, colors)
+                .is_ok()
+            {
+                accepted.push(format!("bitmap:{name}"));
+            }
+            assert_eq!(callbacks, 0);
+        }
+        assert!(
+            accepted.is_empty(),
+            "invalid raster viewports were accepted: {accepted:?}"
+        );
+        assert!(
+            rasterizer.glyphs.images.is_empty()
+                && rasterizer.glyph_runs.entries.is_empty()
+                && rasterizer.bitmaps.entries.is_empty()
+        );
+        assert!(
+            rasterizer
+                .render_shared(&snapshot, view, 1.0, false, false, colors)
+                .is_ok()
+        );
+        let mut context = crate::TextInputContext::default();
+        assert!(context.register_font(Arc::new(
+            include_bytes!("../tests/fixtures/MaterialIcons-Regular.ttf").to_vec()
+        )));
+        context.set_font_stack(crate::FontRole::Ui, "Material Icons");
+        let ordinary = context
+            .shape_styled_text("\u{e145}", 24.0, crate::FontRole::Ui, &[], 100.0)
+            .expect("ordinary glyph");
+        let mut callbacks = 0;
+        rasterizer
+            .visit_glyph_refs(&ordinary, view, 1.0, |_| callbacks += 1)
+            .expect("real glyph");
+        assert!(callbacks > 0);
+        let mut rejected_callbacks = 0;
+        for owned in [false, true] {
+            let result = if owned {
+                rasterizer.visit_glyphs(&ordinary, view, 100.0, |_| rejected_callbacks += 1)
+            } else {
+                rasterizer.visit_glyph_refs(&ordinary, view, 100.0, |_| rejected_callbacks += 1)
+            };
+            assert_eq!(result, Err(TextRasterError::GlyphBudgetExceeded));
+        }
+        let oversized = context
+            .shape_styled_text(
+                &"X".repeat(GLYPH_RUN_CACHE_GLYPHS + 1),
+                8.0,
+                crate::FontRole::Ui,
+                &[],
+                1_000_000.0,
+            )
+            .expect("bounded source, oversized glyph run");
+        let wide = TextInputViewport {
+            bounds: Rect::new(0.0, 0.0, 1_000_000.0, 40.0),
+            clip: Rect::new(0.0, 0.0, 1_000_000.0, 40.0),
+            ..view
+        };
+        assert_eq!(
+            rasterizer.visit_glyph_refs(&oversized, wide, 1.0, |_| rejected_callbacks += 1),
+            Err(TextRasterError::GlyphBudgetExceeded)
+        );
+        assert_eq!(
+            rejected_callbacks, 0,
+            "a rejected run cannot publish a prefix"
+        );
+        assert!(
+            rasterizer.glyph_runs.glyph_count <= GLYPH_RUN_CACHE_GLYPHS
+                && rasterizer.glyph_runs.bytes <= GLYPH_RUN_CACHE_BYTES
+        );
+        assert!(
+            rasterizer
+                .render_shared(&ordinary, view, 1.0, false, false, colors)
+                .is_ok()
+        );
+        let weak = Arc::downgrade(&ordinary.0);
+        drop(ordinary);
+        assert!(
+            weak.upgrade().is_some(),
+            "cached snapshots protect pointer-key identity"
+        );
+        for index in 0..=GLYPH_RUN_CACHE_ENTRIES {
+            let next = context
+                .shape_styled_text(
+                    &format!("\u{e145}{index}"),
+                    13.0,
+                    crate::FontRole::Ui,
+                    &[],
+                    100.0,
+                )
+                .expect("new snapshot");
+            let first = rasterizer
+                .render_shared(&next, view, 1.0, false, false, colors)
+                .expect("new bitmap");
+            let second = rasterizer
+                .render_shared(&next, view, 1.0, false, false, colors)
+                .expect("cached bitmap");
+            assert!(Arc::ptr_eq(&first, &second));
+        }
+        assert!(
+            weak.upgrade().is_none(),
+            "eviction releases snapshots after their last run/bitmap entry"
+        );
+        assert!(
+            rasterizer.bitmaps.entries.len() <= BITMAP_CACHE_ENTRIES
+                && rasterizer.bitmaps.bytes <= BITMAP_CACHE_BYTES
+        );
+        assert!(
+            rasterizer.glyphs.images.len() <= GLYPH_CACHE_ENTRIES
+                && rasterizer.glyphs.bytes <= GLYPH_CACHE_BYTES
+        );
+        assert!(
+            rasterizer.glyph_runs.entries.len() <= GLYPH_RUN_CACHE_ENTRIES
+                && rasterizer.glyph_runs.bytes <= GLYPH_RUN_CACHE_BYTES
+        );
+    }
 
     #[test]
     fn positioned_glyph_cache_follows_snapshot_origin_clip_and_scale() {

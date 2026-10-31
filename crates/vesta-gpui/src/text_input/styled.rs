@@ -76,11 +76,15 @@ impl TextInputContext {
         if text.len() > TEXT_INPUT_MAX_BYTES {
             return Err(StyledTextError::TooLong);
         }
-        if spans.iter().any(|span| {
-            span.range.start > span.range.end
-                || !text.is_char_boundary(span.range.start)
-                || !text.is_char_boundary(span.range.end)
-        }) {
+        if !font_size.is_finite()
+            || font_size <= 0.0
+            || !(font_size * 1.5).is_finite()
+            || spans.iter().any(|span| {
+                span.range.start > span.range.end
+                    || !text.is_char_boundary(span.range.start)
+                    || !text.is_char_boundary(span.range.end)
+            })
+        {
             return Err(StyledTextError::InvalidRange);
         }
         let stack = self
@@ -166,6 +170,17 @@ mod tests {
         let font = include_bytes!("../../tests/fixtures/MaterialIcons-Regular.ttf");
         assert!(context.register_font(Arc::new(font.to_vec())));
         context.set_font_stack(FontRole::Ui, "Material Icons");
+        let accepted_fonts = [f32::NAN, f32::INFINITY, -1.0, 0.0, f32::MAX]
+            .into_iter()
+            .filter(|size| {
+                context.shape_styled_text("", *size, FontRole::Ui, &[], 200.0)
+                    != Err(StyledTextError::InvalidRange)
+            })
+            .count();
+        assert_eq!(
+            accepted_fonts, 0,
+            "invalid styled font sizes must be rejected before shaping"
+        );
         let mut positions = Vec::new();
         for alignment in [
             StyledTextAlignment::Left,
