@@ -46,9 +46,24 @@ pub fn partition_status_items<A>(
         0.0
     };
     let mut retained = vec![true; items.len()];
-    let mut total = items.iter().map(|item| item.width.max(0.0)).sum::<f32>();
     let mut has_overflow = false;
-    while total > available_width {
+    loop {
+        // Recompute from the retained owners: subtraction from a huge cached
+        // total can lose a small survivor even with a wider accumulator.
+        let total = items
+            .iter()
+            .enumerate()
+            .filter(|(index, _)| retained[*index])
+            .map(|(_, item)| f64::from(item.width.max(0.0)))
+            .sum::<f64>()
+            + if has_overflow {
+                f64::from(overflow_button_width.max(0.0))
+            } else {
+                0.0
+            };
+        if total <= f64::from(available_width) {
+            break;
+        }
         let Some(index) = items
             .iter()
             .enumerate()
@@ -59,11 +74,7 @@ pub fn partition_status_items<A>(
             break;
         };
         retained[index] = false;
-        total -= items[index].width.max(0.0);
-        if !has_overflow {
-            total += overflow_button_width.max(0.0);
-            has_overflow = true;
-        }
+        has_overflow = true;
     }
     let mut partition = StatusPartition {
         visible: Vec::new(),
@@ -399,6 +410,29 @@ mod tests {
                 .map(|entry| entry.action)
                 .collect::<Vec<_>>(),
             vec![Some(11), Some(12)]
+        );
+        let extreme = partition_status_items(
+            vec![
+                item(10, f32::MAX, 0, 10),
+                item(11, f32::MAX, 0, 11),
+                item(12, 20.0, 2, 12),
+            ],
+            100.0,
+            30.0,
+        );
+        assert_eq!(
+            extreme.visible.len(),
+            1,
+            "finite status widths must preserve fitting items after overflow"
+        );
+        assert_eq!(extreme.visible[0].element.id, scope.element(12));
+        assert_eq!(
+            extreme
+                .overflow
+                .iter()
+                .map(|entry| entry.action)
+                .collect::<Vec<_>>(),
+            [Some(10), Some(11)]
         );
     }
 }

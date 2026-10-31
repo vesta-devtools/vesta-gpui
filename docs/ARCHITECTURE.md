@@ -54,6 +54,9 @@ and target-specific paths; native support is still Windows-preview scope.
 3. Element trees describe the current projection. Layout, actions, hit geometry,
    accessibility and paint derive from that projection. Retained layout reuses
    solver storage; it does not become another UI model or layout algorithm.
+   Core has one finalization of consumed raw solver output: cumulative f64
+   edges, whole logical pixels, half ties toward positive infinity. Positions
+   and dimensions use that same policy; Widgets never repair solver geometry.
 4. The host completes necessary text/scroll/layout reconciliation before exposing
    a frame for input and rendering. The Agent consumer currently bounds its own
    settlement to eight passes. Standalone now bounds its Main/Float preparation

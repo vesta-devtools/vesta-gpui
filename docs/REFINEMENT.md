@@ -4,6 +4,26 @@ Requested: 2026-10-31. Status: Active.
 Authority: this repository. Products track adoption in their own integration records.
 Decision: [0006](decisions/0006-Explicit-Architecture-And-Refinement-Gates.md).
 
+Current continuation, 2026-10-31: the complete Widgets review covers 73 production
+modules in seven responsibility groups and actual Host entry points. Decisions
+[0023](decisions/0023-Widget-Projection-And-Controlled-State-Authority.md) and
+[0024](decisions/0024-Precise-Cumulative-Layout-Finalization.md) address five
+reproduced causes: fixed final-row range, stale menu step, status width total,
+Core finalization precision/edge disagreement, and measured-menu geometry.
+Mixed private state is separated by responsibility and modal metadata has one
+entry owner. [Full ownership contract](WIDGETS.md). Original reds are preserved;
+final full02 qualifies the cleaned source: 232 contracts/38 harnesses and CPU
+smoke, two compile-fail docs, all/base strict, six tool groups, format and two
+ordinary standard builds pass with frozen inputs. The actual standard binary
+completed existing hidden/nonactive Inputs Main64/Float64, zero retry injection,
+normal exit and descendant/lock retirement. This signs the local Widgets family
+and the newly discovered Core finalization branch; no new physical input,
+reader, DPI or speed exit follows. Local receipts live under
+`target/research/widgets-family-20261031/`; original red/fixture failures and
+full01 before residual marker cleanup remain intact.
+The preceding exact 0139ec8 revision's remote CI 41181229182 actually passed;
+its green does not qualify this changed source or common product adoption.
+
 ## Completion standard
 
 Every crate/module must have a justified responsibility and dependency direction.
@@ -42,8 +62,8 @@ its existing gate and evidence, rather than expanding a widget catalogue.
 
 | Family | Qualified work retained | Remaining review target |
 | --- | --- | --- |
-| Core | Complete current 41-module/eight-group export/caller review; finite geometry/layout (decision 0020), render/owner boundary (decision 0021), text/semantic resource ownership and limits (decision 0022); [contract](TEXT-AND-OBSERVATION.md) | Local source-family/software/native qualification recorded below; product adoption, remaining native/consumer/performance programme exits retain their own scope |
-| Widgets | Existing controlled widget contracts, temporary-editor/tree/suggestion and cancellation evidence | Remaining gallery composition and controlled editing/collection/popup public state boundaries |
+| Core | Complete current 41-module/eight-group export/caller review; geometry/layout (0020), render/owner (0021), text/semantic resources (0022), precise cumulative finalization (0024); [contract](TEXT-AND-OBSERVATION.md) | Local source-family/software/native qualification recorded here and below; product adoption, remaining native/consumer/performance exits retain their own scope |
+| Widgets | Complete 73-module/seven-group source/export/caller review; [controlled projection and resource contract](WIDGETS.md), decisions 0023/0024 and original reds; final full02 and affected Main/Float qualification | Local family closed at recorded source/runtime; common product adoption and remaining cross-family native/consumer/performance exits retain their own scope |
 | Native adapter | Registered text ownership; typed error causes; stdio deadline/process lifetime | Remaining automation/context/capture and platform-service exported boundaries |
 | Vulkan renderer | CPU preparation, scene admission, frame/retirement contracts; native recipe consumes async tickets | Capture/recovery/profile/resource lifetimes and actual public contract coverage |
 | Workspace model | Complete public family/caller review; one private field representation and invariant validator; checked atomic operations, version-1 recovery and narrow window updates; [contract](WORKSPACE.md) | Local model/caller qualification recorded below; immutable product API migration remains GF06 |

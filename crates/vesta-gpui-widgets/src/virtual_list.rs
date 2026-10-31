@@ -64,17 +64,28 @@ impl VirtualListRange {
         if content_height > MAX_CONTENT_HEIGHT {
             return Err(VirtualListError::ContentTooLarge);
         }
-        let visible_rows = ((viewport_height / row_height).ceil() as usize).saturating_add(1);
+        let visible_rows = ((f64::from(viewport_height) / f64::from(row_height)).ceil() as usize)
+            .saturating_add(1);
         if visible_rows > MAX_VISIBLE_ROWS {
             return Err(VirtualListError::ViewportTooDense);
         }
         let content_height = content_height as f32;
-        let offset = offset.clamp(0.0, (content_height - viewport_height).max(0.0));
+        let maximum = (f64::from(content_height) - f64::from(viewport_height)).max(0.0);
+        let mut offset = f64::from(offset).clamp(0.0, maximum) as f32;
+        // A fractional viewport can be smaller than one f32 step near the
+        // content limit. Round inward so a computed range keeps its final row.
+        if f64::from(offset) > maximum {
+            offset = offset.next_down().max(0.0);
+        }
         let padding = overscan.min(MAX_OVERSCAN);
-        let first = ((offset / row_height).floor() as usize).saturating_sub(padding);
-        let end = (((offset + viewport_height) / row_height).ceil() as usize)
-            .saturating_add(padding)
+        let first = ((f64::from(offset) / f64::from(row_height)).floor() as usize)
+            .saturating_sub(padding)
             .min(count);
+        let end =
+            (((f64::from(offset) + f64::from(viewport_height)) / f64::from(row_height)).ceil()
+                as usize)
+                .saturating_add(padding)
+                .min(count);
         Ok(Self {
             count,
             first,
@@ -195,6 +206,71 @@ mod tests {
 
     #[test]
     fn large_list_projects_only_visible_stable_rows() {
+        let final_row = VirtualListRange::compute(16_777_216, 1.0, 0.25, f32::MAX, 0)
+            .expect("admitted fractional final viewport");
+        assert_eq!(
+            final_row.first..final_row.end,
+            16_777_215..16_777_216,
+            "a computed fractional viewport must not drop the final row"
+        );
+        for range in [
+            final_row,
+            VirtualListRange::compute(16_777_216, 1.0, 1.0, f32::MAX, 0)
+                .expect("drawable final viewport"),
+        ] {
+            let mut final_indices = Vec::new();
+            let edge = virtual_list(
+                VirtualListIds {
+                    root: WidgetIdentity::new(ElementId::new(1), "edge"),
+                    content: WidgetIdentity::new(ElementId::new(2), "edge.content"),
+                },
+                Dimension::Px(240.0),
+                range,
+                None,
+                |index| {
+                    final_indices.push(index);
+                    Widget::from_element(
+                        Element::container(ElementId::new(3), ElementKey::new("edge.last"))
+                            .styled(Style::default().focusable(true)),
+                    )
+                    .on_click(index)
+                },
+            );
+            assert_eq!(final_indices, [16_777_215]);
+            let edge_layout = LayoutEngine
+                .compute(&edge.element, Viewport::new(240.0, 40.0, 4.0))
+                .expect("fractional row layout");
+            if range.viewport_height >= 1.0 {
+                assert_eq!(
+                    vesta_gpui::HitTestTree::build(&edge.element, &edge_layout)
+                        .hit(Point::new(4.0, 0.125)),
+                    Some(ElementId::new(3)),
+                    "drawable final-row geometry: {:?}",
+                    edge_layout.nodes()
+                );
+            }
+            let edge_route =
+                ActionRoute::build(&edge.element, edge.actions).expect("fractional row route");
+            assert_eq!(edge_route.action_at(ElementId::new(3)), Some(&16_777_215));
+        }
+        for (count, height) in [
+            (0, 1.0),
+            (1, 1.0),
+            (2, 1.25),
+            (8_388_608, 2.0),
+            (16_777_216, 1.0),
+        ] {
+            for viewport in [0.25, 0.5, 1.0] {
+                for overscan in [0, 32] {
+                    let range =
+                        VirtualListRange::compute(count, height, viewport, f32::MAX, overscan)
+                            .expect("finite edge range");
+                    assert!(range.first <= range.end && range.end == count);
+                    assert!(count == 0 || (range.first..range.end).contains(&(count - 1)));
+                    assert!(range.len() <= MAX_VISIBLE_ROWS + 2 * MAX_OVERSCAN);
+                }
+            }
+        }
         let range = VirtualListRange::compute(10_000, 28.0, 140.0, 140_000.0, 2)
             .expect("bounded list geometry");
         assert!(range.len() <= 10);

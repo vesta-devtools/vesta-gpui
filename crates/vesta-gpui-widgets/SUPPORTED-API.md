@@ -5,6 +5,11 @@ the dates below retain their original evidence scope. Actual exports are defined
 by this crate/rustdoc. Choose a capability below rather than treating a historical
 exit label as a later SDK qualification.
 
+The complete family review's [ownership and resource contract](../../docs/WIDGETS.md)
+maps the implementation responsibilities, raw projection preconditions, local
+compatibility modes and native Host obligations. It complements the capability
+contracts below; crate exports remain authoritative.
+
 | Capability | Contract |
 | --- | --- |
 | Identity and controlled composition | [Composition](#composition-identities-and-state) |
@@ -292,8 +297,10 @@ business action. Hosts publish the highlighted row's focus through the current
 route after accepted opening/navigation/hover; a later explicit focus or close
 supersedes any deferred request. Rebuilds do not force focus on every frame.
 
-`PopoverState`, `PopupDismissal` and `ModalStack` retain explicit source-window
-ownership. Only the top modal and its own window may dismiss it; duplicate/full
+Native `open_in` entries in `PopoverState`, `MenuController` and `ModalStack`
+retain explicit source-window ownership. Legacy unqualified local open/close
+entries cannot enforce native window ownership; native Hosts use `open_in`.
+Only the top qualified modal and its own window may dismiss it; duplicate/full
 stack requests reject without replacing a live entry. Explicit/Confirm/Traverse
 closures may request the opener, which still needs validation against the rebuilt
 window/modal scope. Outside press keeps its original target/action; blur,
@@ -520,7 +527,7 @@ The qualified exports are `ScrollAreaState`, `ScrollAxis`, `ScrollbarDrag`,
 Signatures, ordinary finite arithmetic and bool/Option/remainder failure behavior
 are preserved. An already built input path is not a subscription to later tree
 changes; the Host rebuilds it for each admitted current event and owns the
-window's retained state. [Geometry authority](src/state.rs).
+window's retained state. [Geometry authority](src/scroll_state.rs).
 
 ## Captured scrollbar sessions and loss — qualified original GPS04
 

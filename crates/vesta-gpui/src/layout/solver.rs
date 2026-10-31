@@ -4,17 +4,22 @@ use super::*;
 use std::cell::Cell;
 use taffy::{
     CacheTree, CompactLength, Display, Layout, LayoutFlexboxContainer, LayoutGridContainer,
-    LayoutInput, LayoutOutput, LayoutPartialTree, RoundTree, RunMode, SizingMode,
-    TraversePartialTree, TraverseTree, compute_cached_layout, compute_flexbox_layout,
-    compute_grid_layout, compute_hidden_layout, compute_leaf_layout, compute_root_layout,
-    round_layout,
+    LayoutInput, LayoutOutput, LayoutPartialTree, RunMode, SizingMode, TraversePartialTree,
+    compute_cached_layout, compute_flexbox_layout, compute_grid_layout, compute_hidden_layout,
+    compute_leaf_layout, compute_root_layout,
 };
+
+#[derive(Clone, Copy, Default)]
+pub(super) struct FinalLayout {
+    pub(super) location: Point,
+    pub(super) size: Size,
+    pub(super) scrollbar_size: Size,
+}
 
 #[derive(Clone, Copy, Default)]
 struct Geometry {
     raw: Layout,
-    rounded: Layout,
-    rounding_origin: Point,
+    rounded: FinalLayout,
 }
 
 pub(super) struct LayoutStorage {
@@ -86,11 +91,45 @@ impl LayoutStorage {
         Ok(removed)
     }
 
-    pub(super) fn layout(&self, node: NodeId) -> taffy::TaffyResult<&Layout> {
+    pub(super) fn layout(&self, node: NodeId) -> taffy::TaffyResult<&FinalLayout> {
         self.geometry
             .get(&node)
             .map(|geometry| &geometry.rounded)
             .ok_or(taffy::TaffyError::InvalidInputNode(node))
+    }
+
+    fn finalize(&mut self, root: NodeId) -> Result<(), LayoutError> {
+        let edge = |value: f64| (value + 0.5).floor();
+        let mut pending = vec![(root, [0.0_f64; 2])];
+        while let Some((node, parent)) = pending.pop() {
+            let geometry = self
+                .geometry
+                .get_mut(&node)
+                .ok_or_else(|| error(taffy::TaffyError::InvalidInputNode(node)))?;
+            let raw = geometry.raw;
+            let origin = [
+                parent[0] + f64::from(raw.location.x),
+                parent[1] + f64::from(raw.location.y),
+            ];
+            // One cumulative edge policy governs positions and dimensions.
+            // f64 preserves half-pixel decisions at the admitted f32 extent.
+            geometry.rounded = FinalLayout {
+                location: Point::new(
+                    (edge(origin[0]) - edge(parent[0])) as f32,
+                    (edge(origin[1]) - edge(parent[1])) as f32,
+                ),
+                size: Size::new(
+                    (edge(origin[0] + f64::from(raw.size.width)) - edge(origin[0])) as f32,
+                    (edge(origin[1] + f64::from(raw.size.height)) - edge(origin[1])) as f32,
+                ),
+                scrollbar_size: Size::new(
+                    edge(f64::from(raw.scrollbar_size.width)) as f32,
+                    edge(f64::from(raw.scrollbar_size.height)) as f32,
+                ),
+            };
+            pending.extend(self.tree.child_ids(node).map(|child| (child, origin)));
+        }
+        Ok(())
     }
 
     pub(super) fn compute(
@@ -108,14 +147,13 @@ impl LayoutStorage {
             error_style: TaffyStyle::DEFAULT,
         };
         compute_root_layout(&mut view, root, available);
-        round_layout(&mut view, root);
         if let Some(element) = view.invalid_text.get() {
             return Err(LayoutError::InvalidTextMetrics(element));
         }
         if let Some(node) = view.invalid.get() {
             return Err(error(taffy::TaffyError::InvalidInputNode(node)));
         }
-        Ok(())
+        view.storage.finalize(root)
     }
 }
 
@@ -158,8 +196,6 @@ impl<F> TraversePartialTree for Solver<'_, F> {
         self.storage.tree.get_child_id(node, index)
     }
 }
-
-impl<F> TraverseTree for Solver<'_, F> {}
 
 impl<F> CacheTree for Solver<'_, F> {
     fn cache_get(&self, node: NodeId, input: &LayoutInput) -> Option<LayoutOutput> {
@@ -310,36 +346,5 @@ where
     }
     fn get_grid_child_style(&self, node: NodeId) -> Self::GridItemStyle<'_> {
         self.style(node)
-    }
-}
-
-impl<F> RoundTree for Solver<'_, F> {
-    fn get_unrounded_layout(&self, node: NodeId) -> Layout {
-        match self.storage.geometry.get(&node) {
-            Some(geometry) => geometry.raw,
-            None => {
-                self.invalid.set(Some(node));
-                Layout::default()
-            }
-        }
-    }
-    fn set_final_layout(&mut self, node: NodeId, layout: &Layout) {
-        let parent = self
-            .storage
-            .tree
-            .parent(node)
-            .and_then(|parent| self.storage.geometry.get(&parent))
-            .map_or(Point::default(), |geometry| geometry.rounding_origin);
-        let geometry = self.storage.geometry.entry(node).or_default();
-        let origin = Point::new(
-            parent.x + geometry.raw.location.x,
-            parent.y + geometry.raw.location.y,
-        );
-        let mut rounded = *layout;
-        // Sizes already use cumulative raw edges. Local positions must agree.
-        rounded.location.x = origin.x.round() - parent.x.round();
-        rounded.location.y = origin.y.round() - parent.y.round();
-        geometry.rounding_origin = origin;
-        geometry.rounded = rounded;
     }
 }

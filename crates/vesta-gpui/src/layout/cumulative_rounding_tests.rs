@@ -3,6 +3,30 @@ use super::*;
 use crate::{HitTestTree, Style, TextInputContext};
 
 pub(super) fn qualify() {
+    let pair = Element::container(ElementId::new(90), ElementKey::new("half.root"))
+        .styled(Style::default().size(Dimension::Px(10.0), Dimension::Px(10.0)))
+        .child(
+            Element::container(ElementId::new(91), ElementKey::new("half.a")).styled(
+                Style::default()
+                    .absolute(-0.5, 0.0)
+                    .size(Dimension::Px(1.0), Dimension::Px(1.0)),
+            ),
+        )
+        .child(
+            Element::container(ElementId::new(92), ElementKey::new("half.b")).styled(
+                Style::default()
+                    .absolute(0.5, 0.0)
+                    .size(Dimension::Px(1.0), Dimension::Px(1.0)),
+            ),
+        );
+    let pair_layout = LayoutEngine
+        .compute(&pair, Viewport::new(10.0, 10.0, 1.0))
+        .expect("half-edge layout");
+    assert_eq!(
+        HitTestTree::build(&pair, &pair_layout).hit(Point::new(0.5, 0.5)),
+        Some(ElementId::new(91)),
+        "adjacent negative-half boxes must not leave a hit gap"
+    );
     let id = ElementId::new;
     let mut failures = Vec::new();
     for flow in [FlowDirection::LeftToRight, FlowDirection::RightToLeft] {

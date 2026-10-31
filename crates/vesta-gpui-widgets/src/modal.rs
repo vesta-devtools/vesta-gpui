@@ -24,8 +24,14 @@ impl std::error::Error for ModalStackError {}
 
 #[derive(Clone, Debug)]
 pub struct ModalStack<Id> {
-    entries: Vec<Id>,
-    owners: Vec<Option<(UiWindowId, Option<InputTarget>, ModalDismissPolicy)>>,
+    entries: Vec<ModalEntry<Id>>,
+}
+
+#[derive(Clone, Debug)]
+struct ModalEntry<Id> {
+    id: Id,
+    // None is the existing local open/close API; native dismissals carry an owner.
+    owner: Option<(UiWindowId, Option<InputTarget>, ModalDismissPolicy)>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -46,7 +52,6 @@ impl<Id> Default for ModalStack<Id> {
     fn default() -> Self {
         Self {
             entries: Vec::new(),
-            owners: Vec::new(),
         }
     }
 }
@@ -55,14 +60,17 @@ impl<Id: Copy + Eq> ModalStack<Id> {
     pub const CAPACITY: usize = 4;
 
     pub fn open(&mut self, id: Id) -> Result<(), ModalStackError> {
-        if self.entries.contains(&id) {
+        self.insert(ModalEntry { id, owner: None })
+    }
+
+    fn insert(&mut self, entry: ModalEntry<Id>) -> Result<(), ModalStackError> {
+        if self.entries.iter().any(|current| current.id == entry.id) {
             return Err(ModalStackError::Duplicate);
         }
         if self.entries.len() >= Self::CAPACITY {
             return Err(ModalStackError::Full);
         }
-        self.entries.push(id);
-        self.owners.push(None);
+        self.entries.push(entry);
         Ok(())
     }
 
@@ -73,15 +81,14 @@ impl<Id: Copy + Eq> ModalStack<Id> {
         opener: Option<InputTarget>,
         policy: ModalDismissPolicy,
     ) -> Result<(), ModalStackError> {
-        self.open(id)?;
-        if let Some(owner) = self.owners.last_mut() {
-            *owner = Some((
+        self.insert(ModalEntry {
+            id,
+            owner: Some((
                 window,
                 opener.filter(|target| target.window == window),
                 policy,
-            ));
-        }
-        Ok(())
+            )),
+        })
     }
 
     /// Only the top dialog and its source window may close. Teardown is always permitted.
@@ -94,7 +101,7 @@ impl<Id: Copy + Eq> ModalStack<Id> {
         if self.top() != Some(id) {
             return None;
         }
-        let owner = self.owners.last().copied().flatten();
+        let owner = self.entries.last().and_then(|entry| entry.owner);
         if let Some((window, _, policy)) = owner
             && (window != source
                 || reason == PopupCloseReason::OutsidePress && !policy.outside_press
@@ -114,7 +121,6 @@ impl<Id: Copy + Eq> ModalStack<Id> {
     pub fn close_top(&mut self, id: Id) -> bool {
         if self.top() == Some(id) {
             self.entries.pop();
-            self.owners.pop();
             true
         } else {
             false
@@ -123,7 +129,7 @@ impl<Id: Copy + Eq> ModalStack<Id> {
 
     #[must_use]
     pub fn top(&self) -> Option<Id> {
-        self.entries.last().copied()
+        self.entries.last().map(|entry| entry.id)
     }
 
     #[must_use]
@@ -287,6 +293,64 @@ mod tests {
         assert_eq!(stack.top(), Some(2));
         assert!(stack.close_top(2));
         assert_eq!(stack.top(), Some(1));
+        let mut owned = ModalStack::default();
+        for value in 1..=4_u8 {
+            let window = UiWindowId(u64::from(value));
+            owned
+                .open_in(
+                    window,
+                    value,
+                    Some(InputTarget {
+                        window,
+                        element: ElementId::new(u64::from(value)),
+                    }),
+                    ModalDismissPolicy {
+                        explicit: false,
+                        outside_press: false,
+                    },
+                )
+                .expect("owned entry");
+        }
+        assert_eq!(
+            owned.open_in(UiWindowId(99), 4, None, ModalDismissPolicy::default()),
+            Err(ModalStackError::Duplicate)
+        );
+        assert_eq!(
+            owned.open_in(UiWindowId(99), 5, None, ModalDismissPolicy::default()),
+            Err(ModalStackError::Full)
+        );
+        for value in (1..=4_u8).rev() {
+            let window = UiWindowId(u64::from(value));
+            assert_eq!(owned.top(), Some(value));
+            assert_eq!(
+                owned.dismiss(UiWindowId(99), value, PopupCloseReason::WindowUnavailable),
+                None
+            );
+            assert_eq!(
+                owned.dismiss(window, value, PopupCloseReason::Explicit),
+                None
+            );
+            assert_eq!(
+                owned.dismiss(window, value, PopupCloseReason::OutsidePress),
+                None
+            );
+            let closed = owned
+                .dismiss(window, value, PopupCloseReason::WindowUnavailable)
+                .expect("matching owned teardown");
+            assert_eq!(
+                closed.opener,
+                Some(InputTarget {
+                    window,
+                    element: ElementId::new(u64::from(value))
+                })
+            );
+            assert_eq!(closed.focus_request(), None);
+            assert_eq!(
+                owned.dismiss(window, value, PopupCloseReason::Confirm),
+                None
+            );
+        }
+        assert!(owned.is_empty());
         let ids = ModalIds {
             backdrop: id(1),
             panel: id(2),

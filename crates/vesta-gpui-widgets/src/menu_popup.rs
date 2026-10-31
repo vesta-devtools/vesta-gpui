@@ -176,8 +176,8 @@ fn project_popup<A, B>(
     mut action: impl FnMut(&vesta_gpui::MenuItem<A>) -> B,
     presentation: Presentation,
 ) -> Result<Widget<B>, LayoutError> {
-    if !spec.bounds.width.is_finite()
-        || !spec.bounds.height.is_finite()
+    if !spec.bounds.is_valid()
+        || !spec.anchor.is_valid()
         || spec.bounds.width <= 0.0
         || spec.bounds.height <= 0.0
     {

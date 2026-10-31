@@ -202,6 +202,15 @@ the repository; platform adapters/renderers remain separate crates.
 
 ## Layout and measurement
 
+Taffy owns the single raw solver/topology/cache. Core finalizes its consumed
+location, size and scrollbar dimensions with one cumulative edge policy:
+whole logical pixels, half ties toward positive infinity, f64 intermediate
+origins. Local positions and dimensions share those edges. This preserves a
+one-pixel final row at the admitted list extent and corrects the previous
+negative-half position/size disagreement. Fractional boxes can still round to
+zero at this quantum; DPI does not change it. See
+[decision 0024](../../docs/decisions/0024-Precise-Cumulative-Layout-Finalization.md).
+
 ### Numeric values and admission
 
 `Point`, `Size`, `Rect` and `Viewport` are logical-coordinate values, not native

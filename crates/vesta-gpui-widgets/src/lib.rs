@@ -32,6 +32,7 @@ mod key_chord;
 mod key_dispatch;
 mod markdown;
 mod menu_bar;
+mod menu_controller;
 mod menu_popup;
 mod modal;
 mod notification_focus;
@@ -39,6 +40,7 @@ mod numeric_component;
 mod password;
 mod popover;
 mod popup_lifecycle;
+mod popup_placement;
 mod progress;
 mod property;
 mod property_set;
@@ -46,11 +48,12 @@ mod radio_group;
 mod ramp;
 mod rich_text;
 mod scroll_input;
+mod scroll_state;
 mod search_field;
 mod selection;
-mod state;
 mod suggestion_state;
 mod suggestion_view;
+mod tab_bar_state;
 mod tab_switcher;
 mod table_view;
 mod temporary_editor;
@@ -123,6 +126,7 @@ pub use markdown::{
     MarkdownSurface, MarkdownView,
 };
 pub use menu_bar::{MenuBarEntry, MenuBarView, menu_bar, menu_bar_anchor, menu_bar_next};
+pub use menu_controller::{MenuController, MenuKeyAction};
 pub use menu_popup::{
     MenuPickerColumns, MenuPickerContent, MenuPickerPopupSpec, MenuPopupSpec, menu_picker_popup,
     menu_picker_popup_with_content, menu_picker_popup_with_header, menu_popup, menu_submenu_anchor,
@@ -138,6 +142,7 @@ pub use popover::{
     PopoverState, PopupKeyAction, popover, popover_trigger, popup_dismiss_for_hit, popup_key_action,
 };
 pub use popup_lifecycle::{PopupCloseReason, PopupDismissal};
+pub use popup_placement::{PopupDirection, place_popup};
 pub use progress::{ProgressState, ProgressStateError, progress_bar_state};
 pub use property::{
     PropertyRowIds, PropertyRowPresentation, PropertyRowState, PropertyValidation,
@@ -156,18 +161,18 @@ pub use ramp::{
 };
 pub use rich_text::{RichTextRun, RichTextTone, rich_text, rich_text_paragraph};
 pub use scroll_input::ScrollInputPath;
+pub use scroll_state::{
+    ScrollAreaState, ScrollAxis, ScrollRevealStep, ScrollRevealViewport, ScrollbarDrag,
+    scroll_reveal_path, scroll_wheel_path,
+};
 pub use search_field::{SearchFieldIds, search_field};
 pub use selection::{ListSelectionState, SelectionModifiers};
-pub use state::{
-    MenuController, MenuKeyAction, PopupDirection, ScrollAreaState, ScrollAxis, ScrollRevealStep,
-    ScrollRevealViewport, ScrollbarDrag, TabBarState, place_popup, scroll_reveal_path,
-    scroll_wheel_path,
-};
 pub use suggestion_state::{
     SUGGESTION_ROW_HEIGHT, SuggestionError, SuggestionOption, SuggestionPhase, SuggestionRequest,
     SuggestionRequestId, SuggestionState,
 };
 pub use suggestion_view::{SuggestionViewIds, editable_combo_controlled};
+pub use tab_bar_state::TabBarState;
 pub use tab_switcher::{TabSwitcherEntry, TabSwitcherStyle, tab_switcher};
 pub use table_view::{
     TableCell, TableCellContent, TableColumn, TableColumnContent, TableColumnResize,

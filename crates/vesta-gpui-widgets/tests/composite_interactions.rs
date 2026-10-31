@@ -806,6 +806,39 @@ fn stable_collection_repair_and_group_edits_survive_reordering_and_removal() {
 #[test]
 fn measured_menu_keeps_actions_and_reveals_the_highlight_in_a_small_window() {
     let mut text = TextInputContext::default();
+    let valid = Rect::new(0.0, 0.0, 240.0, 110.0);
+    let one = Menu::new(MenuId(1), "Actions").item(MenuItem::new(MenuItemId(1), "Run", ()));
+    for bad in [
+        Rect::new(f32::NAN, 0.0, 10.0, 10.0),
+        Rect::new(0.0, f32::INFINITY, 10.0, 10.0),
+        Rect::new(f32::MAX, 0.0, f32::MAX, 10.0),
+        Rect::new(f32::MAX, 0.0, 1.0, 10.0),
+        Rect::new(0.0, 0.0, -1.0, 10.0),
+    ] {
+        for (bounds, anchor) in [(bad, valid), (valid, bad)] {
+            let rejected: Result<Widget<()>, _> = menu_popup(
+                &one,
+                &MenuController::default(),
+                MenuPopupSpec {
+                    root: identity(1),
+                    content: identity(2),
+                    anchor,
+                    bounds,
+                    direction: PopupDirection::Below,
+                    z_index: 90,
+                    hovered: None,
+                },
+                WidgetTheme::dark(),
+                &mut text,
+                |_| panic!("invalid popup geometry reached an identity adapter"),
+                |_| panic!("invalid popup geometry reached an action adapter"),
+            );
+            assert!(matches!(
+                rejected,
+                Err(vesta_gpui::LayoutError::InvalidConstraint)
+            ));
+        }
+    }
     assert!(text.register_font(std::sync::Arc::new(
         include_bytes!("../../vesta-gpui/tests/fixtures/MaterialIcons-Regular.ttf").to_vec()
     )));
