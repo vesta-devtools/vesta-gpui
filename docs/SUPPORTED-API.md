@@ -40,6 +40,9 @@ The following table assigns package responsibilities; rustdoc/source defines
 actual exports. Detailed capability pages and dated evidence do not create
 another executable API registry.
 
+The complete [Native adapter contract](NATIVE.md) maps input/source admission,
+capture pixel/redaction policy, legacy modes and explicit platform/I/O lifetime.
+
 | Package | Intended 0.1 boundary | Explicit experimental or Host boundary |
 | --- | --- | --- |
 | `vesta-gpui` | Supported candidate: stable identity, typed Action, layout/retained invalidation, text/editor state, paint/hit/semantic projections, [CPU render preparation](RENDER-PREPARATION.md), bounded read-only `UiSnapshot` and opt-in trace data. | Host supplies fonts, current complete trees, identities, service policy and author data. Inspection grants no command execution or OS access; trace is wall-time observation. |

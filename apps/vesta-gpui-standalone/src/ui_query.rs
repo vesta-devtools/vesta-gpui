@@ -1,4 +1,4 @@
-//! Opt-in observations of successfully presented native windows. Never dispatches actions.
+//! Explicit presented observations and Host-owned, admitted control dispatch.
 use super::*;
 use std::{collections::VecDeque, sync::mpsc::SyncSender};
 use vesta_gpui::{UiFieldContent, UiQueryLimits, UiSnapshot, UiSnapshotFrame, UiSnapshotId};
@@ -9,6 +9,15 @@ mod control;
 mod input;
 mod wire;
 pub(super) use wire::start;
+
+/// Existing explicit CLI opt-in; true selects control, false selects query only.
+pub(super) fn stdio_argument(argument: &str) -> Option<bool> {
+    match argument {
+        "--ui-query-stdio" => Some(false),
+        "--ui-control-stdio" => Some(true),
+        _ => None,
+    }
+}
 
 #[derive(Clone, Debug)]
 pub(super) enum Operation {

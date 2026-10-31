@@ -142,7 +142,9 @@ impl From<&WindowEvent> for UiInputEvent {
 }
 
 impl UiInputEvent {
-    /// Events that may mutate input, editor state or presented geometry.
+    /// Hint for invalidating ordinary input/geometry observations. A false value
+    /// never permits skipping lifecycle dispatch: Hosts still reconcile visibility,
+    /// capture and renderer availability when those policies change.
     pub fn changes_ui(&self) -> bool {
         !matches!(
             self,

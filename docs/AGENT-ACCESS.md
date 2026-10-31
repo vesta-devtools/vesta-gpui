@@ -22,7 +22,9 @@ host reply. Start it once per native host process. It has no cancellation/join
 handle; window closure does not cancel a blocked stdin read. Embedded controllers
 reuse the containing host's connection. An ordinary request waits up to ten
 seconds for its host response. Dispatch must enqueue promptly on the host's
-existing event-loop proxy, and response serialization must be nonblocking.
+existing event-loop proxy. Serialization runs on the I/O worker, where the Host
+may perform bounded capture waiting/encoding. Its budget remains Host-owned;
+no UI callback may wait for that work.
 
 Read-only `wait` has a default 1,000 ms budget, configurable from 1 to 5,000 ms.
 Polls, reply waits and retry sleeps share one deadline. Budget exhaustion returns

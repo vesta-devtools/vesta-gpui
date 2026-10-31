@@ -8,7 +8,8 @@ use winit::{
     keyboard::{Key, KeyCode, KeyLocation, ModifiersState, NamedKey, NativeKeyCode, PhysicalKey},
 };
 
-const MAX_STEPS: usize = 256;
+const MAX_SOURCE_STEPS: usize = 64;
+const MAX_EXPANDED_STEPS: usize = 256;
 #[cfg(test)]
 mod tests;
 #[derive(Clone, Debug, PartialEq)]
@@ -144,7 +145,7 @@ impl UiInputRequest {
         };
         let input = value["steps"]
             .as_array()
-            .filter(|s| !s.is_empty() && s.len() <= 64)
+            .filter(|s| !s.is_empty() && s.len() <= MAX_SOURCE_STEPS)
             .ok_or("invalid_input")?;
         let mut steps = Vec::new();
         let mut held = None;
@@ -289,7 +290,7 @@ impl UiInputRequest {
                 }
                 _ => return Err("unknown_input"),
             }
-            if steps.len() > MAX_STEPS {
+            if steps.len() > MAX_EXPANDED_STEPS {
                 return Err("input_too_large");
             }
         }
@@ -615,7 +616,9 @@ pub fn ui_input_state(
     let target = |target: vesta_gpui::InputTarget| json!({"window":target.window.0.to_string(),"element":target.element.get().to_string()});
     json!({"observation":"live_logical_host_input","pointer":{"x":pointer.x,"y":pointer.y},"focus":input.focus().map(target),"capture":input.capture().map(|capture|json!({"target":target(capture.target),"button":match capture.button{PointerButton::Primary=>"primary",PointerButton::Secondary=>"secondary",PointerButton::Middle=>"middle"}})),"modifiers":{"control":modifiers.control_key(),"shift":modifiers.shift_key(),"alt":modifiers.alt_key(),"super":modifiers.super_key()}})
 }
-/// Close is returned to the Host's existing close handler; all other requests use winit.
+/// Close returns the existing close event; RetryRender returns the legacy F5
+/// intent, which only an opted-in Host may interpret as renderer recovery.
+/// Other variants use the supplied winit Window. Authorization/admission is Host-owned.
 pub fn apply_ui_window_command(
     window: &winit::window::Window,
     command: &UiWindowCommand,
@@ -686,5 +689,5 @@ fn command_key(key: &str) -> Result<(Key, PhysicalKey), &'static str> {
 
 pub fn ui_input_schema() -> Value {
     let request_example = json!({"schema_version":1,"request_id":"<fresh request ID>","op":"input","instance":"<commands instance>","window":"<commands window>","element":"<commands element>","owner":"<commands owner>","revision":"<commands revision>","steps":[{"kind":"move","x":10.0,"y":10.0},{"kind":"click","button":"primary","count":1}]});
-    json!({"op":"input","request_example":request_example,"target":"top-level instance/window/element/owner from commands; no nested target or input object; steps is an array tagged by kind","revision":"required decimal string; pinned source snapshot revision","source_checks":["owner","context","geometry","hit","focus","editor state"],"origin":"command","coordinates":"logical pixels relative to target bounds; wheel is logical pixel delta","modifiers":["control","shift","alt","super"],"steps":{"move":{"x":"number","y":"number"},"click":{"button":"primary|secondary|middle","count":"1..3"},"press/release":{"button":"balanced within request"},"drag":{"from":{"x":"number","y":"number"},"to":{"x":"number","y":"number"},"samples":"1..64"},"wheel":{"x":"number","y":"number"},"key":{"key":"one Unicode scalar or a pinned winit NamedKey name (including F1..F35)","modifiers":"optional override of request modifiers"},"text":{"text":"UTF-8, editable target only"},"cancel":{"target":"window root; must be the only step"},"window":{"action":"minimize|maximize|restore|close|resize|move|retry_render (Host capability)","target":"window root; must be the only step","resize":"logical width/height 64..8192","move":"physical outer x/y"}},"max_steps":64,"max_expanded_steps":MAX_STEPS,"max_text_bytes":vesta_gpui::TEXT_INPUT_MAX_BYTES,"native_child_surfaces":false,"os_dialogs":false})
+    json!({"op":"input","request_example":request_example,"target":"top-level instance/window/element/owner from commands; no nested target or input object; steps is an array tagged by kind","revision":"required decimal string; pinned source snapshot revision","source_checks":["owner","context","geometry","hit","focus","editor state"],"origin":"command","coordinates":"logical pixels relative to target bounds; wheel is logical pixel delta","modifiers":["control","shift","alt","super"],"steps":{"move":{"x":"number","y":"number"},"click":{"button":"primary|secondary|middle","count":"1..3"},"press/release":{"button":"balanced within request"},"drag":{"from":{"x":"number","y":"number"},"to":{"x":"number","y":"number"},"samples":"1..64"},"wheel":{"x":"number","y":"number"},"key":{"key":"one Unicode scalar or a pinned winit NamedKey name (including F1..F35)","modifiers":"optional override of request modifiers"},"text":{"text":"UTF-8, editable target only"},"cancel":{"target":"window root; must be the only step"},"window":{"action":"minimize|maximize|restore|close|resize|move|retry_render (Host capability)","target":"window root; must be the only step","resize":"logical width/height 64..8192","move":"physical outer x/y"}},"max_steps":MAX_SOURCE_STEPS,"max_expanded_steps":MAX_EXPANDED_STEPS,"max_text_bytes":vesta_gpui::TEXT_INPUT_MAX_BYTES,"native_child_surfaces":false,"os_dialogs":false})
 }

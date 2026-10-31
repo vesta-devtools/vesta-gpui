@@ -136,7 +136,7 @@ pub(super) fn recording() -> Result<Option<vesta_gpui_winit::UiTraceRecording>, 
             arg.starts_with("--trace-ui")
                 || arg.starts_with("--smoke")
                 || arg.starts_with("--native-capture-fixture")
-                || arg.starts_with("--ui-")
+                || (arg.starts_with("--ui-") && ui_query::stdio_argument(arg).is_none())
                 || arg == "--mode=3d"
         })
     {

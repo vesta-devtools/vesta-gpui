@@ -4,13 +4,14 @@ use serde_json::{Value, json};
 use std::sync::OnceLock;
 use vesta_gpui::LayoutEngine;
 use vesta_gpui_vulkan::{CaptureRegion, CaptureTicket};
+use vesta_gpui_winit::UiCaptureGeometry;
 
 pub(crate) use vesta_gpui_winit::UiCaptureRequest as Query;
 pub(super) struct Binding {
     pub presented: Arc<OnceLock<UiSnapshotId>>,
     viewport: Viewport,
-    element: Option<ElementId>,
-    rect: Rect,
+    request: Query,
+    geometry: UiCaptureGeometry,
 }
 #[derive(Debug)]
 pub(crate) struct Reply {
@@ -66,46 +67,6 @@ impl Reply {
     }
 }
 
-fn region(rect: Rect, viewport: Viewport) -> Result<CaptureRegion, &'static str> {
-    if !viewport.width.is_finite()
-        || !viewport.height.is_finite()
-        || !viewport.scale_factor.is_finite()
-        || viewport.width <= 0.0
-        || viewport.height <= 0.0
-        || !(0.25..=4.0).contains(&viewport.scale_factor)
-        || rect.width <= 0.0
-        || rect.height <= 0.0
-    {
-        return Err("invalid_capture_region");
-    }
-    let rect = rect
-        .intersection(viewport.logical_rect())
-        .ok_or("offscreen_target")?;
-    let scale = viewport.scale_factor;
-    let origin = [
-        (rect.x * scale).floor().max(0.0) as u32,
-        (rect.y * scale).floor().max(0.0) as u32,
-    ];
-    let end = [
-        ((rect.x + rect.width) * scale).ceil() as u32,
-        ((rect.y + rect.height) * scale).ceil() as u32,
-    ];
-    let region = CaptureRegion {
-        origin,
-        extent: [
-            end[0].saturating_sub(origin[0]),
-            end[1].saturating_sub(origin[1]),
-        ],
-    };
-    region
-        .validate([
-            (viewport.width * scale).ceil() as u32,
-            (viewport.height * scale).ceil() as u32,
-        ])
-        .map_err(|_| "invalid_capture_region")?;
-    Ok(region)
-}
-
 impl App {
     pub(crate) fn capture_geometry_changed(
         &self,
@@ -119,14 +80,10 @@ impl App {
             binding.viewport != layout.viewport()
                 || self
                     .capture_query_snapshot(window, gallery, root, layout, route, None, None)
-                    .is_none_or(|snapshot| reject_sensitive(&snapshot, binding.rect).is_err())
-                || binding.element.is_some_and(|id| {
-                    layout
-                        .node(id)
-                        .and_then(|n| n.rect.intersection(n.inherited_clip))
-                        .and_then(|r| r.intersection(layout.viewport().logical_rect()))
-                        != Some(binding.rect)
-                })
+                    .and_then(|snapshot| {
+                        binding.request.geometry(&snapshot, layout.viewport()).ok()
+                    })
+                    .is_none_or(|geometry| geometry.logical != binding.geometry.logical)
         })
     }
 
@@ -173,7 +130,7 @@ impl App {
             .ok_or("capture_source_unavailable")?;
         let observed = if query.viewport.is_some() {
             // Relayout allocates a new target; presented capture only reads its requested crop.
-            region(viewport.logical_rect(), viewport)?;
+            UiCaptureGeometry::new(viewport.logical_rect(), viewport)?;
             // Relayout the same immutable realized tree; this does not realize unloaded model data.
             offscreen_layout = LayoutEngine
                 .compute_with_text_context(&root, viewport, &mut self.text_context)
@@ -193,8 +150,7 @@ impl App {
         } else {
             return self.capture_presented(query, source, viewport);
         };
-        let rect = requested_rect(query, &observed, viewport)?;
-        reject_sensitive(&observed, rect)?;
+        let geometry = query.geometry(&observed, viewport)?;
         let paint = PaintList::build_with_focus(
             &root,
             &offscreen_layout,
@@ -223,7 +179,10 @@ impl App {
         let renderer = state
             .capture_renderer()
             .map_err(|_| "capture_renderer_unavailable")?;
-        let pixels = region(rect, viewport)?;
+        let pixels = CaptureRegion {
+            origin: geometry.origin,
+            extent: geometry.extent,
+        };
         let ticket = renderer
             .capture_offscreen_with_scene(
                 viewport,
@@ -259,9 +218,11 @@ impl App {
         source: Arc<UiSnapshot>,
         viewport: Viewport,
     ) -> Result<Reply, &'static str> {
-        let rect = requested_rect(query, &source, viewport)?;
-        let pixels = region(rect, viewport)?;
-        reject_sensitive(&source, rect)?;
+        let geometry = query.geometry(&source, viewport)?;
+        let pixels = CaptureRegion {
+            origin: geometry.origin,
+            extent: geometry.extent,
+        };
         let state = if query.window == STANDALONE_WINDOW {
             self.gpu.as_mut().ok_or("capture_renderer_unavailable")?
         } else {
@@ -283,8 +244,8 @@ impl App {
             Binding {
                 presented: presented.clone(),
                 viewport,
-                element: query.element,
-                rect,
+                request: query.clone(),
+                geometry,
             },
         );
         self.request_all_redraw();
@@ -297,45 +258,100 @@ impl App {
     }
 }
 
-fn requested_rect(
-    query: &Query,
-    snapshot: &UiSnapshot,
-    viewport: Viewport,
-) -> Result<Rect, &'static str> {
-    match query.element {
-        Some(element) => snapshot
-            .nodes()
-            .iter()
-            .find(|n| n.id == element)
-            .ok_or("target_not_captured")?
-            .visible_bounds
-            .ok_or("offscreen_target"),
-        None => Ok(query.rect.unwrap_or(viewport.logical_rect())),
-    }
-}
-fn reject_sensitive(snapshot: &UiSnapshot, rect: Rect) -> Result<(), &'static str> {
-    if snapshot.node_limit_reached || snapshot.depth_limit_reached {
-        return Err("capture_incomplete_source");
-    }
-    if snapshot.nodes().iter().any(|n| {
-        (n.value.redacted || n.text.redacted || n.name.redacted)
-            && n.visible_bounds
-                .is_some_and(|bounds| bounds.intersection(rect).is_some())
-    }) {
-        return Err("sensitive_region");
-    }
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn rounded_readback_rejects_adjacent_sensitive_pixels(app: &mut App) {
+        let id = app.scopes.gallery.element(500);
+        let secret = app.scopes.gallery.element(501);
+        let root = Element::container(id, ElementKey::new("capture.root"))
+            .styled(Style::default().size(Dimension::Px(32.0), Dimension::Px(16.0)))
+            .child(
+                Element::container(secret, ElementKey::new("capture.secret"))
+                    .styled(
+                        Style::default()
+                            .absolute(10.0, 0.0)
+                            .size(Dimension::Px(2.0), Dimension::Px(16.0)),
+                    )
+                    .semantic(
+                        Semantic::new(SemanticRole::PasswordInput, "credential")
+                            .value("never export"),
+                    ),
+            );
+        let viewport = Viewport::new(32.0, 16.0, 1.25);
+        let layout = LayoutEngine.compute(&root, viewport).expect("layout");
+        let route = ActionRoute::<DemoAction>::build(&root, []).expect("route");
+        let snapshot = app
+            .capture_query_snapshot(
+                STANDALONE_WINDOW,
+                app.scopes.gallery,
+                &root,
+                &layout,
+                &route,
+                None,
+                None,
+            )
+            .expect("snapshot");
+        let query = Query {
+            instance: snapshot.id.instance,
+            window: snapshot.id.window,
+            revision: snapshot.id.revision,
+            element: None,
+            rect: Some(Rect::new(0.0, 0.0, 9.8, 16.0)),
+            viewport: None,
+        };
+        let safe = Query {
+            rect: Some(Rect::new(0.0, 0.0, 9.5, 16.0)),
+            ..query.clone()
+        };
+        let geometry = safe
+            .geometry(&snapshot, viewport)
+            .expect("initial safe crop");
+        app.ui_query
+            .publish_root(snapshot, root.clone(), &route, &layout, "test".into());
+        assert_eq!(
+            app.answer_ui_capture(&query).err(),
+            Some("sensitive_region"),
+            "Standalone must reject the sensitive rounded pixel before GPU admission"
+        );
+        app.ui_query.captures.insert(
+            STANDALONE_WINDOW,
+            Binding {
+                presented: Arc::new(OnceLock::new()),
+                viewport,
+                request: safe,
+                geometry,
+            },
+        );
+        assert!(!app.capture_geometry_changed(
+            STANDALONE_WINDOW,
+            app.scopes.gallery,
+            &root,
+            &layout,
+            &route
+        ));
+        let mut changed = root;
+        changed.children[0].style = changed.children[0].style.clone().absolute(9.0, 0.0);
+        let changed_layout = LayoutEngine
+            .compute(&changed, viewport)
+            .expect("moved redacted control");
+        assert!(app.capture_geometry_changed(
+            STANDALONE_WINDOW,
+            app.scopes.gallery,
+            &changed,
+            &changed_layout,
+            &route
+        ));
+        app.ui_query.captures.remove(&STANDALONE_WINDOW);
+    }
 
     #[test]
     fn presented_crop_budget_is_independent_of_a_large_existing_window() {
         let mut app = App::new();
         app.ui_query = Store::new(true);
         app.ui_query.control_enabled = true;
+        rounded_readback_rejects_adjacent_sensitive_pixels(&mut app);
         crate::tests::activate_gallery_page(&mut app, "gallery.inputs");
         let root = crate::tests::install_action_route(&mut app);
         let viewport = Viewport::new(1720.0, 672.0, 2.0);

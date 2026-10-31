@@ -11,7 +11,9 @@ use std::{
 /// stdin/stdout until EOF, an I/O/size failure or a lost ordinary host response.
 /// There is no cancellation/join handle: closing a window cannot unblock stdin.
 /// Embedded controllers reuse their host's connection instead of starting one.
-/// Dispatch must enqueue without blocking; serialization must also be nonblocking.
+/// Dispatch must enqueue without blocking. Serialization runs on this I/O worker,
+/// where Hosts may perform bounded capture waits/encoding, never UI-thread work.
+/// Its deadline and output budget remain Host-owned; it cannot be preempted here.
 pub fn start_ui_stdio<R: Send + 'static>(
     dispatch: impl Fn(Value, SyncSender<Result<R, &'static str>>) -> Result<(), &'static str>
     + Send

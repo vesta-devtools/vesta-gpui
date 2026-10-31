@@ -61,8 +61,13 @@ pub(super) fn run() -> Result<(), Box<dyn Error>> {
         }
     }
     app.event_proxy = Some(event_loop.create_proxy());
-    if app.ui_query.enabled && !frame_reflow_probe::requested() {
-        app.ui_query.control_enabled = std::env::args().any(|arg| arg == "--ui-control-stdio");
+    // The probe enables local snapshots itself; only explicit existing stdio
+    // flags opt it into the public worker. Its windows remain hidden/nonactive.
+    if let Some(control) = std::env::args()
+        .filter_map(|arg| ui_query::stdio_argument(&arg))
+        .max()
+    {
+        app.ui_query.control_enabled = control;
         ui_query::start(event_loop.create_proxy(), app.ui_query.control_enabled)?;
     }
     let event_result = event_loop.run_app(&mut app);

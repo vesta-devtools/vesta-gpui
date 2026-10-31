@@ -125,7 +125,7 @@ impl UiCaptureRequest {
             (node.value.redacted || node.text.redacted || node.name.redacted)
                 && node
                     .visible_bounds
-                    .is_some_and(|r| r.intersection(geometry.logical).is_some())
+                    .is_some_and(|r| geometry.intersects_pixels(r, viewport.scale_factor))
         }) {
             return Err("sensitive_region");
         }
@@ -134,35 +134,43 @@ impl UiCaptureRequest {
 }
 impl UiCaptureGeometry {
     pub fn new(rect: Rect, viewport: Viewport) -> Result<Self, &'static str> {
-        if !viewport.width.is_finite()
-            || !viewport.height.is_finite()
-            || !viewport.scale_factor.is_finite()
-            || viewport.width <= 0.0
-            || viewport.height <= 0.0
+        if !viewport.is_valid()
             || !(0.25..=4.0).contains(&viewport.scale_factor)
-            || [rect.x, rect.y, rect.width, rect.height]
-                .iter()
-                .any(|v| !v.is_finite())
+            || !rect.is_valid()
             || rect.width <= 0.0
             || rect.height <= 0.0
+        {
+            return Err("invalid_capture_region");
+        }
+        // Preserve the renderer's existing target-extent convention. The crop
+        // has its own precise edges, but cannot invent a larger native target.
+        let target = [
+            f64::from((viewport.width * viewport.scale_factor).ceil()),
+            f64::from((viewport.height * viewport.scale_factor).ceil()),
+        ];
+        if target
+            .iter()
+            .any(|edge| !edge.is_finite() || !(1.0..=f64::from(u32::MAX)).contains(edge))
         {
             return Err("invalid_capture_region");
         }
         let logical = rect
             .intersection(viewport.logical_rect())
             .ok_or("offscreen_target")?;
+        let scale = f64::from(viewport.scale_factor);
         let origin = [
-            (logical.x * viewport.scale_factor).floor().max(0.0) as u32,
-            (logical.y * viewport.scale_factor).floor().max(0.0) as u32,
+            (f64::from(logical.x) * scale).floor().clamp(0.0, target[0]) as u32,
+            (f64::from(logical.y) * scale).floor().clamp(0.0, target[1]) as u32,
         ];
         let end = [
-            ((logical.x + logical.width) * viewport.scale_factor).ceil() as u32,
-            ((logical.y + logical.height) * viewport.scale_factor).ceil() as u32,
+            (f64::from(logical.right()) * scale)
+                .ceil()
+                .clamp(0.0, target[0]) as u32,
+            (f64::from(logical.bottom()) * scale)
+                .ceil()
+                .clamp(0.0, target[1]) as u32,
         ];
-        let extent = [
-            end[0].saturating_sub(origin[0]),
-            end[1].saturating_sub(origin[1]),
-        ];
+        let extent = [end[0] - origin[0], end[1] - origin[1]];
         if extent.contains(&0)
             || extent.iter().any(|n| *n > 4096)
             || u64::from(extent[0]) * u64::from(extent[1]) > 4_194_304
@@ -174,5 +182,16 @@ impl UiCaptureGeometry {
             origin,
             extent,
         })
+    }
+
+    fn intersects_pixels(self, bounds: Rect, scale_factor: f32) -> bool {
+        let scale = f64::from(scale_factor);
+        bounds.is_valid()
+            && bounds.width > 0.0
+            && bounds.height > 0.0
+            && f64::from(bounds.x) * scale < f64::from(self.origin[0]) + f64::from(self.extent[0])
+            && f64::from(bounds.y) * scale < f64::from(self.origin[1]) + f64::from(self.extent[1])
+            && f64::from(bounds.right()) * scale > f64::from(self.origin[0])
+            && f64::from(bounds.bottom()) * scale > f64::from(self.origin[1])
     }
 }

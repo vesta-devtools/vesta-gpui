@@ -40,8 +40,7 @@ impl App {
             scopes: UiScopes::new(),
             frame_reflow_probe: None,
             ui_query: ui_query::Store::new(
-                std::env::args()
-                    .any(|arg| matches!(arg.as_str(), "--ui-query-stdio" | "--ui-control-stdio")),
+                std::env::args().any(|arg| ui_query::stdio_argument(&arg).is_some()),
             ),
             documents: GalleryDocuments::default(),
             mode: AcceptanceMode::from_args(),

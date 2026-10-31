@@ -4,6 +4,27 @@ Requested: 2026-10-31. Status: Active.
 Authority: this repository. Products track adoption in their own integration records.
 Decision: [0006](decisions/0006-Explicit-Architecture-And-Refinement-Gates.md).
 
+Current Native continuation, 2026-10-31: the complete 17-module review and actual
+Host entry points map to [the Native contract](NATIVE.md). Decision
+[0025](decisions/0025-Native-Capture-Admission-And-Platform-Ownership.md) addresses
+two reproduced capture causes: lost conservative crop pixels and sensitivity admission
+against logical bounds rather than actual readback pixels. Standalone's parallel
+capture rules are removed. Focused03 passes after preserving original reds and
+two intermediate fixture/incomplete-rename failures. Red02 also preserves the
+standard program rejecting the intended explicit stdio/probe combination before
+renderer creation; one private existing-flag authority now completes it. Final
+full02 passes 234 contracts/39 harnesses and CPU smoke, two compile-fail docs,
+all/base strict, six tool groups, format and both ordinary standard builds with
+frozen inputs. Actual hidden/nonactive Main/Float each complete 64 submitted
+steps and return a genuine 10x10 offscreen PNG through the public protocol; only
+windows/window_state/snapshot/capture requests are sent. Normal exit, descendants
+and two executable locks are verified. Local receipts live under
+`target/research/native-family-20261031/`. The Native family is locally closed;
+physical/reader/DPI/speed, full Vulkan and product adoption exits remain separate.
+Source/expanded-step authority and explicit I/O,
+context, event and legacy Host responsibilities are clarified without new public
+signatures, dependencies, services, flags or examples.
+
 Current continuation, 2026-10-31: the complete Widgets review covers 73 production
 modules in seven responsibility groups and actual Host entry points. Decisions
 [0023](decisions/0023-Widget-Projection-And-Controlled-State-Authority.md) and
@@ -64,7 +85,7 @@ its existing gate and evidence, rather than expanding a widget catalogue.
 | --- | --- | --- |
 | Core | Complete current 41-module/eight-group export/caller review; geometry/layout (0020), render/owner (0021), text/semantic resources (0022), precise cumulative finalization (0024); [contract](TEXT-AND-OBSERVATION.md) | Local source-family/software/native qualification recorded here and below; product adoption, remaining native/consumer/performance exits retain their own scope |
 | Widgets | Complete 73-module/seven-group source/export/caller review; [controlled projection and resource contract](WIDGETS.md), decisions 0023/0024 and original reds; final full02 and affected Main/Float qualification | Local family closed at recorded source/runtime; common product adoption and remaining cross-family native/consumer/performance exits retain their own scope |
-| Native adapter | Registered text ownership; typed error causes; stdio deadline/process lifetime | Remaining automation/context/capture and platform-service exported boundaries |
+| Native adapter | Complete 17-module/seven-group source/export/caller review; [input/capture/platform-service contract](NATIVE.md), decision 0025, original reds, final full02 and actual public offscreen capture for Main/Float | Local family closed at recorded source/runtime; product adoption and remaining renderer/consumer/resource programme exits retain their own scope |
 | Vulkan renderer | CPU preparation, scene admission, frame/retirement contracts; native recipe consumes async tickets | Capture/recovery/profile/resource lifetimes and actual public contract coverage |
 | Workspace model | Complete public family/caller review; one private field representation and invariant validator; checked atomic operations, version-1 recovery and narrow window updates; [contract](WORKSPACE.md) | Local model/caller qualification recorded below; immutable product API migration remains GF06 |
 | Workspace projection | Complete view/header/geometry/drag/resize/reveal/overlay review and current caller map; six original failures retained; [contract](DOCK.md) | Local family/software/native qualification recorded below; immutable product API migration remains GF06 |
