@@ -1,5 +1,9 @@
 # Vesta GPUI Standalone
 
+The bounded public-API CPU workloads and recorder-cost comparison are documented
+in [the performance procedure](../../docs/PERFORMANCE.md). They require no GUI
+or manual input and keep normal application entry points unchanged.
+
 ## Frame settlement probe
 
 From the SDK root, build the standard program, then select a new report path:

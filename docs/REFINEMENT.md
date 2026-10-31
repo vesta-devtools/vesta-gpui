@@ -23,13 +23,25 @@ exits, not estimated feature percentages or the number of tests.
 | GF02 — API and module reduction | Audit actual public surfaces against current documentation and callers; remove unjustified wrappers/exports, untangle mixed responsibilities, provide migrations for changed public contracts | In progress; text/ownership/composition, private fixture and API-authority changes qualified; remaining families open |
 | GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | In progress; Main/Float and native Agent CPU/deferral/controlled-budget contracts qualified at recorded inputs; Builder ordinary bridge qualified; Builder budget/fault and current joint integration remain open |
 | GF04 — Interaction and lifecycle | Close concrete existing input/text/IME/focus/popup/selection/resource gaps; make transport, cancellation, error and ownership limits explicit; preserve existing accepted scenarios | In progress; unavailable-window click history and shared-preview publication defects reproduced and qualified; remaining interaction/transport audit open |
-| GF05 — Performance and diagnostics | Reproducible static/resize/text/collection workloads, disabled/enabled trace cost, bounds/retention/idle checks; select and fix measured bottlenecks with comparable evidence | Open |
+| GF05 — Performance and diagnostics | Reproducible static/resize/text/collection workloads, disabled/enabled trace cost, bounds/retention/idle checks; select and fix measured bottlenecks with comparable evidence | In progress; four bounded CPU workloads and strict evidence verifier implemented; repeated cost comparison removes duplicate recorder checks; native/consumer/resource review remains open |
 | GF06 — Usability and delivery | Small reusable host recipe, capability-oriented docs, matching exports, clean feature checks and CI, exact SDK source identity and immutable Vesta consumer validation | Open |
 
 Each gate is split into concrete findings as its review runs. New findings must
 state source location, failure/redundancy, intended owner, minimal change and
 acceptance; additions to scope require a recorded reason. Gate completion does
 not erase earlier failed runs, waived scenarios or unsupported platform limits.
+
+## GF05 bounded CPU checkpoint
+
+[Decision 0013](decisions/0013-Reproducible-Cpu-Workload-And-Trace-Cost-Baseline.md)
+and [the performance procedure](PERFORMANCE.md) define the one benchmark owner,
+trace admission simplification, reproducible inputs and evidence limits. Six
+runs retain 6,912 CPU pipeline frames and 288 complete traces; work signatures,
+counts and event structure agree. The final full02 passed the existing 215
+contracts, benchmark smoke, strict/doc/tool/format checks and standard builds.
+The no-argument Cargo failure is preserved and corrected. This closes the
+headless workload/cost slice, not GF05: native/consumer shared capture ownership,
+resource review and current immutable joint adoption remain open.
 
 ## Baseline and initial findings
 

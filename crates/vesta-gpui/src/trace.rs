@@ -274,10 +274,6 @@ impl Session {
             invalid_nesting: state.invalid_nesting,
         }
     }
-    fn record(&self, category: &'static str, name: &'static str, kind: EventKind) -> Option<usize> {
-        self.record_entry(category, name, kind, false)
-    }
-
     fn record_entry(
         &self,
         category: &'static str,
@@ -355,6 +351,34 @@ fn active() -> Option<Arc<Session>> {
     Some(session.clone())
 }
 
+// Healthy entries check the deadline once, under the same lock that appends.
+// Keep ACTIVE -> state lock order and retire an expired owner before returning.
+fn record_active(
+    category: &'static str,
+    name: &'static str,
+    kind: EventKind,
+    is_frame: bool,
+    detailed: bool,
+) -> Option<(Arc<Session>, usize)> {
+    if !ENABLED.load(Ordering::Acquire) {
+        return None;
+    }
+    let mut active = lock(&ACTIVE);
+    let session = active.as_ref()?;
+    if detailed && session.detail != TraceDetail::Detailed {
+        return None;
+    }
+    if let Some(index) = session.record_entry(category, name, kind, is_frame) {
+        return Some((session.clone(), index));
+    }
+    if !session.is_live() {
+        ENABLED.store(false, Ordering::Release);
+        DETAILS_ENABLED.store(false, Ordering::Release);
+        *active = None;
+    }
+    None
+}
+
 /// True only while an explicitly started capture accepts new events.
 pub fn is_recording() -> bool {
     active().is_some()
@@ -370,17 +394,16 @@ pub struct TraceSpan {
 }
 
 pub fn span(category: &'static str, name: &'static str) -> TraceSpan {
-    let entry = active().and_then(|session| {
-        let index = session.record(
-            category,
-            name,
-            EventKind::Span {
-                end: None,
-                unfinished: false,
-            },
-        )?;
-        Some((session, index))
-    });
+    let entry = record_active(
+        category,
+        name,
+        EventKind::Span {
+            end: None,
+            unfinished: false,
+        },
+        false,
+        false,
+    );
     TraceSpan {
         entry,
         thread_bound: PhantomData,
@@ -393,19 +416,16 @@ pub(crate) fn detail_span(category: &'static str, name: &'static str) -> TraceSp
     if !DETAILS_ENABLED.load(Ordering::Acquire) {
         return TraceSpan::default();
     }
-    let entry = active()
-        .filter(|session| session.detail == TraceDetail::Detailed)
-        .and_then(|session| {
-            let index = session.record(
-                category,
-                name,
-                EventKind::Span {
-                    end: None,
-                    unfinished: false,
-                },
-            )?;
-            Some((session, index))
-        });
+    let entry = record_active(
+        category,
+        name,
+        EventKind::Span {
+            end: None,
+            unfinished: false,
+        },
+        false,
+        true,
+    );
     TraceSpan {
         entry,
         thread_bound: PhantomData,
@@ -416,18 +436,16 @@ pub(crate) fn detail_span(category: &'static str, name: &'static str) -> TraceSp
 /// shared GPUI calls automatically inherit this frame and their parent scope.
 /// Ending this guard does not assert GPU completion or physical presentation.
 pub fn frame(name: &'static str) -> TraceSpan {
-    let entry = active().and_then(|session| {
-        let index = session.record_entry(
-            "gpui.frame",
-            name,
-            EventKind::Span {
-                end: None,
-                unfinished: false,
-            },
-            true,
-        )?;
-        Some((session, index))
-    });
+    let entry = record_active(
+        "gpui.frame",
+        name,
+        EventKind::Span {
+            end: None,
+            unfinished: false,
+        },
+        true,
+        false,
+    );
     TraceSpan {
         entry,
         thread_bound: PhantomData,
@@ -478,16 +496,12 @@ impl Drop for TraceSpan {
 
 /// Thread-scoped marker, for example a host deciding to retry layout before render.
 pub fn instant(category: &'static str, name: &'static str) {
-    if let Some(session) = active() {
-        session.record(category, name, EventKind::Instant);
-    }
+    record_active(category, name, EventKind::Instant, false, false);
 }
 
 /// Finite numeric observation. No application strings or arbitrary JSON payloads.
 pub fn counter(category: &'static str, name: &'static str, value: f64) {
-    if let Some(session) = active() {
-        session.record(category, name, EventKind::Counter(value));
-    }
+    record_active(category, name, EventKind::Counter(value), false, false);
 }
 
 pub struct TraceSnapshot {
@@ -589,13 +603,14 @@ mod tests {
             }),
         });
         let index = session
-            .record(
+            .record_entry(
                 "host",
                 "late",
                 EventKind::Span {
                     end: None,
                     unfinished: false,
                 },
+                false,
             )
             .expect("scope recorded");
         let scope = TraceSpan {

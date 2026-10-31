@@ -32,7 +32,7 @@ jobs:
       - name: Source and tool contracts
         shell: pwsh
         run: |
-          node --test tools/sdk/gpui_source.test.mjs tools/verify/gpui_profile.test.mjs tools/verify/architecture.test.mjs
+          node --test tools/sdk/gpui_source.test.mjs tools/verify/gpui_profile.test.mjs tools/verify/architecture.test.mjs tools/verify/ui_workloads.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tools/sdk/gpui_source.mjs --verify .
           exit $LASTEXITCODE

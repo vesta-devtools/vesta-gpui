@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "51c07a0dbddd1991e929a12033fa2614efe05c5c4cfdbdf40245ce4134ea8238",
+  "tree_sha256": "3dcb771571a73f27af01d760b7dec945946075bd5d23a92cc1e4e53ea3332723",
   "files": [
     {
       "path": ".gitattributes",
@@ -15,8 +15,8 @@
     },
     {
       "path": ".github/workflows/checks.yml",
-      "bytes": 2227,
-      "sha256": "06ef380b9cd616ee3868ce7ab3a14940a998093cd26da1141ac255ee8bbc92ac"
+      "bytes": 2262,
+      "sha256": "f1c500403a312c138d688714d98ae61602cb96a296e940cf9f5d05e412fd4bdd"
     },
     {
       "path": ".gitignore",
@@ -50,13 +50,23 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/Cargo.toml",
-      "bytes": 930,
-      "sha256": "df90100b77a1e5b966ce355bddcdf585cc927375ab42286632f3a7cefec42550"
+      "bytes": 979,
+      "sha256": "611bb6680bcef4ef83055915903c1d3f4792261f1a1fc78ffdcdc1c478d501c0"
     },
     {
       "path": "apps/vesta-gpui-standalone/README.md",
-      "bytes": 27918,
-      "sha256": "d8081a6b50659013ff28e49a2394d4dd624667c1e39e76d9501275cda36a5db9"
+      "bytes": 28151,
+      "sha256": "cd127a11a84a03a717146f38e40fef505c7dd5f6376e8125eaea6b0acaa9316c"
+    },
+    {
+      "path": "apps/vesta-gpui-standalone/benches/ui_workloads.rs",
+      "bytes": 11612,
+      "sha256": "9bc3be79ae567ea980861e7ba832746f48f788cc4ab8af473751fd2146f01277"
+    },
+    {
+      "path": "apps/vesta-gpui-standalone/benches/ui_workloads/fixture.rs",
+      "bytes": 10531,
+      "sha256": "b1cf5e921adfe2519b295abecb771672c69139fa3ed539d7811e9b999b802850"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/application_chrome.rs",
@@ -1885,8 +1895,8 @@
     },
     {
       "path": "crates/vesta-gpui/src/trace.rs",
-      "bytes": 20944,
-      "sha256": "fed881ff1d402ffb269fbefd6b00c290baca2ae7929cc08e898f56e6fed0d93a"
+      "bytes": 21196,
+      "sha256": "0e779dd9951a77d314b4167113cc9231fc85116177e89f34c56de67ccd064b67"
     },
     {
       "path": "crates/vesta-gpui/src/trace/frames.rs",
@@ -2025,8 +2035,8 @@
     },
     {
       "path": "docs/ARCHITECTURE.md",
-      "bytes": 8509,
-      "sha256": "3e71d8050434dce31563d02e54fe79f1fe8dd32606477d0547aafebe49ba06fa"
+      "bytes": 8976,
+      "sha256": "61b73f0faf3ee4bae54f8c523efac14569ceee87cc44660c228dc2045d582d08"
     },
     {
       "path": "docs/MAINTENANCE.md",
@@ -2034,9 +2044,14 @@
       "sha256": "879d9e0c4432797961bb0632f92166ea6208d994d26f2597b0f0a3da3c734c1d"
     },
     {
+      "path": "docs/PERFORMANCE.md",
+      "bytes": 5518,
+      "sha256": "220899705be0d30ced2a08d900118ff0395bd7ab56814d4e95ea7a9da017a76f"
+    },
+    {
       "path": "docs/REFINEMENT.md",
-      "bytes": 25372,
-      "sha256": "e00a5a92e811c8b2c88f4cf01723a5de53e21482f685953e6565773a2fe6ab68"
+      "bytes": 26285,
+      "sha256": "75696f5f6805de25d99a90c7e2a943f17002f08239fd1c44e95e8fbc080770d5"
     },
     {
       "path": "docs/RELEASING.md",
@@ -2055,8 +2070,8 @@
     },
     {
       "path": "docs/VALIDATION.md",
-      "bytes": 12947,
-      "sha256": "050430259bb2d1375665f404269076a788552fd8320a84ae56252e2e9056a068"
+      "bytes": 13824,
+      "sha256": "7d41e453bc894864d774cc4787c9ced703f257774337d6a104b91fecd3133ae3"
     },
     {
       "path": "docs/decisions/0001-Headless-Preparation-And-Scene-Views.md",
@@ -2117,6 +2132,11 @@
       "path": "docs/decisions/0012-Public-Error-Interoperability.md",
       "bytes": 4439,
       "sha256": "9c18108f40a26198d8f5cb7ad3be3361d1d7ec7f5f244df012e9ff84286f1b80"
+    },
+    {
+      "path": "docs/decisions/0013-Reproducible-Cpu-Workload-And-Trace-Cost-Baseline.md",
+      "bytes": 4201,
+      "sha256": "b7887f242f6bc5ed85f9fae6e8531b576a54670c0a23bf36246f026afb8668a9"
     },
     {
       "path": "release/0.1.0-rc.1.md",
@@ -2197,6 +2217,16 @@
       "path": "tools/verify/gpui_profile/standalone.mjs",
       "bytes": 7930,
       "sha256": "5f1fd45e5c2016954f3542efb2bc3a0ae7036e63187ea19d09ffd401fa37b306"
+    },
+    {
+      "path": "tools/verify/ui_workloads.mjs",
+      "bytes": 12442,
+      "sha256": "5d5b635a09d432db13ff8aabe93a6da7ed0fb1496f75f45838fbe46ac78fb129"
+    },
+    {
+      "path": "tools/verify/ui_workloads.test.mjs",
+      "bytes": 7583,
+      "sha256": "bae2c885f7a365954e7656dbc2837b06abc72d9683fb7e11d1513b8075968525"
     }
   ]
 }

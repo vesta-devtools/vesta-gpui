@@ -118,6 +118,13 @@ become a shared frame scheduler or a second text/workspace implementation.
 
 ## Remaining audit
 
+The Standalone package also owns the headless CPU benchmark fixture. It consumes
+the real public pipeline without exporting fixture data or a scheduling API.
+[Performance evidence](PERFORMANCE.md) is checked by the tool-side verifier;
+recorded call analysis remains inside the existing recorder. The private recorder
+entry coordinator owns append-time admission, retaining one global capture and
+one session state; it adds no thread-local cache or generation model.
+
 The current API inventories contain historical notes. GF02 will reconcile them
 against actual exports; undocumented or redundant exports remain review items,
 not implicitly supported features. Reuse the existing text/layout/render engines

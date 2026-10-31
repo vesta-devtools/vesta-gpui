@@ -27,6 +27,18 @@ actually run successfully before it can be reported as passing.
 
 ## Refinement checkpoint — 2026-10-31
 
+The GF05 CPU slice adds four real public-API workloads and a strict evidence
+verifier. Six balanced repeated runs retain 6,912 pipeline frames / 288 complete
+traces with equal work and event structure, including disabled hook, bounds and
+idle/retirement checks. One private recorder entry coordinator removes duplicate
+session/deadline checks. Full02 passed 215 contracts / 33 harnesses, the bounded
+benchmark smoke, documentation, all-feature/base strict checks, six Node tool
+contracts, format and both standard builds without input drift. Full01's Cargo
+no-argument benchmark failure remains recorded and is fixed. Raw local receipts
+are in `target/research/ui-workloads-20261031`; [the procedure](PERFORMANCE.md)
+states the shared-machine variance and partial timing scope. This supplies no
+new native, physical, GPU/display, remote CI or consumer-adoption qualification.
+
 The bounded-exit checkpoint makes CPU-input readiness explicit per window and
 keeps presented-query freshness separate. Native 24240 demonstrated that a
 controlled budget exit still admitted input/Focus and retained capture. Final

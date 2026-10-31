@@ -7,6 +7,10 @@ license.workspace = true
 publish.workspace = true
 description = "Standalone winit/native Vulkan acceptance host for the reusable Vesta GPUI stack"
 
+[[bench]]
+name = "ui_workloads"
+harness = false
+
 [features]
 gpu-fault-injection = ["vesta-gpui-vulkan/fault-injection"]
 
