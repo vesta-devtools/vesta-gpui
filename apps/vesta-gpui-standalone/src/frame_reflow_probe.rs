@@ -105,15 +105,28 @@ pub(super) fn recording() -> Result<Option<vesta_gpui_winit::UiTraceRecording>, 
         .filter_map(|arg| arg.strip_prefix(PREFIX))
         .collect::<Vec<_>>();
     if paths.is_empty() {
-        if args
-            .iter()
-            .any(|arg| arg == "--probe-frame-reflow" || arg.starts_with("--probe-frame-case"))
-        {
+        if args.iter().any(|arg| {
+            arg == "--probe-frame-reflow"
+                || arg.starts_with("--probe-frame-case")
+                || arg.starts_with("--probe-frame-retry-once")
+        }) {
             return Err("frame_reflow_probe_requires_new_html_path".into());
         }
         return Ok(None);
     }
-    Case::from_arguments(&args)?;
+    let case = Case::from_arguments(&args)?;
+    let retry_flags = args
+        .iter()
+        .filter(|arg| arg.starts_with("--probe-frame-retry-once"))
+        .collect::<Vec<_>>();
+    if !retry_flags.is_empty()
+        && (!cfg!(feature = "gpu-fault-injection")
+            || case != Case::Inputs
+            || retry_flags.len() != 1
+            || retry_flags[0].as_str() != "--probe-frame-retry-once")
+    {
+        return Err("frame_reflow_invalid_retry_probe".into());
+    }
     if paths.len() != 1
         || paths[0].is_empty()
         || PathBuf::from(paths[0])
@@ -145,6 +158,8 @@ pub(super) struct Probe {
     step: usize,
     warm: usize,
     recover_after: Option<vesta_gpui::UiSnapshotId>,
+    #[cfg(feature = "gpu-fault-injection")]
+    retry_injected: bool,
     started: Instant,
     pub(super) completed: bool,
 }
@@ -191,7 +206,7 @@ impl App {
             }
             .into(),
             PanelTypeId::new(case.panel_type()),
-        );
+        )?;
         let pane = self
             .demo
             .workspace
@@ -227,6 +242,8 @@ impl App {
             step: 0,
             warm: 8,
             recover_after: None,
+            #[cfg(feature = "gpu-fault-injection")]
+            retry_injected: false,
             started: Instant::now(),
             completed: false,
         });
@@ -444,7 +461,7 @@ impl Probe {
             }
         }
         {
-            let _step = vesta_gpui::trace::span("fixture", "reflow.step");
+            let step_trace = vesta_gpui::trace::span("fixture", "reflow.attempt");
             let owner = if source == 0 {
                 STANDALONE_WINDOW
             } else {
@@ -513,7 +530,10 @@ impl Probe {
                 None
             };
             #[cfg(feature = "gpu-fault-injection")]
-            if self.case == Case::Deferred {
+            if self.case == Case::Deferred
+                || (!self.retry_injected
+                    && std::env::args().any(|arg| arg == "--probe-frame-retry-once"))
+            {
                 let gpu = if source == 0 {
                     app.gpu.as_mut()
                 } else {
@@ -525,6 +545,10 @@ impl Probe {
                 gpu.capture_renderer()
                     .map_err(|e| format!("frame_reflow_deferred_renderer: {e:?}"))?
                     .inject_acquire_faults();
+                if self.case != Case::Deferred {
+                    self.retry_injected = true;
+                    vesta_gpui::trace::instant("fixture", "reflow.retry_once_injected");
+                }
             }
             if source == 0 {
                 app.redraw();
@@ -739,6 +763,15 @@ impl Probe {
                 }
                 self.recover_after = before_presented;
             }
+            if !self.case.is_budget()
+                && self.case != Case::Deferred
+                && app.ui_query.next(owner) == before_presented
+            {
+                vesta_gpui::trace::instant("fixture", "reflow.await_submission");
+                self.warm = 4;
+                return Ok(false);
+            }
+            step_trace.finish_with_name("reflow.step");
         }
         self.step += 1;
         self.warm = 4;

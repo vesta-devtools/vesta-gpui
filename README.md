@@ -72,6 +72,7 @@ Start with [structured UI access](docs/AGENT-ACCESS.md) and the API inventories:
 - [Widgets](crates/vesta-gpui-widgets/SUPPORTED-API.md)
 - [Native renderer and integration](crates/vesta-gpui-vulkan/SUPPORTED-API.md)
 - [Optional native WebView lifecycle and resources](docs/WEBVIEW.md)
+- [Workspace model, operations and versioned recovery](docs/WORKSPACE.md)
 
 ## Maintain and release
 

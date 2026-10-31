@@ -31,9 +31,9 @@ state source location, failure/redundancy, intended owner, minimal change and
 acceptance; additions to scope require a recorded reason. Gate completion does
 not erase earlier failed runs, waived scenarios or unsupported platform limits.
 
-## Remaining public-family reviews
+## Public-family review ledger
 
-These are the finite remaining GF02 family reviews, not new feature promises or
+These are the finite GF02 family reviews, not new feature promises or
 a second export registry. For each row, map actual current exports/modules to
 the capability contract and real callers, document ownership/failure limits,
 and resolve demonstrated duplication. An absent product caller alone does not
@@ -46,7 +46,7 @@ its existing gate and evidence, rather than expanding a widget catalogue.
 | Widgets | Existing controlled widget contracts, temporary-editor/tree/suggestion and cancellation evidence | Remaining gallery composition and controlled editing/collection/popup public state boundaries |
 | Native adapter | Registered text ownership; typed error causes; stdio deadline/process lifetime | Remaining automation/context/capture and platform-service exported boundaries |
 | Vulkan renderer | CPU preparation, scene admission, frame/retirement contracts; native recipe consumes async tickets | Capture/recovery/profile/resource lifetimes and actual public contract coverage |
-| Workspace model | Stable model authority and legacy qualified/waived scope | Current serialized model/error/session exports and caller responsibilities |
+| Workspace model | Complete public family/caller review; one private field representation and invariant validator; checked atomic operations, version-1 recovery and narrow window updates; [contract](WORKSPACE.md) | Local model/caller qualification recorded below; immutable product API migration remains GF06 |
 | Workspace projection | Dependency/authority boundary and original Dock contracts | Public gesture/view geometry ownership against the current model/callers |
 | WebView | Complete public surface and existing Agent/Builder callers reviewed; redundant mutable identity removed, partial native sync and real temporary-profile leak fixed; [contract and migration](WEBVIEW.md) | Local API/resource qualification recorded below; immutable product migration remains GF06, not a second family audit |
 | Viewport | Neutral dependency boundary and private demo-fixture removal | Public display/render/lighting ownership and optional renderer-facing contract coverage |
@@ -82,14 +82,48 @@ actual page/origin/reload/storage stages, normal exit and profile retirement:
 two SDK temporary roots disappeared, the Host application root remained, and
 sampled child identities exited. Source/artifact identities and subsequent
 whole-SDK checks live in the product handoff. This closes this family's local
-review, not universal browser support, GF04 as a whole or GF06 adoption. The
-other seven family reviews remain open. Final full02 passed 220 contracts / 36
+review, not universal browser support, GF04 as a whole or GF06 adoption. At that
+checkpoint the other seven reviews remained open. Final full02 passed 220 contracts / 36
 harnesses plus CPU smoke, doc/strict/tool/format checks and three ordinary builds.
 Final native04 (`2d82cfd9…`, PID 9768) repeated the finite fixture on those frozen
 runtime inputs with twenty observed descendants, two removed temporary roots
 and retained Host storage. Thirteen report/corruption checks reject incomplete
 evidence. Full01 fixture-style failure and the unobserved native01 profile
 identities remain documented; no historical qualification is rewritten.
+
+## GF02 / GF04 workspace model checkpoint
+
+[Decision 0017](decisions/0017-Workspace-Invariants-And-Mutation-Authority.md)
+reviews the full model, value, error and session surface against Standalone and
+the published-pin Agent/Builder consumers. Three actual runtime reds and two
+successful forbidden compilations are retained. Live state and untrusted
+versioned snapshots now share one private field definition and one invariant
+validator. Raw live-model deserialization and mutable floating topology are
+removed; rejected operations retain allocator cursors as well as content.
+Same-pane pre-move order, all four exhausted cursor kinds, empty-main identity
+reuse and fixed v1 wire compatibility are qualified. Ratio normalization lives
+with value types rather than reversing their dependency on the mutable model.
+
+Final full06 passed 223 contracts / 36 harnesses, two compile-fail docs, CPU
+smoke, strict/tool/format checks and ordinary builds. The first native run
+exposed an additional existing probe defect: Main step zero was counted despite
+readiness deferral and no submission. That exit0 run remains rejected.
+[Decision 0018](decisions/0018-Frame-Probe-Submission-Admission.md) admits normal
+steps from the existing published snapshot stamp, retaining deferred attempts
+and requiring the next qualified step to keep its logical identity. Native02
+injected once through the existing renderer hook: one unsubmitted attempt then
+64 successful Main and 64 successful Float submissions. The ordinary build was
+restored and native03 independently completed all 128 successful submissions.
+Both exited normally; no native child identities remained. Two CLI negatives
+prove the feature/report guard returns before creating a native window.
+
+The final report-only consistency tightening is independently qualified by
+13 actual-report/corruption checks, including the original native rejection;
+Rust inputs remain identical to full06. The product handoff binds current
+ordinary artifacts and native processes; no physical input, user assistance,
+remote CI or product adoption is inferred. The model family is locally closed;
+the projection family and five other family reviews remain open, as do the
+remaining GF03–GF06 programme exits.
 
 ## GF05 bounded CPU checkpoint
 

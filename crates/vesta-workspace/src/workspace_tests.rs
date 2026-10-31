@@ -40,6 +40,233 @@ fn add(mut workspace: WorkspaceModel, pane: PaneId, title: &str) -> (WorkspaceMo
 }
 
 #[test]
+fn same_pane_merge_preserves_the_requested_pre_move_insertion_slot() {
+    for (source, slot, expected) in [
+        (2, 1, [0, 2, 1, 3]),
+        (3, 2, [0, 1, 3, 2]),
+        (1, 3, [0, 2, 1, 3]),
+        (0, 4, [1, 2, 3, 0]),
+        (2, 2, [0, 1, 2, 3]),
+        (3, 0, [3, 0, 1, 2]),
+    ] {
+        let pane = PaneId(1);
+        let mut model = WorkspaceModel::with_tree(WorkspaceNode::leaf(pane), [Pane::new(pane)])
+            .expect("initial tree");
+        let ids = (0..4)
+            .map(|i| {
+                model
+                    .add_item(pane, i.to_string(), PanelTypeId::new("test"))
+                    .expect("add tab")
+            })
+            .collect::<Vec<_>>();
+        model
+            .dock_item(ids[source], DockAction::Merge { pane, slot })
+            .expect("merge at pre-move slot");
+        assert_eq!(
+            model
+                .pane(pane)
+                .expect("live pane")
+                .items
+                .iter()
+                .map(|i| i.id)
+                .collect::<Vec<_>>(),
+            expected.map(|i| ids[i]),
+            "source={source} slot={slot}"
+        );
+        let restored = WorkspaceSession::from_json(
+            &WorkspaceSession::capture(&model)
+                .expect("capture ordered model")
+                .to_json()
+                .expect("encode ordered session"),
+        )
+        .expect("decode ordered envelope")
+        .restore(|_| true)
+        .expect("restore ordered model");
+        assert_eq!(restored.workspace, model);
+    }
+}
+
+#[test]
+fn constructors_and_rejected_mutations_preserve_the_session_invariants() {
+    let mut model = three_pane_workspace();
+    let before = model.clone();
+    assert!(
+        model
+            .add_item(PaneId(999), "missing", PanelTypeId::new("test"))
+            .is_err()
+    );
+    assert_eq!(model, before, "rejected add must not consume an identity");
+    let item = model.active_item().expect("seeded active item").id;
+    assert!(
+        model
+            .dock_item(
+                item,
+                DockAction::Float {
+                    placement: WindowPlacement::new(0.0, 0.0, -1.0, 200.0)
+                }
+            )
+            .is_err(),
+        "invalid placement cannot enter the live model"
+    );
+    assert_eq!(model, before);
+    assert_eq!(
+        model.set_item_type(ItemId(999), PanelTypeId::new("test"), "missing"),
+        Err(WorkspaceError::MissingItem(ItemId(999)))
+    );
+    assert_eq!(model, before);
+    model
+        .dock_item(
+            item,
+            DockAction::Float {
+                placement: WindowPlacement::new(-100.0, 20.0, 300.0, 200.0),
+            },
+        )
+        .expect("valid floating window");
+    let floating = model.floating_windows()[0].id;
+    let floated = model.clone();
+    for placement in [
+        WindowPlacement::new(0.0, 0.0, 0.0, 20.0),
+        WindowPlacement::new(f32::MAX, 0.0, f32::MAX, 20.0),
+    ] {
+        assert_eq!(
+            model.set_floating_placement(floating, placement),
+            Err(WorkspaceError::InvalidWindowPlacement(floating))
+        );
+        assert_eq!(
+            model, floated,
+            "invalid native placement cannot corrupt persisted state"
+        );
+    }
+    model
+        .set_floating_title(floating, "Renamed")
+        .expect("known window");
+    WorkspaceSession::capture(&model).expect("narrow updates retain invariants");
+    let repeated = WorkspaceNode::split(
+        SplitId(1),
+        SplitAxis::Row,
+        0.5,
+        WorkspaceNode::leaf(PaneId(1)),
+        WorkspaceNode::leaf(PaneId(1)),
+    );
+    assert!(
+        WorkspaceModel::with_tree(repeated, [Pane::new(PaneId(1))]).is_err(),
+        "constructor must reject repeated tree ownership"
+    );
+    assert!(
+        WorkspaceModel::with_tree(
+            WorkspaceNode::leaf(PaneId(1)),
+            [Pane::new(PaneId(1)), Pane::new(PaneId(2))]
+        )
+        .is_err(),
+        "constructor must reject an orphan pane"
+    );
+    let mut inactive = Pane::new(PaneId(1));
+    inactive.items.push(WorkspaceItem {
+        id: ItemId(1),
+        title: "inactive".into(),
+        panel_type: PanelTypeId::new("test"),
+    });
+    assert!(
+        WorkspaceModel::with_tree(WorkspaceNode::leaf(PaneId(1)), [inactive]).is_err(),
+        "nonempty pane needs a valid active item"
+    );
+}
+
+#[test]
+fn exhausted_allocators_reject_compound_changes_without_losing_items() {
+    let initial = three_pane_workspace();
+    let json = WorkspaceSession::capture(&initial)
+        .expect("capture seeded model")
+        .to_json()
+        .expect("encode seeded session");
+    for kind in ["item", "pane", "split", "window"] {
+        let mut value: serde_json::Value = serde_json::from_str(&json).expect("seed envelope");
+        value["workspace"][format!("next_{kind}_id")] = u64::MAX.into();
+        let mut model = WorkspaceSession::from_json(&value.to_string())
+            .expect("decode exhausted envelope")
+            .restore(|_| true)
+            .expect("restore valid terminal cursor")
+            .workspace;
+        let before = model.clone();
+        let item = model.active_item().expect("seeded active item").id;
+        let rejected = match kind {
+            "item" => model
+                .add_item(PaneId(1), "exhausted", PanelTypeId::new("test"))
+                .map(|_| ()),
+            "pane" | "split" => model.dock_item(
+                item,
+                DockAction::Split {
+                    pane: PaneId(1),
+                    side: Side::Left,
+                },
+            ),
+            "window" => model.dock_item(
+                item,
+                DockAction::Float {
+                    placement: WindowPlacement::new(0.0, 0.0, 300.0, 200.0),
+                },
+            ),
+            _ => unreachable!(),
+        };
+        assert_eq!(rejected, Err(WorkspaceError::IdentityExhausted(kind)));
+        assert_eq!(
+            model, before,
+            "failed compound change must retain {kind} identities"
+        );
+        WorkspaceSession::capture(&model).expect("failed change preserves session invariants");
+        assert_eq!(
+            model.spawn_floating_window(
+                "exhausted".into(),
+                WindowPlacement::new(0.0, 0.0, 300.0, 200.0),
+                "new".into(),
+                PanelTypeId::new("test")
+            ),
+            if kind == "split" {
+                Ok(FloatingWindowId(1))
+            } else {
+                Err(WorkspaceError::IdentityExhausted(kind))
+            }
+        );
+        if kind != "split" {
+            assert_eq!(model, before);
+        }
+        if kind == "pane" {
+            let mut empty = WorkspaceModel::with_tree(
+                initial.root().clone(),
+                [
+                    Pane::new(PaneId(1)),
+                    Pane::new(PaneId(2)),
+                    Pane::new(PaneId(3)),
+                ],
+            )
+            .expect("empty tree");
+            let only = empty
+                .add_item(PaneId(3), "last", PanelTypeId::new("test"))
+                .expect("only tab");
+            let mut snapshot = serde_json::to_value(
+                WorkspaceSession::capture(&empty).expect("capture empty tree"),
+            )
+            .expect("snapshot value");
+            snapshot["workspace"]["next_pane_id"] = u64::MAX.into();
+            let mut empty = WorkspaceSession::from_json(&snapshot.to_string())
+                .expect("decode terminal cursor")
+                .restore(|_| true)
+                .expect("restore terminal cursor")
+                .workspace;
+            empty
+                .close_item(only)
+                .expect("close requires no new identity");
+            assert_eq!(
+                empty.root().panes(),
+                vec![PaneId(1)],
+                "retain an existing empty main pane"
+            );
+            WorkspaceSession::capture(&empty).expect("terminal pane allocator survives close");
+        }
+    }
+}
+
+#[test]
 fn with_tree_rejects_duplicate_and_missing_identity() {
     let panes = vec![Pane::new(PaneId(1)), Pane::new(PaneId(1))];
     assert!(matches!(
@@ -62,6 +289,7 @@ fn with_tree_resumes_item_ids_after_pre_seeded_items() {
         title: "Seeded".to_owned(),
         panel_type: PanelTypeId::new("test"),
     });
+    pane.active = Some(ItemId(42));
     let mut workspace =
         WorkspaceModel::with_tree(WorkspaceNode::leaf(PaneId(1)), [pane]).expect("valid tree");
     let fresh = workspace
@@ -79,12 +307,14 @@ fn with_tree_rejects_duplicate_item_ids() {
         title: "A".to_owned(),
         panel_type: PanelTypeId::new("test"),
     });
+    first.active = Some(ItemId(7));
     let mut second = Pane::new(PaneId(2));
     second.items.push(WorkspaceItem {
         id: ItemId(7),
         title: "B".to_owned(),
         panel_type: PanelTypeId::new("test"),
     });
+    second.active = Some(ItemId(7));
     let root = WorkspaceNode::split(
         SplitId(1),
         SplitAxis::Row,
@@ -328,6 +558,21 @@ fn native_window_close_restores_items_without_changing_identity_or_order() {
 
 #[test]
 fn versioned_session_round_trips_dock_identity_and_reports_missing_panels() {
+    // A fixed v1 wire sample protects the schema independently of today's writer.
+    let v1 = include_str!("../tests/fixtures/session_v1.json");
+    let legacy = WorkspaceSession::from_json(v1)
+        .expect("decode fixed v1 sample")
+        .restore(|_| true)
+        .expect("restore v1 sample")
+        .workspace;
+    let current = WorkspaceSession::capture(&legacy)
+        .expect("capture restored v1")
+        .to_json()
+        .expect("encode v1");
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&current).expect("current JSON"),
+        serde_json::from_str::<serde_json::Value>(v1).expect("v1 JSON")
+    );
     let mut workspace = three_pane_workspace();
     let item = workspace.pane(PaneId(2)).expect("details").items[0].id;
     workspace
@@ -338,7 +583,9 @@ fn versioned_session_round_trips_dock_identity_and_reports_missing_panels() {
             },
         )
         .expect("float details");
-    workspace.set_item_type(item, PanelTypeId::new("missing.inspector"), "Inspector");
+    workspace
+        .set_item_type(item, PanelTypeId::new("missing.inspector"), "Inspector")
+        .expect("known item");
     let json = WorkspaceSession::capture(&workspace)
         .expect("capture valid layout")
         .to_json()
@@ -375,9 +622,14 @@ fn session_restore_rejects_stale_identity_and_unsupported_schema() {
     let mut value: serde_json::Value = serde_json::from_str(&json).expect("JSON");
     value["workspace"]["next_item_id"] = 1.into();
     let session = WorkspaceSession::from_json(&value.to_string()).expect("decode envelope");
+    let error = session.restore(|_| true).expect_err("stale allocator");
     assert_eq!(
-        session.restore(|_| true),
-        Err(WorkspaceSessionError::InvalidAllocator("item"))
+        error,
+        WorkspaceSessionError::InvalidWorkspace(WorkspaceError::InvalidAllocator("item"))
+    );
+    assert_eq!(
+        std::error::Error::source(&error).and_then(|cause| cause.downcast_ref::<WorkspaceError>()),
+        Some(&WorkspaceError::InvalidAllocator("item"))
     );
 
     value["version"] = 99.into();
@@ -393,7 +645,9 @@ fn session_restore_rejects_stale_identity_and_unsupported_schema() {
     let session = WorkspaceSession::from_json(&duplicate_leaf.to_string()).expect("decode");
     assert_eq!(
         session.restore(|_| true),
-        Err(WorkspaceSessionError::RepeatedPane(PaneId(1)))
+        Err(WorkspaceSessionError::InvalidWorkspace(
+            WorkspaceError::DuplicatePane(PaneId(1))
+        ))
     );
 }
 

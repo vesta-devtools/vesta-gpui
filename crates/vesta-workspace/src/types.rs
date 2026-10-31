@@ -5,7 +5,6 @@
 
 #![forbid(unsafe_code)]
 
-use crate::model::sanitize_ratio;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
@@ -94,7 +93,7 @@ pub enum WorkspaceNode {
     Split {
         id: SplitId,
         axis: SplitAxis,
-        /// Fraction of the container taken by `first` in its main axis, clamped to `(0, 1)`.
+        /// Fraction taken by `first`, admitted in `0.05..=0.95`.
         ratio: f32,
         first: Box<WorkspaceNode>,
         second: Box<WorkspaceNode>,
@@ -158,7 +157,7 @@ impl WindowPlacement {
     }
 }
 
-/// A floating OS window that owns its own workspace tree.
+/// A logical floating container; the Host maps it to a native window or overlay.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FloatingWindow {
     pub id: FloatingWindowId,
@@ -194,4 +193,14 @@ pub enum DockAction {
     WindowSplit { container: ContainerRef, side: Side },
     /// Detach the item into a new floating window at the given placement.
     Float { placement: WindowPlacement },
+}
+
+/// One value rule shared by construction and model resizing. Values do not
+/// depend on the mutable model module merely to normalize a ratio.
+pub(crate) fn sanitize_ratio(value: f32, fallback: f32) -> f32 {
+    if value.is_finite() {
+        value.clamp(0.05, 0.95)
+    } else {
+        fallback
+    }
 }

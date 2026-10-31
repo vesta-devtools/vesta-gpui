@@ -95,6 +95,12 @@ and target-specific paths; native support is still Windows-preview scope.
 
 ## Public API admission
 
+The [workspace model](WORKSPACE.md) has one private field representation and one
+invariant validator. Construction and versioned restore create validated live
+owners; a session only holds an untrusted snapshot until restore. Native Hosts
+use narrow placement/title operations instead of mutating topology through a
+floating-window reference. ID capacity is checked before compound changes.
+
 The [family boundary](SUPPORTED-API.md) owns the package support matrix and common
 migration policy. Core, Widgets and renderer inventories own their detailed
 contracts; the renderer does not define another package's support policy.

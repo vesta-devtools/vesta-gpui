@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "workspace": {
+    "root": {"Leaf": 1},
+    "panes": {
+      "1": {"id": 1, "items": [{"id": 1, "title": "Main", "panel_type": "test.main"}], "active": 1},
+      "2": {"id": 2, "items": [{"id": 2, "title": "开发", "panel_type": "future.preview"}], "active": 2}
+    },
+    "floating": [{"id": 1, "title": "Detached", "placement": {"x": -100.0, "y": 20.0, "width": 300.0, "height": 200.0}, "root": {"Leaf": 2}}],
+    "active_pane": 2,
+    "next_item_id": 3,
+    "next_pane_id": 3,
+    "next_split_id": 1,
+    "next_window_id": 2
+  }
+}

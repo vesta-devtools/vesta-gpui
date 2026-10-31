@@ -420,10 +420,12 @@ impl App {
     }
 
     pub(super) fn cancel_floating_move(&mut self) {
-        if let Some(drag) = self.floating_move.take()
-            && let Some(window) = self.demo.workspace.floating_window_mut(drag.window)
-        {
-            window.placement = drag.placement;
+        if let Some(drag) = self.floating_move.take() {
+            // A retired logical window is not recreated by gesture rollback.
+            let _ = self
+                .demo
+                .workspace
+                .set_floating_placement(drag.window, drag.placement);
         }
     }
 
@@ -431,11 +433,17 @@ impl App {
         let (Some(drag), Some(workspace)) = (self.floating_move, self.workspace_rect) else {
             return;
         };
-        if let Some(window) = self.demo.workspace.floating_window_mut(drag.window) {
-            window.placement.x = (drag.placement.x + self.cursor.x - drag.origin.x)
-                .clamp(0.0, (workspace.width - drag.placement.width).max(0.0));
-            window.placement.y = (drag.placement.y + self.cursor.y - drag.origin.y)
-                .clamp(0.0, (workspace.height - drag.placement.height).max(0.0));
+        let mut placement = drag.placement;
+        placement.x = (drag.placement.x + self.cursor.x - drag.origin.x)
+            .clamp(0.0, (workspace.width - drag.placement.width).max(0.0));
+        placement.y = (drag.placement.y + self.cursor.y - drag.origin.y)
+            .clamp(0.0, (workspace.height - drag.placement.height).max(0.0));
+        if self
+            .demo
+            .workspace
+            .set_floating_placement(drag.window, placement)
+            .is_ok()
+        {
             self.request_redraw();
         }
     }

@@ -26,6 +26,13 @@ entries, preserves its draft, closes normally and retires GPU owners. It perform
 no OS input, preference restore/save or user-workspace persistence. It cannot be
 combined with ordinary smoke, UI stdio, native-input or another trace recording.
 
+Ordinary accepted steps require a new published presentation. Deferred draws
+retain `reflow.attempt` spans and retry the same logical index; the verifier
+checks and reports them alongside the 128 successful steps. With the existing
+`gpu-fault-injection` feature, `--probe-frame-retry-once` (inputs case only)
+injects an acquire deferral once to qualify this retry path. Restore the ordinary
+standard build after that isolated feature run.
+
 With `--features gpu-fault-injection`, `--probe-frame-case=deferred` uses the
 existing finite acquire failures at each split step. It requires current text
 and hit bounds to agree while no new presented snapshot is published, then

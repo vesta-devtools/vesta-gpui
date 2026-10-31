@@ -175,10 +175,18 @@ impl Probe {
                     let logical = size.to_logical::<f32>(host.window.scale_factor());
                     let expected = pending
                         .workspace
-                        .floating_window_mut(host.logical_id)
+                        .floating_window(host.logical_id)
                         .ok_or("native_scrollbar_geometry_model: floating placement missing")?;
-                    expected.placement.width = logical.width;
-                    expected.placement.height = logical.height;
+                    let placement = WindowPlacement::new(
+                        expected.placement.x,
+                        expected.placement.y,
+                        logical.width,
+                        logical.height,
+                    );
+                    pending
+                        .workspace
+                        .set_floating_placement(host.logical_id, placement)
+                        .map_err(|error| format!("native_scrollbar_geometry_model: {error}"))?;
                     let _ = host.window.request_inner_size(size);
                     eprintln!(
                         "native_scrollbar_cancel_fixture resize_requested window={} sequence={} physical={size:?} fixture_cancel=false fixture_input=false",

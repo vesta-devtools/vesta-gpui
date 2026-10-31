@@ -29,9 +29,8 @@ pub(super) fn minimized_events_preserve_restore_placement() {
             native_window::placement_from_native_event(current, &event, 1.25, true)
         {
             model
-                .floating_window_mut(floating)
-                .expect("window")
-                .placement = placement;
+                .set_floating_placement(floating, placement)
+                .expect("window");
         }
     }
     assert_eq!(
@@ -48,9 +47,8 @@ pub(super) fn minimized_events_preserve_restore_placement() {
     )
     .expect("normal move");
     model
-        .floating_window_mut(floating)
-        .expect("window")
-        .placement = moved;
+        .set_floating_placement(floating, moved)
+        .expect("window");
     assert_eq!(
         model.floating_window(floating).expect("window").placement,
         WindowPlacement::new(-1200.0, 240.0, original.width, original.height)
@@ -63,9 +61,8 @@ pub(super) fn minimized_events_preserve_restore_placement() {
     )
     .expect("normal resize");
     model
-        .floating_window_mut(floating)
-        .expect("window")
-        .placement = resized;
+        .set_floating_placement(floating, resized)
+        .expect("window");
     assert_eq!(
         model.floating_window(floating).expect("window").placement,
         WindowPlacement::new(moved.x, moved.y, 600.0, 400.0)

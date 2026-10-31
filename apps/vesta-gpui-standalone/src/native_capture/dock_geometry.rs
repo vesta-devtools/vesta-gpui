@@ -137,9 +137,8 @@ impl Probe {
                 )
                 .ok_or("native_dock_geometry_ordinary_placement_missing")?;
                 expected
-                    .floating_window_mut(pending.destination)
-                    .ok_or("native_dock_geometry_expected_window_missing")?
-                    .placement = placement;
+                    .set_floating_placement(pending.destination, placement)
+                    .map_err(|error| format!("native_dock_geometry_expected_placement: {error}"))?;
                 eprintln!(
                     "native_dock_geometry moved source={} target={} sequence={} actual={actual:?} placement={placement:?} source_moves={} source_blurred={} target_admitted={} cached_preview={} model_matches_expected={} fixture_cancel=false fixture_reroute=false",
                     pending.source.0,

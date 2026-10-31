@@ -24,6 +24,30 @@ assert.equal(steps.length, 128, 'all Main and Float forward/reverse steps requir
 const results = [{window: 'Main', steps: 0, renderer: 0, submitted: 0, max_passes: 0},
   {window: 'Float', steps: 0, renderer: 0, submitted: 0, max_passes: 0}];
 const failures = [];
+const attempts = data.traceEvents.filter(e => e.name === 'reflow.attempt');
+const retryOnceInjections = data.traceEvents.filter(e => e.name === 'reflow.retry_once_injected').length;
+assert.ok(retryOnceInjections <= 1 && (!retryOnceInjections || attempts.length > 0), 'one-shot injection requires its retained deferred attempt');
+for (const attempt of attempts) {
+  const within = event => event.ts >= attempt.ts && event.ts <= attempt.ts + attempt.dur + .01;
+  const counters = data.traceEvents.filter(e => e.ph === 'C' && within(e));
+  const value = name => counters.find(e => e.name === name)?.args?.value;
+  const source = value('reflow.source'), index = value('reflow.index'), content = value('reflow.case');
+  assert.ok([0, 1].includes(source) && Number.isInteger(index) && index >= 0 && index < 64 && [0, 1, 2].includes(content), 'ordinary deferred attempt identity required');
+  assert.equal(data.traceEvents.filter(e => e.name === 'reflow.await_submission' && within(e)).length, 1, 'deferred attempt must remain explicit');
+  const frames = data.gpui_frames.filter(f => f.start_us >= attempt.ts && f.start_us + f.duration_us <= attempt.ts + attempt.dur + .01);
+  assert.equal(frames.length, 1, 'one CPU draw per deferred attempt');
+  assert.equal(frames[0].calls.filter(c => c.name === 'renderer.attempt').length, 1, 'defer after a renderer attempt');
+  const passes = frames[0].calls.filter(c => c.name === 'layout.pass').length;
+  assert.ok(passes >= 1 && passes <= 8, 'deferred attempt still needs complete bounded CPU preparation');
+  assert.ok(!frames[0].markers.some(m => m.name === 'present.submitted'), 'a submitted frame must not be hidden as a deferred attempt');
+  const next = steps.find(step => step.ts > attempt.ts + attempt.dur);
+  assert.ok(next, 'deferred attempt needs a later accepted step');
+  const own = data.traceEvents.filter(e => e.ph === 'C' && e.ts >= next.ts && e.ts <= next.ts + next.dur + .01);
+  assert.deepEqual([own.find(e => e.name === 'reflow.source')?.args?.value,
+    own.find(e => e.name === 'reflow.index')?.args?.value,
+    own.find(e => e.name === 'reflow.case')?.args?.value], [source, index, content],
+  'the next accepted step must retain the deferred logical identity');
+}
 const cases = new Set();
 let cpuReadinessSamples = 0;
 let cursorSamples = 0;
@@ -91,6 +115,8 @@ assert.ok(cursorSamples === 0 || cursorSamples === 128, 'cursor observations mus
 const budget_skips = data.traceEvents.filter(e => e.name === 'frame.skipped.layout_budget').length;
 const result = {status: failures.length || (budget_skips && !cases.has(4) && !cases.has(5)) ? 'failed' : 'passed', windows: results,
   native_pid: nativePid,
+  deferred_attempts: attempts.length,
+  retry_once_injections: retryOnceInjections,
   case: ['inputs', 'documents', 'focus', 'deferred', 'budget', 'cancellation'][[...cases][0]],
   failures, budget_skips, cpu_input_readiness_observed: cpuReadinessSamples === 128,
   cursor_cache_observed: cursorSamples === 128,

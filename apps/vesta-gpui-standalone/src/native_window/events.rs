@@ -907,9 +907,12 @@ impl App {
             && placement.height.is_finite()
             && placement.width >= 1.0
             && placement.height >= 1.0
-            && let Some(window) = self.demo.workspace.floating_window_mut(logical_id)
         {
-            window.placement = placement;
+            // Late native events for a retired logical window are ignored.
+            let _ = self
+                .demo
+                .workspace
+                .set_floating_placement(logical_id, placement);
         }
         if restore {
             self.restore_native_window(window_id);
