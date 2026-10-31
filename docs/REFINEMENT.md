@@ -22,7 +22,7 @@ exits, not estimated feature percentages or the number of tests.
 | GF01 — Architecture authority | Current eight-library graph, state/lifecycle ownership map, resolved dependency boundary gate and corruption checks | Completed 2026-10-31: actual all-feature Cargo metadata accepted; corruption contract rejects reverse/optional/target/build/transitive native and UI leaks; no new Rust/native qualification |
 | GF02 — API and module reduction | Audit actual public surfaces against current documentation and callers; remove unjustified wrappers/exports, untangle mixed responsibilities, provide migrations for changed public contracts | In progress; text/ownership/composition, private fixture and API-authority changes qualified; remaining families open |
 | GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | In progress; Main/Float and native Agent CPU/deferral/controlled-budget contracts qualified at recorded inputs; Builder ordinary bridge qualified; Builder budget/fault and current joint integration remain open |
-| GF04 — Interaction and lifecycle | Close concrete existing input/text/IME/focus/popup/selection/resource gaps; make transport, cancellation, error and ownership limits explicit; preserve existing accepted scenarios | In progress; unavailable-window click history and shared-preview publication defects reproduced and qualified; remaining interaction/transport audit open |
+| GF04 — Interaction and lifecycle | Close concrete existing input/text/IME/focus/popup/selection/resource gaps; make transport, cancellation, error and ownership limits explicit; preserve existing accepted scenarios | In progress; click/shared-preview cancellation and stdio deadline/lifetime contracts qualified; remaining interaction/resource audit open |
 | GF05 — Performance and diagnostics | Reproducible static/resize/text/collection workloads, disabled/enabled trace cost, bounds/retention/idle checks; select and fix measured bottlenecks with comparable evidence | In progress; four bounded CPU workloads and strict evidence verifier implemented; repeated cost comparison removes duplicate recorder checks; native/consumer/resource review remains open |
 | GF06 — Usability and delivery | Small reusable host recipe, capability-oriented docs, matching exports, clean feature checks and CI, exact SDK source identity and immutable Vesta consumer validation | Open |
 
@@ -69,8 +69,12 @@ are inventory, not product complexity or a new qualification.
   host. The actual Agent divider capture and fixed 64-step consumer regression
   motivate GF03. Do not assume the same defect in Standalone before reproducing it.
 - Native adapter stdio starts a detached process-lifetime worker and exposes no
-  shutdown/join owner. Document that fact now and review actual embedding needs
-  before deciding whether a different transport lifetime is required.
+  shutdown/join handle. The current native callers and embedded reuse were
+  reviewed under [decision 0014](decisions/0014-Stdio-Wait-Budget-And-Process-Lifetime.md):
+  retain this explicit process boundary, not a flag-based cancellation promise.
+  The review reproduced a 25 ms condition wait taking 10.01 seconds and retiring
+  transport; the bounded shared-deadline reply path and real process EOF/size/
+  successor-request contracts are now qualified in the GF04 checkpoint below.
 
 ## GF02 findings in progress
 
@@ -345,8 +349,25 @@ timing, Root adoption or remote CI claim. Evidence is in
 
 The known stdio callers opt in once at native startup, matching the documented
 process-lifetime transport. No current consumer requirement justifies a generic
-transport runtime; retain the explicit no-join/no-cancel limit while reviewing
-its actual failure/cancellation paths.
+transport runtime. [Decision 0014](decisions/0014-Stdio-Wait-Budget-And-Process-Lifetime.md)
+retains the explicit no-join/no-cancel limit and fixes the reproduced condition
+budget defect: a 25 ms request took 10.0106849 seconds and retired transport.
+The existing reply function now shares the condition deadline across polls,
+reply waits and sleep. Expiry rejects a late reply yet permits the next request;
+actual channel disconnection retires transport. No new API, wrapper, dependency
+or runtime thread is introduced.
+
+The public test exercises invalid input, bounded wait, a healthy successor and
+EOF in an actual child process. Another child must exit on oversized input while
+stdin remains open; closing the pipe cannot supply a false pass. Both children
+are normal Cargo test harness processes with explicit handles and reader joins.
+Final focused03 passed 15 adapter contracts and strict checking. Frozen
+stdio-lifecycle/full02 passed 217 contracts / 34 harnesses, CPU workload smoke,
+documentation, all/base strict checks, six Node contracts, format and standard
+builds. All inputs stayed unchanged; the original red and earlier fixture
+versions remain under `target/research/stdio-lifecycle-20261031`. This closes the
+bounded transport finding, not the remaining interaction/resource or native and
+current consumer-adoption exits.
 
 GF01's maintained gate is `tools/verify/architecture.mjs`, with its focused
 contract and Windows workflow step. It requires full Cargo metadata and enabled

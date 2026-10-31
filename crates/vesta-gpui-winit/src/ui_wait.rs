@@ -1,31 +1,41 @@
 //! Bounded read-only condition polling on the IO worker, never on the UI thread.
 use serde_json::{Value, json};
 use std::{
-    sync::mpsc::{SyncSender, sync_channel},
+    sync::mpsc::{RecvTimeoutError, SyncSender, sync_channel},
     time::{Duration, Instant},
 };
+// A condition poll spends the remaining overall budget, never a new host timeout.
 pub(super) fn once<R>(
     value: Value,
     dispatch: &impl Fn(Value, SyncSender<Result<R, &'static str>>) -> Result<(), &'static str>,
     serialize: &impl Fn(R) -> Result<Value, &'static str>,
-    timed_out: &mut bool,
+    retire_transport: &mut bool,
+    wait_deadline: Option<Instant>,
 ) -> Result<Value, &'static str> {
+    if wait_deadline.is_some_and(|deadline| Instant::now() >= deadline) {
+        return Err("wait_timeout");
+    }
     let (sender, receiver) = sync_channel(1);
     dispatch(value, sender)?;
-    serialize(
-        receiver
-            .recv_timeout(Duration::from_secs(10))
-            .map_err(|_| {
-                *timed_out = true;
-                "host_unavailable"
-            })??,
-    )
+    let timeout = wait_deadline.map_or(Duration::from_secs(10), |deadline| {
+        deadline.saturating_duration_since(Instant::now())
+    });
+    let value = match receiver.recv_timeout(timeout) {
+        Ok(value) => value?,
+        Err(RecvTimeoutError::Timeout) if wait_deadline.is_some() => return Err("wait_timeout"),
+        Err(_) => {
+            *retire_transport = true;
+            return Err("host_unavailable");
+        }
+    };
+    serialize(value)
 }
+
 pub(super) fn wait<R>(
     value: Value,
     dispatch: &impl Fn(Value, SyncSender<Result<R, &'static str>>) -> Result<(), &'static str>,
     serialize: &impl Fn(R) -> Result<Value, &'static str>,
-    timed_out: &mut bool,
+    retire_transport: &mut bool,
 ) -> Result<Value, &'static str> {
     let allowed = [
         "schema_version",
@@ -90,7 +100,13 @@ pub(super) fn wait<R>(
         request["root"] = condition["element"].clone();
     }
     loop {
-        match once(request.clone(), dispatch, serialize, timed_out) {
+        match once(
+            request.clone(),
+            dispatch,
+            serialize,
+            retire_transport,
+            Some(deadline),
+        ) {
             Ok(mut snapshot) => {
                 let revision = snapshot["revision"]
                     .as_str()
@@ -127,5 +143,71 @@ pub(super) fn wait<R>(
         std::thread::sleep(
             Duration::from_millis(50).min(deadline.saturating_duration_since(Instant::now())),
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::{Cell, RefCell};
+
+    #[test]
+    fn condition_budget_retires_only_its_reply_and_preserves_transport() {
+        let held = RefCell::new(Vec::new());
+        let request = json!({"schema_version":1,"request_id":"bounded","op":"wait",
+            "instance":"fixture","window":"1","after_revision":"0","timeout_ms":25});
+        let mut retire = false;
+        let start = Instant::now();
+        let result = wait(
+            request,
+            &|_, reply: SyncSender<Result<Value, &'static str>>| {
+                held.borrow_mut().push(reply);
+                Ok(())
+            },
+            &Ok,
+            &mut retire,
+        );
+        assert_eq!(result, Err("wait_timeout"), "elapsed {:?}", start.elapsed());
+        assert!(start.elapsed() < Duration::from_secs(1));
+        assert!(!retire, "a condition deadline must not retire stdio");
+        assert_eq!(held.borrow().len(), 1);
+        assert!(
+            held.borrow()[0].send(Ok(json!({"revision":"1"}))).is_err(),
+            "an expired request must reject its late reply"
+        );
+
+        let attempts = Cell::new(0);
+        let resumed = json!({"schema_version":1,"request_id":"successor","op":"wait",
+            "instance":"fixture","window":"1","after_revision":"1","timeout_ms":500,
+            "expected_context":{"scope":"same-host"}});
+        let result = wait(
+            resumed.clone(),
+            &|request, response| {
+                assert_eq!(request["op"], "snapshot");
+                assert_eq!(request["request_id"], "successor");
+                assert_eq!(request["expected_context"], resumed["expected_context"]);
+                attempts.set(attempts.get() + 1);
+                response
+                    .send(if attempts.get() == 1 {
+                        Err("not_ready")
+                    } else {
+                        Ok(json!({"revision":"2","nodes":[]}))
+                    })
+                    .expect("live reply");
+                Ok(())
+            },
+            &Ok,
+            &mut retire,
+        )
+        .expect("condition after transient not_ready");
+        assert_eq!(result["wait_satisfied"], true);
+        assert_eq!(attempts.get(), 2);
+        assert!(!retire);
+
+        assert_eq!(
+            wait(resumed, &|_, _| Ok(()), &Ok::<Value, _>, &mut retire),
+            Err("host_unavailable")
+        );
+        assert!(retire, "a disconnected host must retire transport");
     }
 }

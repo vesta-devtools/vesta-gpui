@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "3dcb771571a73f27af01d760b7dec945946075bd5d23a92cc1e4e53ea3332723",
+  "tree_sha256": "b7614ad49a185534cb5f095977bf9af0611a58b5cd8915861d2c632855140928",
   "files": [
     {
       "path": ".gitattributes",
@@ -1545,8 +1545,8 @@
     },
     {
       "path": "crates/vesta-gpui-winit/src/ui_stdio.rs",
-      "bytes": 2759,
-      "sha256": "da37f1072c2ea35e1392991fca09df3a24b832c6158b2a816062948e7bb826cf"
+      "bytes": 3585,
+      "sha256": "703eb37abc119f6a7b725e905cef8341b694b649400fa9587bf9593e68d4a7ab"
     },
     {
       "path": "crates/vesta-gpui-winit/src/ui_trace.rs",
@@ -1555,8 +1555,8 @@
     },
     {
       "path": "crates/vesta-gpui-winit/src/ui_wait.rs",
-      "bytes": 4838,
-      "sha256": "35022c1e25367e98e0b77f680dd4b717597fd132a7585ecdf9e0d9d8028da266"
+      "bytes": 7951,
+      "sha256": "bbb633c55921598d662adfcd7caac5a1581f111da4121d30c6403087a380cdf1"
     },
     {
       "path": "crates/vesta-gpui-winit/src/window_chrome.rs",
@@ -1572,6 +1572,11 @@
       "path": "crates/vesta-gpui-winit/tests/dependency_boundaries.rs",
       "bytes": 1286,
       "sha256": "1c0f70707181bddb9ef85fc4e02eb2d8b003408f40ed62773d51fdaec8ad0462"
+    },
+    {
+      "path": "crates/vesta-gpui-winit/tests/stdio_lifecycle.rs",
+      "bytes": 5506,
+      "sha256": "2a7cecf9e22bf7a4935ddf64512fe47e4e6c7d772209cb64683d47182444a465"
     },
     {
       "path": "crates/vesta-gpui-winit/tests/text_error_chain.rs",
@@ -2030,13 +2035,13 @@
     },
     {
       "path": "docs/AGENT-ACCESS.md",
-      "bytes": 5457,
-      "sha256": "308a1e36ff42cd6c994ca69f50d6ec5c398bc2b534cf0c1e571dbb2eb90f9dc1"
+      "bytes": 6525,
+      "sha256": "18775566d5f6ac65493318a2d9efa5485f5a8133bd67810d4f05496297c533da"
     },
     {
       "path": "docs/ARCHITECTURE.md",
-      "bytes": 8976,
-      "sha256": "61b73f0faf3ee4bae54f8c523efac14569ceee87cc44660c228dc2045d582d08"
+      "bytes": 9393,
+      "sha256": "cc8ce26a3174543d50c16197c909074c966e551429a4e282bf6664d97749675c"
     },
     {
       "path": "docs/MAINTENANCE.md",
@@ -2050,8 +2055,8 @@
     },
     {
       "path": "docs/REFINEMENT.md",
-      "bytes": 26285,
-      "sha256": "75696f5f6805de25d99a90c7e2a943f17002f08239fd1c44e95e8fbc080770d5"
+      "bytes": 27827,
+      "sha256": "b4940f1bd09c0be38f0c052721a1be63d7bedb787a0bfef86b62694097314658"
     },
     {
       "path": "docs/RELEASING.md",
@@ -2070,8 +2075,8 @@
     },
     {
       "path": "docs/VALIDATION.md",
-      "bytes": 13824,
-      "sha256": "7d41e453bc894864d774cc4787c9ced703f257774337d6a104b91fecd3133ae3"
+      "bytes": 14760,
+      "sha256": "d63daaf8b97a1e8378556464d1d5c949fabe98502e39a4ffef21b6808884a258"
     },
     {
       "path": "docs/decisions/0001-Headless-Preparation-And-Scene-Views.md",
@@ -2139,14 +2144,19 @@
       "sha256": "b7887f242f6bc5ed85f9fae6e8531b576a54670c0a23bf36246f026afb8668a9"
     },
     {
+      "path": "docs/decisions/0014-Stdio-Wait-Budget-And-Process-Lifetime.md",
+      "bytes": 4015,
+      "sha256": "d693f1f720477cc5d3ea16c416e427f14a93a7151c3d05daa66e68cf55b97f92"
+    },
+    {
       "path": "release/0.1.0-rc.1.md",
       "bytes": 1749,
       "sha256": "70f2d9dd4dac7f66c3b66003bad71719f5a0308ead3ce68dc958ba54f5a38868"
     },
     {
       "path": "release/0.1.0-rc.2.md",
-      "bytes": 3431,
-      "sha256": "77d9557bd2949f0e9c3725fc9f20841bd499f7420ff64cef4f9956e4abe9bf8f"
+      "bytes": 3807,
+      "sha256": "eff68aa679e91e381f6a545a6ecb06fb5f45a801e5bfd054f6ef3370f04e76a2"
     },
     {
       "path": "rust-toolchain.toml",

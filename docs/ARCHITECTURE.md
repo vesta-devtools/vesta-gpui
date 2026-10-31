@@ -78,8 +78,13 @@ and target-specific paths; native support is still Windows-preview scope.
    display are distinct facts. Recovery preserves caller-owned CPU state.
 6. Trace capture is opt-in and bounded. Native adapter export can freeze data and
    hand file output to the host's worker. The stdio helper is explicitly started,
-   process-lifetime stdin/stdout transport; its current API provides no join or
-   cancellation handle. Its lifecycle suitability is an open GF04 review item.
+   process-lifetime stdin/stdout transport, started once by a native process host;
+   embedded controllers reuse that connection. It provides no join/cancellation
+   handle because window close cannot cancel a blocking stdin read. EOF/failure
+   releases the worker. Host callbacks must enqueue/serialize without blocking.
+   Read-only polls share one condition deadline; its expiry preserves transport,
+   while a disconnected ordinary reply retires it. This boundary and its tests
+   are defined in [decision 0014](decisions/0014-Stdio-Wait-Budget-And-Process-Lifetime.md).
 
 ## Public API admission
 

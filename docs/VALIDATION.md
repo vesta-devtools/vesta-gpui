@@ -27,6 +27,19 @@ actually run successfully before it can be reported as passing.
 
 ## Refinement checkpoint — 2026-10-31
 
+The GF04 transport checkpoint reproduces a 25 ms read-only condition wait taking
+10.0106849 seconds and falsely retiring stdio. The same reply function now spends
+one deadline and distinguishes wait expiry from actual reply disconnection.
+Real public-worker test processes verify invalid input, a successful request
+after timeout, EOF and size-error retirement with stdin still open. Final
+stdio-lifecycle/full02 passed 217 contracts / 34 harnesses, workload smoke,
+documentation, all/base strict checks, six Node tool contracts, format and both
+standard builds without input drift. Current native callers retain the documented
+process-lifetime worker; callbacks must enqueue/serialize without blocking.
+`target/research/stdio-lifecycle-20261031` retains the red and exact child/source
+identities. This is process/transport software evidence, not window/physical
+input, remote CI, full GF04 or current Vesta integration qualification.
+
 The GF05 CPU slice adds four real public-API workloads and a strict evidence
 verifier. Six balanced repeated runs retain 6,912 pipeline frames / 288 complete
 traces with equal work and event structure, including disabled hook, bounds and
