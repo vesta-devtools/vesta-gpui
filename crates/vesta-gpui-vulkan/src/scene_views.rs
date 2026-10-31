@@ -46,9 +46,11 @@ pub fn validate_scene_views(
     SceneInput::Batch(views).prepare(extent).map(|_| ())
 }
 
+pub(crate) type SceneFrame<'a> = Option<(Camera, &'a ViewportScene, ViewportRect)>;
+
 #[derive(Clone, Copy)]
 pub(crate) enum SceneInput<'a> {
-    Single(crate::recording::SceneFrame<'a>),
+    Single(SceneFrame<'a>),
     Batch(&'a [SceneView<'a>]),
 }
 fn intersection(a: ViewportRect, b: ViewportRect) -> Option<ViewportRect> {

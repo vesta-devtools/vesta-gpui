@@ -208,7 +208,12 @@ impl RetirementMonitor {
     }
 }
 fn observe_pending(budget: Duration, pending: impl Fn() -> bool) -> Result<(), RendererError> {
-    let deadline = Instant::now() + budget;
+    let deadline = Instant::now().checked_add(budget).ok_or_else(|| {
+        RendererError::at(
+            "retirement_budget",
+            "observation deadline is not representable",
+        )
+    })?;
     while pending() {
         if Instant::now() >= deadline {
             return Err(RendererError {
@@ -257,6 +262,17 @@ mod tests {
             status: registry.status.clone(),
             busy: Arc::new(AtomicBool::new(false)),
         };
+        assert_eq!(
+            monitor
+                .observe(Duration::MAX)
+                .expect_err(
+                    "an unrepresentable observation budget is rejected without unwinding owners"
+                )
+                .stage,
+            "retirement_budget"
+        );
+        assert_eq!(registry.pending(), 2);
+        assert_eq!(dropped.load(Ordering::Relaxed), 0);
         let timeout = monitor
             .observe(Duration::from_millis(2))
             .expect_err("host timeout does not release queued resources");

@@ -7,6 +7,34 @@ const PREFIX: &str = "--probe-frame-reflow=";
 const STEPS: usize = 64;
 const DRAFT: &str = "Preserved 草稿 😀 — mixed text wraps with each pane width. ";
 
+/// Fixture-only observations from the existing stdio worker. No ticket wait or
+/// result callback is introduced on the native event thread.
+#[cfg(feature = "gpu-fault-injection")]
+pub(super) fn capture_result(
+    window: UiWindowId,
+    result: Result<(), vesta_gpui_vulkan::RendererFault>,
+) {
+    if !requested() || !std::env::args().any(|arg| arg == "--probe-frame-case=capture") {
+        return;
+    }
+    let _trace = vesta_gpui::trace::span("fixture", "reflow.capture_result");
+    vesta_gpui::trace::counter(
+        "fixture",
+        "reflow.source",
+        if window == STANDALONE_WINDOW {
+            0.0
+        } else {
+            1.0
+        },
+    );
+    let outcome = match result {
+        Ok(()) => 1.0,
+        Err(vesta_gpui_vulkan::RendererFault::SwapchainOutOfDate) => 0.0,
+        Err(_) => -1.0,
+    };
+    vesta_gpui::trace::counter("fixture", "reflow.capture_outcome", outcome);
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Case {
     Inputs,
@@ -15,6 +43,7 @@ enum Case {
     Deferred,
     Budget,
     Cancellation,
+    Capture,
 }
 
 impl Case {
@@ -33,6 +62,7 @@ impl Case {
             "deferred" if cfg!(feature = "gpu-fault-injection") => Ok(Self::Deferred),
             "budget" => Ok(Self::Budget),
             "cancellation" => Ok(Self::Cancellation),
+            "capture" if cfg!(feature = "gpu-fault-injection") => Ok(Self::Capture),
             _ => Err("frame_reflow_invalid_case"),
         }
     }
@@ -115,6 +145,13 @@ pub(super) fn recording() -> Result<Option<vesta_gpui_winit::UiTraceRecording>, 
         return Ok(None);
     }
     let case = Case::from_arguments(&args)?;
+    if case == Case::Capture
+        && !args
+            .iter()
+            .any(|arg| ui_query::stdio_argument(arg) == Some(true))
+    {
+        return Err("frame_capture_probe_requires_explicit_control_stdio".into());
+    }
     let retry_flags = args
         .iter()
         .filter(|arg| arg.starts_with("--probe-frame-retry-once"))
@@ -160,6 +197,8 @@ pub(super) struct Probe {
     recover_after: Option<vesta_gpui::UiSnapshotId>,
     #[cfg(feature = "gpu-fault-injection")]
     retry_injected: bool,
+    #[cfg(feature = "gpu-fault-injection")]
+    capture_requests: [u8; 2],
     started: Instant,
     pub(super) completed: bool,
 }
@@ -170,7 +209,7 @@ impl App {
             return Ok(());
         }
         self.demo.busy = false;
-        // Local presented snapshots only; no stdin worker or automation input.
+        // Local snapshots; a stdin worker still requires explicit stdio opt-in.
         self.ui_query = ui_query::Store::new(true);
         self.ui_query.control_enabled = true;
         let case = Case::from_arguments(&std::env::args().collect::<Vec<_>>())?;
@@ -244,6 +283,8 @@ impl App {
             recover_after: None,
             #[cfg(feature = "gpu-fault-injection")]
             retry_injected: false,
+            #[cfg(feature = "gpu-fault-injection")]
+            capture_requests: [0; 2],
             started: Instant::now(),
             completed: false,
         });
@@ -274,6 +315,22 @@ impl App {
 }
 
 impl Probe {
+    #[cfg(feature = "gpu-fault-injection")]
+    pub(super) fn capture_requested(&mut self, window: UiWindowId) -> bool {
+        if self.case != Case::Capture {
+            return false;
+        }
+        let source = usize::from(window != STANDALONE_WINDOW);
+        self.capture_requests[source] = self.capture_requests[source].saturating_add(1);
+        self.warm = 8;
+        let inject = self.capture_requests[source] == 1;
+        eprintln!(
+            "Frame capture probe: window={} request={} inject_out_of_date={inject}",
+            window.0, self.capture_requests[source]
+        );
+        inject
+    }
+
     fn advance(&mut self, app: &mut App, event_loop: &ActiveEventLoop) -> Result<bool, String> {
         if self.completed {
             return Ok(true);
@@ -413,6 +470,12 @@ impl Probe {
             return Ok(true);
         }
         let source = self.step / STEPS;
+        #[cfg(feature = "gpu-fault-injection")]
+        if self.case == Case::Capture && self.capture_requests != [2, 2] {
+            app.redraw();
+            app.redraw_native_window(id);
+            return Ok(false);
+        }
         let step = self.step % STEPS;
         let container = if source == 0 {
             ContainerRef::Main

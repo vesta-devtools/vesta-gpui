@@ -32,7 +32,7 @@ for (const attempt of attempts) {
   const counters = data.traceEvents.filter(e => e.ph === 'C' && within(e));
   const value = name => counters.find(e => e.name === name)?.args?.value;
   const source = value('reflow.source'), index = value('reflow.index'), content = value('reflow.case');
-  assert.ok([0, 1].includes(source) && Number.isInteger(index) && index >= 0 && index < 64 && [0, 1, 2].includes(content), 'ordinary deferred attempt identity required');
+  assert.ok([0, 1].includes(source) && Number.isInteger(index) && index >= 0 && index < 64 && [0, 1, 2, 6].includes(content), 'ordinary deferred attempt identity required');
   assert.equal(data.traceEvents.filter(e => e.name === 'reflow.await_submission' && within(e)).length, 1, 'deferred attempt must remain explicit');
   const frames = data.gpui_frames.filter(f => f.start_us >= attempt.ts && f.start_us + f.duration_us <= attempt.ts + attempt.dur + .01);
   assert.equal(frames.length, 1, 'one CPU draw per deferred attempt');
@@ -58,7 +58,7 @@ for (const step of steps) {
   const value = name => counters.find(e => e.name === name)?.args?.value;
   const source = value('reflow.source'), index = value('reflow.index');
   const content = value('reflow.case') ?? 0;
-  assert.ok([0, 1, 2, 3, 4, 5].includes(content), 'known case required');
+  assert.ok([0, 1, 2, 3, 4, 5, 6].includes(content), 'known case required');
   cases.add(content);
   assert.ok(source === 0 || source === 1, 'source counter required');
   const row = results[source];
@@ -110,6 +110,22 @@ for (const step of steps) {
 }
 assert.ok(results.every(row => row.steps === 64));
 assert.equal(cases.size, 1, 'one isolated case per report');
+let captureOutcomes;
+if (cases.has(6)) {
+  const captures = data.traceEvents.filter(e => e.name === 'reflow.capture_result');
+  assert.equal(captures.length, 4, 'both windows need a rejected and a fresh capture');
+  captureOutcomes = [[], []];
+  for (const capture of captures) {
+    const counters = data.traceEvents.filter(e => e.ph === 'C'
+      && e.ts >= capture.ts && e.ts <= capture.ts + capture.dur + .01);
+    const source = counters.find(e => e.name === 'reflow.source')?.args?.value;
+    const outcome = counters.find(e => e.name === 'reflow.capture_outcome')?.args?.value;
+    assert.ok([0, 1].includes(source), 'capture window identity required');
+    captureOutcomes[source].push(outcome);
+  }
+  assert.deepEqual(captureOutcomes, [[0, 1], [0, 1]],
+    'a rejected presentation must fail capture before a fresh request succeeds');
+}
 assert.ok(cpuReadinessSamples === 0 || cpuReadinessSamples === 128, 'readiness observations must be complete when supplied');
 assert.ok(cursorSamples === 0 || cursorSamples === 128, 'cursor observations must be complete when supplied');
 const budget_skips = data.traceEvents.filter(e => e.name === 'frame.skipped.layout_budget').length;
@@ -117,7 +133,8 @@ const result = {status: failures.length || (budget_skips && !cases.has(4) && !ca
   native_pid: nativePid,
   deferred_attempts: attempts.length,
   retry_once_injections: retryOnceInjections,
-  case: ['inputs', 'documents', 'focus', 'deferred', 'budget', 'cancellation'][[...cases][0]],
+  ...(captureOutcomes ? {capture_outcomes: captureOutcomes} : {}),
+  case: ['inputs', 'documents', 'focus', 'deferred', 'budget', 'cancellation', 'capture'][[...cases][0]],
   failures, budget_skips, cpu_input_readiness_observed: cpuReadinessSamples === 128,
   cursor_cache_observed: cursorSamples === 128,
   cancellation_observed: cancellationSamples === 128,

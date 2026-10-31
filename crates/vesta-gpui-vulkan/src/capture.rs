@@ -172,6 +172,7 @@ impl WindowRenderer {
         ));
     }
     /// Copy a region of the next successfully submitted presentation, never an arbitrary old swapchain image.
+    /// A rejected presentation fails this ticket; request a fresh capture after recovery.
     pub fn capture_next_frame(
         &mut self,
         region: CaptureRegion,

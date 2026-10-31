@@ -12,6 +12,8 @@ Standalone loads its existing Windows fonts from `C:\Windows\Fonts` and owns
 system clipboard, AccessKit, input/event-loop and rendering policies. Rust1.89.0
 and a compatible Vulkan driver/loader are required. Qualified behavior follows
 the candidate API inventory and incremental native acceptance evidence.
+The [complete renderer ownership contract](../../docs/VULKAN.md) defines current
+construction, submission, capture, observation and retirement responsibilities.
 
 ## Existing development probes
 

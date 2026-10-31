@@ -29,10 +29,13 @@ impl Reply {
     pub(super) fn serialize(self) -> Result<Value, &'static str> {
         use base64::Engine;
         use image::ImageEncoder;
-        let readback = self
-            .ticket
-            .wait(std::time::Duration::from_secs(10))
-            .map_err(|e| e.stage)?;
+        let readback = self.ticket.wait(std::time::Duration::from_secs(10));
+        #[cfg(feature = "gpu-fault-injection")]
+        frame_reflow_probe::capture_result(
+            self.source.window,
+            readback.as_ref().map(|_| ()).map_err(|e| e.fault),
+        );
+        let readback = readback.map_err(|e| e.stage)?;
         let pixels = readback.rgba().map_err(|e| e.stage)?;
         let mut png = Vec::new();
         image::codecs::png::PngEncoder::new(&mut png)
@@ -233,11 +236,18 @@ impl App {
                 .ok_or("window_not_found")?
                 .surface
         };
-        let ticket = state
+        let renderer = state
             .capture_renderer()
-            .map_err(|_| "capture_renderer_unavailable")?
-            .capture_next_frame(pixels)
-            .map_err(|e| e.stage)?;
+            .map_err(|_| "capture_renderer_unavailable")?;
+        let ticket = renderer.capture_next_frame(pixels).map_err(|e| e.stage)?;
+        #[cfg(feature = "gpu-fault-injection")]
+        if self
+            .frame_reflow_probe
+            .as_mut()
+            .is_some_and(|probe| probe.capture_requested(query.window))
+        {
+            renderer.inject_present_out_of_date();
+        }
         let presented = Arc::new(OnceLock::new());
         self.ui_query.captures.insert(
             query.window,

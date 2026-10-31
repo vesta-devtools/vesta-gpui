@@ -16,7 +16,6 @@ mod painter;
 mod preparation;
 pub use preparation::{PreparedPaint, prepare_paint};
 mod reconfiguration;
-mod recording;
 mod recovery;
 mod renderer_error;
 mod retirement;
@@ -896,7 +895,8 @@ impl WindowRenderer {
             });
         }
         self.recreate |= suboptimal;
-        let (mut builder, gpu_timestamp) = self.record_commands(
+        let (mut builder, gpu_timestamp) = checked_pipeline::recording::record(
+            self,
             self.frames[index as usize].clone(),
             self.swapchain.image_extent(),
             prepared,
@@ -991,6 +991,9 @@ impl WindowRenderer {
                 Ok(Some(output))
             }
             Err(error) if error.fault == RendererFault::SwapchainOutOfDate => {
+                // These pixels belong to a presentation the Host cannot publish.
+                // Submission still retains the buffer through real GPU completion.
+                self.capture.fail(error.clone());
                 self.painter.invalidate_cache();
                 #[cfg(feature = "viewport")]
                 if let Some(scene) = &mut self.scene {

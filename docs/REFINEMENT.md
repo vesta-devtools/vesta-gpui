@@ -4,6 +4,28 @@ Requested: 2026-10-31. Status: Active.
 Authority: this repository. Products track adoption in their own integration records.
 Decision: [0006](decisions/0006-Explicit-Architecture-And-Refinement-Gates.md).
 
+Current Vulkan continuation, 2026-10-31: the full renderer source and current
+Host entry points are reviewed in [the renderer contract](VULKAN.md). Original
+native red01 proves Main and Float both return successful captured pixels for
+an injected rejected presentation; original red02 proves an unrepresentable
+public retirement-observation budget unwinds instead of returning an error.
+Decisions [0026](decisions/0026-Presented-Capture-And-Submission-Outcome.md) and
+[0027](decisions/0027-Vulkan-Recording-And-Observation-Ownership.md) define the
+minimal outcome/checked-deadline fixes and remove a delegating recording module.
+The shared checked recorder remains the sole presented/offscreen authority.
+Final full01 passes 234 contracts/39 harnesses and CPU smoke, two compile-fail
+docs, all/base strict, six Node groups, format and both ordinary standard builds.
+Actual native01 returns typed errors for rejected Main/Float presentations,
+genuine PNGs for fresh requests, then all 128 successful workload submissions;
+the maintained verifier and seven report checks enforce those outcomes. Source /
+artifact identities, real completion before rebuild, normal native/descendant
+exit and executable-lock release are bound in the final local checkpoint under
+`target/research/vulkan-family-20261031/`. The complete 24-module/nine-group
+source review and 18 Host entry files close the local Vulkan family. Ordinary
+standard builds are restored; no physical, display, Viewport-family or current
+product-adoption exit follows. The preceding exact 52dfe35 revision's remote
+CI 41185751938 actually passed; it does not qualify this newer source.
+
 Current Native continuation, 2026-10-31: the complete 17-module review and actual
 Host entry points map to [the Native contract](NATIVE.md). Decision
 [0025](decisions/0025-Native-Capture-Admission-And-Platform-Ownership.md) addresses
@@ -86,7 +108,7 @@ its existing gate and evidence, rather than expanding a widget catalogue.
 | Core | Complete current 41-module/eight-group export/caller review; geometry/layout (0020), render/owner (0021), text/semantic resources (0022), precise cumulative finalization (0024); [contract](TEXT-AND-OBSERVATION.md) | Local source-family/software/native qualification recorded here and below; product adoption, remaining native/consumer/performance exits retain their own scope |
 | Widgets | Complete 73-module/seven-group source/export/caller review; [controlled projection and resource contract](WIDGETS.md), decisions 0023/0024 and original reds; final full02 and affected Main/Float qualification | Local family closed at recorded source/runtime; common product adoption and remaining cross-family native/consumer/performance exits retain their own scope |
 | Native adapter | Complete 17-module/seven-group source/export/caller review; [input/capture/platform-service contract](NATIVE.md), decision 0025, original reds, final full02 and actual public offscreen capture for Main/Float | Local family closed at recorded source/runtime; product adoption and remaining renderer/consumer/resource programme exits retain their own scope |
-| Vulkan renderer | CPU preparation, scene admission, frame/retirement contracts; native recipe consumes async tickets | Capture/recovery/profile/resource lifetimes and actual public contract coverage |
+| Vulkan renderer | Complete 24-module/nine-group source/export/caller review; [renderer contract](VULKAN.md), decisions 0026/0027, original capture/deadline reds, final full01 and actual Main/Float rejected/fresh readback plus later submissions | Local family closed at recorded source/runtime; physical/display guarantees, Viewport family and current common product adoption retain their own scope |
 | Workspace model | Complete public family/caller review; one private field representation and invariant validator; checked atomic operations, version-1 recovery and narrow window updates; [contract](WORKSPACE.md) | Local model/caller qualification recorded below; immutable product API migration remains GF06 |
 | Workspace projection | Complete view/header/geometry/drag/resize/reveal/overlay review and current caller map; six original failures retained; [contract](DOCK.md) | Local family/software/native qualification recorded below; immutable product API migration remains GF06 |
 | WebView | Complete public surface and existing Agent/Builder callers reviewed; redundant mutable identity removed, partial native sync and real temporary-profile leak fixed; [contract and migration](WEBVIEW.md) | Local API/resource qualification recorded below; immutable product migration remains GF06, not a second family audit |

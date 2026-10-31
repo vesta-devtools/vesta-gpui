@@ -42,7 +42,7 @@ impl WindowRenderer {
         images: Option<&dyn ImageResolver>,
         options: RenderOptions,
         region: CaptureRegion,
-        scene: crate::recording::SceneFrame<'_>,
+        scene: crate::scene_views::SceneFrame<'_>,
     ) -> Result<CaptureTicket, RendererError> {
         self.capture_offscreen_frame(
             viewport,
@@ -225,7 +225,8 @@ impl WindowRenderer {
         )?
         .into_parts();
         let mut trace = frame_profile::Trace::new(false);
-        let (mut builder, _) = self.record_commands(
+        let (mut builder, _) = crate::checked_pipeline::recording::record(
+            self,
             frames[0].clone(),
             extent,
             prepared,

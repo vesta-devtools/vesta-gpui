@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "db95f04cb9d08bf4bed7272da05a5ca7079f737fd4a93b81d4e2dbc5261f6fa1",
+  "tree_sha256": "e496114d64ba5dd171d20138836c2a394573907433e5c188f1f888cb808323e0",
   "files": [
     {
       "path": ".gitattributes",
@@ -55,8 +55,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/README.md",
-      "bytes": 28836,
-      "sha256": "54e8d4ca3ce899a42b085dee5712155e9accab6db63f58e37085e94632d1ae55"
+      "bytes": 30164,
+      "sha256": "f87024dfcf4fae2b9b00c777900a6fdc30e9bf7c3f7fd1d3f5443835de441327"
     },
     {
       "path": "apps/vesta-gpui-standalone/benches/ui_workloads.rs",
@@ -135,8 +135,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/frame_reflow_probe.rs",
-      "bytes": 31568,
-      "sha256": "632301c1f4c340ab2ec35bdbb36a3e9c58c3246191658d81d800053a5892edf9"
+      "bytes": 33823,
+      "sha256": "f87eefd4d649ba513b911fd1223a05c4f54791fd55eac024bb506a7aca0dfefa"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/frame_reflow_probe/cancellation.rs",
@@ -545,8 +545,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/ui_query/capture.rs",
-      "bytes": 15502,
-      "sha256": "f57f7f80075565308b6399fa9a240c4b960d159089ab27f846acde821b101574"
+      "bytes": 15963,
+      "sha256": "52426661ff5c1f1a3e64edea423949f16651d3ec26e3dcdeaec07a976c590ae6"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/ui_query/control.rs",
@@ -775,13 +775,13 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/README.md",
-      "bytes": 6657,
-      "sha256": "b0013ea5759e71424c96151f617b8e89c302f16d5b4ce722db9e2c94d8dbf6c0"
+      "bytes": 6818,
+      "sha256": "fd1b70456a8bd192a2489e8cd23e59839b6fc37f22342108fadeff13271ccfa5"
     },
     {
       "path": "crates/vesta-gpui-vulkan/SUPPORTED-API.md",
-      "bytes": 22806,
-      "sha256": "695fe541028f93e7bac65cda7618e71f22055f6b3d78d14793109637eb4e3b60"
+      "bytes": 23211,
+      "sha256": "a79de2afdc4a3b74d3860f1017ffafbe90f6b2cff6a6135d80549b016d270b39"
     },
     {
       "path": "crates/vesta-gpui-vulkan/examples/native/mod.rs",
@@ -810,13 +810,13 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/capture.rs",
-      "bytes": 8397,
-      "sha256": "d7ac7b37640854f7df4975764da4fa4d506f5996d26043fd406240a91bf76083"
+      "bytes": 8488,
+      "sha256": "c2634324a7cefcb56acba4468771956cdb290c6d124294fa0278d1187aa1c69e"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/capture/offscreen.rs",
-      "bytes": 8476,
-      "sha256": "04dd9f2834dacdba3d44ce09ee733b1e0b57e214091ffd198a41f47927451a44"
+      "bytes": 8518,
+      "sha256": "28ee96df34d0b63edb0c34b62c82646cb04b7f03f3484e2b8cd960d62828f34a"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/checked_pipeline.rs",
@@ -870,8 +870,8 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/lib.rs",
-      "bytes": 38400,
-      "sha256": "7ede3fd4092be2ebbcae34514883d9a65f6d35996bce35df5a2f8091bc40e64a"
+      "bytes": 38637,
+      "sha256": "dd254eebbca9a76fd9551808ab93ceb442ee964116125e36b1ac2d96f24ed031"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/painter.rs",
@@ -894,11 +894,6 @@
       "sha256": "59375eb1fac6cbfba080780fa1a1dc430a387e6f2e0d1b8bde9c18cabb2d2e24"
     },
     {
-      "path": "crates/vesta-gpui-vulkan/src/recording.rs",
-      "bytes": 1226,
-      "sha256": "52e9d8c486fde11743784ba7030890cb6c8505d48d215b4eb52d9a5d9d53d059"
-    },
-    {
       "path": "crates/vesta-gpui-vulkan/src/recovery.rs",
       "bytes": 37833,
       "sha256": "0e47ed2dc09e26726c1d615fcc00485e948f15a8343f74be048f9297232ba67b"
@@ -910,13 +905,13 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/retirement.rs",
-      "bytes": 12239,
-      "sha256": "562ea8681824c491c6929a8b36cfeb4321b9b7becfbef443f606d43c4c0ba67a"
+      "bytes": 12791,
+      "sha256": "dba10ea7a2a75f61df63778e065c322cf5aebb62a73c366a2a2d2152c7e5cda1"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/scene_views.rs",
-      "bytes": 5126,
-      "sha256": "2f174c82870ad5588bef8d4e3fc8266083e84cf922f46bb2379f648d056a5c97"
+      "bytes": 5193,
+      "sha256": "d699b829e94438522db13b84c3e6f6d3355599e41dad2a0083bdaabfbb6f0612"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/submission.rs",
@@ -2115,8 +2110,8 @@
     },
     {
       "path": "docs/ARCHITECTURE.md",
-      "bytes": 12925,
-      "sha256": "6273c56c04fff5ac301c5286f7b4f6c9c705ff582a3579170c95c36af64cb99d"
+      "bytes": 12938,
+      "sha256": "cc2afd65d90403bab751fed63d638c09cb10cad227b6fc4a5422869db449df8f"
     },
     {
       "path": "docs/DOCK.md",
@@ -2145,8 +2140,8 @@
     },
     {
       "path": "docs/REFINEMENT.md",
-      "bytes": 47187,
-      "sha256": "a3fe01b12c5d9690d7a7a87ce130bfa318841e928179c000fe8da8372dc4c3b8"
+      "bytes": 49028,
+      "sha256": "062728bb4ec0c895050221906752b99b18fc48767967c158ee3976054446164c"
     },
     {
       "path": "docs/RELEASING.md",
@@ -2160,8 +2155,8 @@
     },
     {
       "path": "docs/SUPPORTED-API.md",
-      "bytes": 12224,
-      "sha256": "05c876c43154d5b5ac86718b56be85c1141fbd5c6728da96d1b1dc90ecf46782"
+      "bytes": 12252,
+      "sha256": "1f00995085b871bcf442f0152297e98d8c4ba4861af0aafab59b7af2df612f33"
     },
     {
       "path": "docs/TEXT-AND-OBSERVATION.md",
@@ -2177,6 +2172,11 @@
       "path": "docs/VALIDATION.md",
       "bytes": 15780,
       "sha256": "ca3c7c9e8cbc744e83338ccaa2cba4c448cdef5c64172cb8342be918e52ca951"
+    },
+    {
+      "path": "docs/VULKAN.md",
+      "bytes": 13078,
+      "sha256": "af93ca59ab4facf0989ac4635a629b84a0a682a95b3e97694da85e1325a22339"
     },
     {
       "path": "docs/WEBVIEW.md",
@@ -2319,6 +2319,16 @@
       "sha256": "a9e8887216d2e315d52ad7bd6c039c2df0462fe0840bda9b67940cc792cf394c"
     },
     {
+      "path": "docs/decisions/0026-Presented-Capture-And-Submission-Outcome.md",
+      "bytes": 3657,
+      "sha256": "33224442a495858f504881720d9718837f3899b6d2a6d94d40f6f26efd964509"
+    },
+    {
+      "path": "docs/decisions/0027-Vulkan-Recording-And-Observation-Ownership.md",
+      "bytes": 2818,
+      "sha256": "aad64e651d3ea0ee7db2c23f8c5397fc9b5348c3a328dc25651fa72fcdfc7dd9"
+    },
+    {
       "path": "release/0.1.0-rc.1.md",
       "bytes": 1749,
       "sha256": "70f2d9dd4dac7f66c3b66003bad71719f5a0308ead3ce68dc958ba54f5a38868"
@@ -2365,8 +2375,8 @@
     },
     {
       "path": "tools/verify/frame_settlement.mjs",
-      "bytes": 8422,
-      "sha256": "3af9c81a54d5c2b4cb7c036753c6c2f1eb2154f40bfc611be3405c49b0b2dc26"
+      "bytes": 9352,
+      "sha256": "8b67744d970bbafe0a1021790ad9c63441a768ebf27c752ef3d6e0d7b38092e1"
     },
     {
       "path": "tools/verify/gpui_profile.mjs",

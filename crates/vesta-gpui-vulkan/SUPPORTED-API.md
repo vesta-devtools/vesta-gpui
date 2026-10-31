@@ -9,6 +9,8 @@ remain explicit; these wall-time intervals do not certify GPU or display latency
 
 The [candidate API boundary](../../docs/SUPPORTED-API.md) owns the cross-package
 support matrix and migration policy. This document owns renderer contracts only.
+The [full source-family contract](../../docs/VULKAN.md) maps current public
+surfaces, failure policy, cache bounds and Host/resource lifetimes.
 
 ## Next candidate: CPU preparation and bounded scene views
 
@@ -148,6 +150,10 @@ results do not qualify a different immutable SDK artifact automatically.
 
 `WindowRenderer::capture_next_frame(CaptureRegion)` queues one transfer from the
 next successful presentation if the surface supports transfer-source usage.
+If its recorded presentation reports OutOfDate, that ticket receives the same
+typed error; it never returns those pixels under a later successful frame.
+Request a fresh capture after recovery. Submitted resources still remain owned
+until actual GPU completion.
 `capture_offscreen` uses an independent image with the same preparation/record
 path; its signature is stable across the optional viewport feature.
 `capture_offscreen_with_scene` also accepts the current camera/scene when viewport

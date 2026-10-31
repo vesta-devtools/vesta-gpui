@@ -24,7 +24,9 @@ shared text-session owner. The default is `inputs`. Each isolated hidden run
 changes each window's split 64 times forward/reverse through the actual draw
 entries, preserves its draft, closes normally and retires GPU owners. It performs
 no OS input, preference restore/save or user-workspace persistence. It cannot be
-combined with ordinary smoke, UI stdio, native-input or another trace recording.
+combined with ordinary smoke, native-input or another trace recording. A probe
+alone starts no stdin worker; explicit existing `--ui-query-stdio` or
+`--ui-control-stdio` may enable the same public transport for its owned controller.
 
 Ordinary accepted steps require a new published presentation. Deferred draws
 retain `reflow.attempt` spans and retry the same logical index; the verifier
@@ -53,6 +55,22 @@ case does not establish a naturally occurring eight-pass exhaustion. In-process
 probe queries use the ordinary bounded request/reply dispatch without starting
 the stdio worker. Stable CPU input readiness and presented-query freshness are
 separate: acquire deferral may preserve the former while the latter stays pending.
+
+With `gpu-fault-injection`, the private `--probe-frame-case=capture` value also
+requires explicit `--ui-control-stdio`. The controller uses the existing public
+windows/snapshot/capture protocol described in [Agent access](../../docs/AGENT-ACCESS.md),
+with no native input: wait for the two ready hidden windows; for each, request
+one next-presented crop and then a fresh one after recovery (omit `viewport`
+to select presented capture). The first admitted request injects OutOfDate and
+must return `present`; the second must return a genuine next-presented image.
+Retry only ordinary pre-admission freshness/readiness responses. Use a small
+valid crop such as the upper-left 8x8 logical region, away from sensitive fields.
+After both pairs, the same Main64/Float64 workload completes and exits normally;
+the existing 100-second probe limit remains. Close controller stdin normally.
+`frame_settlement.mjs` requires the four typed worker outcomes in window order
+as well as all 128 later successful submissions. Restore the ordinary standard
+build afterward. This controlled notification does not simulate a physical
+device loss or certify compositor pixels.
 
 ## Gallery interactions
 
