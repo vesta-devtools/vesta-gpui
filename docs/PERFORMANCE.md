@@ -87,6 +87,8 @@ same final artifact reinforces the shared-machine limitation; none of these
 numbers is a stable latency guarantee. The original failure and all samples stay
 in the evidence, without discarding the slower run.
 
-This is the GF05 headless CPU slice. Native workload cost, consuming-host shared
-capture ownership, resource review and current immutable SDK adoption remain
-separate programme exits in [REFINEMENT](REFINEMENT.md).
+This is the recorded GF05 headless CPU slice. The native collection/idle matrix,
+allocator-only ABBA and same-Model consumer comparison now have separate scoped
+qualification. Current evidence and final immutable-delivery work live only in
+the [finite programme ledger](REFINEMENT.md); this dated checkpoint retains its
+original workload, executable and shared-machine limits.

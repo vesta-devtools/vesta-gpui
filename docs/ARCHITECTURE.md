@@ -167,7 +167,7 @@ values nor handles input. Platform modules adapt native boundaries; typed action
 still mutate the same demonstration state. The example's orchestration does not
 become a shared frame scheduler or a second text/workspace implementation.
 
-## Remaining audit
+## Qualification and continued boundaries
 
 Core's [text/semantic/observation contract](TEXT-AND-OBSERVATION.md) assigns fonts,
 editing, immutable geometry, CPU raster caches, window semantics, bounded

@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "dcf9bb7b92a236539eec63002fc936a4d39f8092f74f452f668bf435a5154848",
+  "tree_sha256": "17691dec8fbbd3c1e84df78a5e775afd9c3dfd4966d3f412c9988ac457aff0fd",
   "files": [
     {
       "path": ".gitattributes",
@@ -2125,8 +2125,8 @@
     },
     {
       "path": "docs/ARCHITECTURE.md",
-      "bytes": 13352,
-      "sha256": "6f84f6575d93dce1f176de1ec70b5aa925703212f1d3cfa5fcf0d45ec1812eaa"
+      "bytes": 13375,
+      "sha256": "5c54a4353c902d2d89579f0973e01bc8fa98fa01c6408b24e96833762c3c72f3"
     },
     {
       "path": "docs/DOCK.md",
@@ -2150,13 +2150,18 @@
     },
     {
       "path": "docs/PERFORMANCE.md",
-      "bytes": 5518,
-      "sha256": "220899705be0d30ced2a08d900118ff0395bd7ab56814d4e95ea7a9da017a76f"
+      "bytes": 5680,
+      "sha256": "09198697d8922f15a1dc6c4bf93d30cedde717a58e63fab07d1e0f7cde6c770b"
+    },
+    {
+      "path": "docs/REFINEMENT-HISTORY.md",
+      "bytes": 54733,
+      "sha256": "9ba1c09b0fa791a700e4a439a060b2d7324a2989c0dd01602a57c25ed5947e4b"
     },
     {
       "path": "docs/REFINEMENT.md",
-      "bytes": 54733,
-      "sha256": "9ba1c09b0fa791a700e4a439a060b2d7324a2989c0dd01602a57c25ed5947e4b"
+      "bytes": 14187,
+      "sha256": "538f3eaeb2ab4423b154b42d2b2d2c74abb1176a96dafe02d47a356619d99759"
     },
     {
       "path": "docs/RELEASING.md",

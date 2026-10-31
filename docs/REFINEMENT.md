@@ -1,746 +1,132 @@
 # Concise and reliable framework programme
 
-Requested: 2026-10-31. Status: Active.
-Authority: this repository. Products track adoption in their own integration records.
-Decision: [0006](decisions/0006-Explicit-Architecture-And-Refinement-Gates.md).
+Requested: 2026-10-31. Current reconciliation: 2026-11-01. Status: Active.
+Authority: this repository. Decision: [0006](decisions/0006-Explicit-Architecture-And-Refinement-Gates.md).
+Qualified runtime revision: ac13b9068a51ba47060c3f1d4a1e83224d582926.
 
-Resource ownership continuation, 2026-10-31: [decision 0032](decisions/0032-Terminal-Context-Ownership-For-Allocation-Leases.md)
-closes the reproduced public readback last-owner gap. A retained first-frame
-readback now keeps its device context after App/renderers retire; releasing the
-result permits normal context retirement on the existing worker. The renderer's
-terminal context field also outlives its allocation owners. Original red01,
-green01, two offscreen PNGs and both Main/Float rejected/fresh presented capture
-sequences remain in `target/research/gpu-allocation-lease-20261031/`. These
-directed qualifications preserve the collection/idle and allocator ABBA evidence;
-they do not assert a new speed result or current product adoption.
-
-Current cross-host cursor, 2026-10-31: Vesta's external Builder budget and
-Main/Float device/surface-loss records now qualify their scoped paths; its
-ordinary trace capture is connected. Those records do not qualify all current
-shared Core/Agent inputs. Builder also removes its second Dock projection:
-one candidate owns its widget and regions through layout. The external same-
-Model ABBA profile retains 560 samples with 140 equivalent steps, and the
-unchanged production contract has 32 tests plus all-target strict qualification.
-Direct extra-projector medians are about 0.18/3.74/0.14/0.13 ms for creation,
-development, about and todo; noisy aggregate totals are not native speed claims.
-Root's catalog popup still constructs its renderer synchronously; moving that
-existing factory to the GPU worker remains a concrete Host integration task.
-Root standard updates belong to its current Agent owner; exact immutable
-adoption and current-source native qualification remain GF06.
-
-[Decision 0031](decisions/0031-Recovery-Retry-Observation-States.md) corrects the
-existing smoke report's conflation of unobserved busy rejection with a worker
-that already finished. Original cancel01 retains the false failure and normal
-GPU retirement. Directed cancellation and timeout observations retain separate
-claims; the timeout still has to exercise actual busy rejection. Production
-retry admission, worker retirement and the fixture delay are unchanged.
-
-Native collection/resource checkpoint, 2026-10-31: decisions
-[0029](decisions/0029-Native-Collection-Capture-And-Idle-Measurement.md) and
-[0030](decisions/0030-Device-Scoped-Vulkan-Memory-Ownership.md) define the existing
-private Main/Float collection fixture and one allocator per device generation.
-The two six-run recorder matrices preserve 1,536 equivalent measured frames;
-the allocator-only ABBA follow-up preserves another 1,024 with registered-font
-identities. The real 100,000-item virtual subtree stays bounded and matches
-across off/stages/detailed capture. Ordinary four-second idle reports no
-redraw, present, polling or periodic timer churn. Process CPU, private commit,
-working set and handles are sampled by exact PID; raw data and interpretation
-are under `target/research/native-collection-cost-20261031/`. Timing is shared-
-machine evidence, not a physical-input/display latency or speed guarantee.
-Native frame call time excludes snapshot validation; request wall time includes
-that validation. Consumer projection work and final shared adoption retain
-separate GF05/GF06 qualification.
-
-Current qualification, 2026-10-31: all eight GF02 source families are locally
-closed at their recorded inputs. [Decision 0028](decisions/0028-Viewport-Projection-And-Geometry-Boundaries.md)
-and [the Viewport contract](VIEWPORT.md) close the final family. One private
-camera owner supplies projection, matrices and rays through existing re-exports.
-Picking clips individual triangles and uses scale-relative f64 intersection;
-packing rejects non-finite shader payloads and expansion omits whole invalid
-primitives. One Gizmo length serves drawing and interaction. The misleading
-FrameAll reset becomes ResetCamera; unused RenderStats scaffolding is removed.
-Migration notes identify these pre-release changes without compatibility aliases.
-
-Original red02 preserves four runtime failures; red01's fixture inference error
-and red03's missing Error trait remain separate. Actual native01 preserves the
-near/far label pixel defect in both projections. The shader now clips anchor
-depth before assigning overlay depth zero. On the final ordinary build,
-native03 retains 144 changed pixels for each visible control and zero for all
-four clipped controls, across eight actual PNG readbacks. Reflow02 separately
-passes Main64/Float64 submission and two public offscreen readbacks. Both native
-workloads are hidden/nonactive, use zero OS input and exit normally.
-
-Final full02 passes 236 contracts/39 harnesses, CPU workload smoke, two
-compile-fail docs, all/base strict, seven Node groups, format and both ordinary
-standard builds with unchanged inputs. Full01 preserves an existing trace test's
-incorrect exact-one global-event assertion; red04 deterministically demonstrates
-two legitimate frames. Its existing composite test now checks named frames in
-the frozen export and retains successor/racing-file guarantees. Recorder
-production code is unchanged. Evidence and final process retirement are under
-`target/research/viewport-family-20261031/`. GF03–GF06 remain active, including
-Builder budget/fault, native/consumer resource/performance review and common
-immutable product adoption. Earlier dated checkpoints below keep their original
-scope; none adds a physical/reader/DPI pass or closes UI-DOC-TABLE-001.
-
-Current Vulkan continuation, 2026-10-31: the full renderer source and current
-Host entry points are reviewed in [the renderer contract](VULKAN.md). Original
-native red01 proves Main and Float both return successful captured pixels for
-an injected rejected presentation; original red02 proves an unrepresentable
-public retirement-observation budget unwinds instead of returning an error.
-Decisions [0026](decisions/0026-Presented-Capture-And-Submission-Outcome.md) and
-[0027](decisions/0027-Vulkan-Recording-And-Observation-Ownership.md) define the
-minimal outcome/checked-deadline fixes and remove a delegating recording module.
-The shared checked recorder remains the sole presented/offscreen authority.
-Final full01 passes 234 contracts/39 harnesses and CPU smoke, two compile-fail
-docs, all/base strict, six Node groups, format and both ordinary standard builds.
-Actual native01 returns typed errors for rejected Main/Float presentations,
-genuine PNGs for fresh requests, then all 128 successful workload submissions;
-the maintained verifier and seven report checks enforce those outcomes. Source /
-artifact identities, real completion before rebuild, normal native/descendant
-exit and executable-lock release are bound in the final local checkpoint under
-`target/research/vulkan-family-20261031/`. The complete 24-module/nine-group
-source review and 18 Host entry files close the local Vulkan family. Ordinary
-standard builds are restored; no physical, display, Viewport-family or current
-product-adoption exit follows. The preceding exact 52dfe35 revision's remote
-CI 41185751938 actually passed; it does not qualify this newer source.
-
-Current Native continuation, 2026-10-31: the complete 17-module review and actual
-Host entry points map to [the Native contract](NATIVE.md). Decision
-[0025](decisions/0025-Native-Capture-Admission-And-Platform-Ownership.md) addresses
-two reproduced capture causes: lost conservative crop pixels and sensitivity admission
-against logical bounds rather than actual readback pixels. Standalone's parallel
-capture rules are removed. Focused03 passes after preserving original reds and
-two intermediate fixture/incomplete-rename failures. Red02 also preserves the
-standard program rejecting the intended explicit stdio/probe combination before
-renderer creation; one private existing-flag authority now completes it. Final
-full02 passes 234 contracts/39 harnesses and CPU smoke, two compile-fail docs,
-all/base strict, six tool groups, format and both ordinary standard builds with
-frozen inputs. Actual hidden/nonactive Main/Float each complete 64 submitted
-steps and return a genuine 10x10 offscreen PNG through the public protocol; only
-windows/window_state/snapshot/capture requests are sent. Normal exit, descendants
-and two executable locks are verified. Local receipts live under
-`target/research/native-family-20261031/`. The Native family is locally closed;
-physical/reader/DPI/speed, full Vulkan and product adoption exits remain separate.
-Source/expanded-step authority and explicit I/O,
-context, event and legacy Host responsibilities are clarified without new public
-signatures, dependencies, services, flags or examples.
-
-Current continuation, 2026-10-31: the complete Widgets review covers 73 production
-modules in seven responsibility groups and actual Host entry points. Decisions
-[0023](decisions/0023-Widget-Projection-And-Controlled-State-Authority.md) and
-[0024](decisions/0024-Precise-Cumulative-Layout-Finalization.md) address five
-reproduced causes: fixed final-row range, stale menu step, status width total,
-Core finalization precision/edge disagreement, and measured-menu geometry.
-Mixed private state is separated by responsibility and modal metadata has one
-entry owner. [Full ownership contract](WIDGETS.md). Original reds are preserved;
-final full02 qualifies the cleaned source: 232 contracts/38 harnesses and CPU
-smoke, two compile-fail docs, all/base strict, six tool groups, format and two
-ordinary standard builds pass with frozen inputs. The actual standard binary
-completed existing hidden/nonactive Inputs Main64/Float64, zero retry injection,
-normal exit and descendant/lock retirement. This signs the local Widgets family
-and the newly discovered Core finalization branch; no new physical input,
-reader, DPI or speed exit follows. Local receipts live under
-`target/research/widgets-family-20261031/`; original red/fixture failures and
-full01 before residual marker cleanup remain intact.
-The preceding exact 0139ec8 revision's remote CI 41181229182 actually passed;
-its green does not qualify this changed source or common product adoption.
+This is the current finite exit ledger. [The historical checkpoints](REFINEMENT-HISTORY.md)
+preserve the preceding document byte for byte, including its original failures,
+input identities and then-open work. A historical remaining item is not a second
+current backlog. Final source identity and product adoption are still open below;
+this reconciliation does not declare the programme complete.
 
 ## Completion standard
 
-Every crate/module must have a justified responsibility and dependency direction.
-Every state has one authoritative owner. Public API states input/output,
-lifetime, failure and caller responsibilities. Demonstrated duplicate or unused
-layers are removed with a migration when relevant; uncertain cases stay open.
-No new widget, platform promise or abstraction is added without a real use case.
-Clarity requires code and checks as well as documentation.
+Every retained module has a necessary responsibility, dependency direction and
+state owner in [the architecture map](ARCHITECTURE.md). Public contracts identify
+inputs, outputs, lifetime, failures and caller duties. Remove demonstrated
+redundancy with an explicit migration; retain useful small interfaces. No new
+widget, platform, executor or abstraction is justified by this programme alone.
 
-The finite gates below define this programme. Their completion is not a claim of
-universal platform support or a final release. Progress is recorded by actual
-exits, not estimated feature percentages or the number of tests.
+Implementation, software checks, actual native behavior, performance observations,
+source identity and consuming-product adoption are different evidence. Completion
+requires every finite exit below. A passed narrow fixture cannot sign a changing
+Core algorithm, physical interaction, Reader behavior or a whole product release.
 
-| Gate | Required result | Evidence and status |
+## Current exits
+
+| Gate | Required result | Current evidence and remaining work |
 | --- | --- | --- |
-| GF01 — Architecture authority | Current eight-library graph, state/lifecycle ownership map, resolved dependency boundary gate and corruption checks | Completed 2026-10-31: actual all-feature Cargo metadata accepted; corruption contract rejects reverse/optional/target/build/transitive native and UI leaks; no new Rust/native qualification |
-| GF02 — API and module reduction | Audit actual public surfaces against current documentation and callers; remove unjustified wrappers/exports, untangle mixed responsibilities, provide migrations for changed public contracts | Completed locally 2026-10-31: all eight source-family reviews, demonstrated reductions and affected software/native contracts qualified; immutable product API migration remains GF06 |
-| GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | In progress; Main/Float and native Agent CPU/deferral/controlled-budget contracts qualified at recorded inputs; Builder ordinary bridge qualified; Builder budget/fault and current joint integration remain open |
-| GF04 — Interaction and lifecycle | Close concrete existing input/text/IME/focus/popup/selection/resource gaps; make transport, cancellation, error and ownership limits explicit; preserve existing accepted scenarios | In progress; click/shared-preview cancellation and stdio deadline/lifetime contracts qualified; remaining interaction/resource audit open |
-| GF05 — Performance and diagnostics | Reproducible static/resize/text/collection workloads, disabled/enabled trace cost, bounds/retention/idle checks; select and fix measured bottlenecks with comparable evidence | In progress; four bounded CPU workloads and strict evidence verifier implemented; repeated cost comparison removes duplicate recorder checks; native/consumer/resource review remains open |
-| GF06 — Usability and delivery | Small reusable host recipe, capability-oriented docs, matching exports, clean feature checks and CI, exact SDK source identity and immutable Vesta consumer validation | In progress; native recipe/capability navigation qualified at recorded source and artifact; remote CI and immutable consumer delivery remain open |
+| GF01 — Architecture authority | Current eight-library graph; unique state/lifecycle ownership; resolved normal/build dependency policy including optional, target and transitive paths | Qualified locally. Architecture map, full-feature metadata and maintained corruption checks enforce the boundaries. No new package boundary or dependency was needed. |
+| GF02 — API and module reduction | Review every existing public family and caller; remove demonstrated forwarding/duplicate authorities; preserve necessary interfaces and migrations | Qualified locally for all eight families in the ledger below. One App still owns each example; public error interoperability, capability support and migrations have one authority. |
+| GF03 — Frame and layout contract | One coherent reconciliation/invalidation/publication contract across Main, Float and real consumers; bounded budget; text/scroll/hit/paint agreement; deferral and loss | Qualified at recorded inputs. Standalone and Agent budget/deferral cases, Builder budget/device/surface recovery, one widget-plus-Dock candidate and actual native Catalog creation/cancellation/reconfiguration pass. Final same-revision product delivery remains GF06. |
+| GF04 — Interaction and lifecycle | Resolve concrete input/text/IME/focus/popup/selection/resource findings; explicit cancellation, transport and release limits; retain accepted scenarios | Qualified at recorded inputs. Click/shared-preview retirement, bounded stdio waits, window/text ownership, WebView disposal, rejected/fresh capture outcomes and terminal allocator/context leases have actual regression evidence. Catalog pending Escape is reproduced and repaired through the existing dismissal owner. |
+| GF05 — Performance and diagnostics | Reproducible static/resize/edit/collection work; capture modes and cost; bounded retention/idle; repair measured bottlenecks using equivalent work | Qualified at recorded inputs. Four CPU workloads, six balanced cost runs, bounded native Main/Float collection/idle matrices, allocator-only ABBA and same-Model consumer projection comparison retain raw samples and limitations. Shared capture is actually collected by both consumers. |
+| GF06 — Usability and delivery | Minimal reusable host; capability-oriented matching contracts; clean feature checks/CI; final source seal; Vesta consumes that same immutable revision | Runtime ac13 has the recipe, current 236-contract qualification and exact green CI. Root's eight selectors/lock and its one Git checkout match ac13; 16 consumers compile all targets, ordinary Builder/Agent produce actual PNG/trace and retire. This final documentation reconciliation still needs its own source seal/tool/link qualification, publication/exact CI and same-final-revision consumer coordination. The programme remains active until those exits are proved. |
 
-Each gate is split into concrete findings as its review runs. New findings must
-state source location, failure/redundancy, intended owner, minimal change and
-acceptance; additions to scope require a recorded reason. Gate completion does
-not erase earlier failed runs, waived scenarios or unsupported platform limits.
+Qualified means the stated scope and recorded environment, not a claim that future
+edits or every native interaction are covered. An actual relevant implementation,
+dependency or environment change requires directed continuation with its reason.
+Do not restart already accepted scenes because of a new chat or aggregate status.
 
-## Public-family review ledger
+## Source families and contract authorities
 
-These are the finite GF02 family reviews, not new feature promises or
-a second export registry. For each row, map actual current exports/modules to
-the capability contract and real callers, document ownership/failure limits,
-and resolve demonstrated duplication. An absent product caller alone does not
-justify removing a useful SDK interface. Record any new concrete defect against
-its existing gate and evidence, rather than expanding a widget catalogue.
-
-| Family | Qualified work retained | Remaining review target |
+| Family | Current contract | Closed findings and qualification owner |
 | --- | --- | --- |
-| Core | Complete current 41-module/eight-group export/caller review; geometry/layout (0020), render/owner (0021), text/semantic resources (0022), precise cumulative finalization (0024); [contract](TEXT-AND-OBSERVATION.md) | Local source-family/software/native qualification recorded here and below; product adoption, remaining native/consumer/performance exits retain their own scope |
-| Widgets | Complete 73-module/seven-group source/export/caller review; [controlled projection and resource contract](WIDGETS.md), decisions 0023/0024 and original reds; final full02 and affected Main/Float qualification | Local family closed at recorded source/runtime; common product adoption and remaining cross-family native/consumer/performance exits retain their own scope |
-| Native adapter | Complete 17-module/seven-group source/export/caller review; [input/capture/platform-service contract](NATIVE.md), decision 0025, original reds, final full02 and actual public offscreen capture for Main/Float | Local family closed at recorded source/runtime; product adoption and remaining renderer/consumer/resource programme exits retain their own scope |
-| Vulkan renderer | Complete 24-module/nine-group source/export/caller review; [renderer contract](VULKAN.md), decisions 0026/0027, original capture/deadline reds, final full01 and actual Main/Float rejected/fresh readback plus later submissions | Local family closed at recorded source/runtime; physical/display guarantees and current common product adoption retain their own scope |
-| Workspace model | Complete public family/caller review; one private field representation and invariant validator; checked atomic operations, version-1 recovery and narrow window updates; [contract](WORKSPACE.md) | Local model/caller qualification recorded below; immutable product API migration remains GF06 |
-| Workspace projection | Complete view/header/geometry/drag/resize/reveal/overlay review and current caller map; six original failures retained; [contract](DOCK.md) | Local family/software/native qualification recorded below; immutable product API migration remains GF06 |
-| WebView | Complete public surface and existing Agent/Builder callers reviewed; redundant mutable identity removed, partial native sync and real temporary-profile leak fixed; [contract and migration](WEBVIEW.md) | Local API/resource qualification recorded below; immutable product migration remains GF06, not a second family audit |
-| Viewport | Complete seven-Rust/three-WGSL module and actual caller review; [projection/geometry contract](VIEWPORT.md), decision 0028, CPU/API reds and real near/far pixel red; final full02, native03 and reflow02 | Local family closed at recorded source/runtime; Host author framing, physical/display guarantees and immutable product API migration retain their own scope |
-
-[Decision 0015](decisions/0015-Minimal-Native-Host-And-Capability-Navigation.md)
-adds the complete [native host recipe](HOSTING.md) and current capability
-navigation without another library layer. The recipe's bounded native result is
-recorded separately from these full-family reviews and from immutable adoption.
-Frozen native-host-recipe/full01 passed 217 contracts / 35 harnesses, workload
-smoke, doc/strict/tool/format and all three ordinary executable builds. Final
-example `6a0900c6…` / PID 33224 passed five native width steps, logical edit/Undo,
-CPU/painter geometry, GPU retirement and normal exit0 with nine complete frame
-attempts / 114 events. Nine report/corruption checks retain the original hidden
-redraw and close-callback failures, including a green exit later rejected by
-stderr review. At that checkpoint all eight family reviews were still open; the
-recipe does not supply physical input, reader, remote CI or Vesta adoption.
-
-## GF02 / GF04 / GF05 Core text and semantic review
-
-Core's remaining [text/semantic/observation contract](TEXT-AND-OBSERVATION.md)
-has now been reconciled across every current production source module and actual
-SDK/Agent/Builder callers. Decision 0022 preserves three actual runtime reds:
-historical mappings grew on the second eight-row page, seventeen invalid raster
-input/path combinations were accepted, and all five invalid styled font sizes
-were accepted. Focused01 also preserves the old fully-removed platform-ID
-restoration assertion, whose explicit preview migration is documented. The
-other original selection/foreign-run assertions remain. Focused02 passed the
-relevant runtime contracts but strict rejected two new fixture unwraps; these
-are corrected and that failed run remains evidence.
-
-Final frozen full01 passed 232 contracts / 38 harnesses, CPU workload smoke, two
-existing compile-fail docs, all/base strict, six tool groups, format and both
-ordinary standard builds. The runtime byte inputs remained unchanged. Actual
-ordinary Standalone `0d17deb5…` / PID 20340 completed the existing inputs fixture
-with 64 submitted Main and 64 submitted Float steps, no injection, then normal
-exit0, no live descendants or observation errors. It was hidden/nonactive with
-zero OS input; CPU resource contracts and native integration remain distinct
-evidence. Owned commands/processes and executable locks are checked at final
-qualification under `target/research/core-text-resources-20261031`.
-
-The complete Core source-family review is locally closed alongside Workspace
-model/projection and WebView. Widgets, Native adapter, Vulkan renderer and
-Viewport reviews remain open. This does not close GF03–GF06, add an original
-physical/reader/DPI scene or adopt the SDK in a product. The previous b2d7ab7
-revision's actual Windows CI run 41179543727 passed; changed source requires its
-own delivery/CI evidence and cannot inherit that green check.
-
-## GF02 / GF04 WebView family checkpoint
-
-[Decision 0016](decisions/0016-Webview-Identity-And-Native-Sync-Ownership.md)
-reviews every public export, asset capability, native callback and worker,
-against actual Agent/Builder callers. One sync body retains completed native
-effects after a later failure; the mutable event-identity copy is removed.
-Native02 exposed two temporary profile residues despite all twenty sampled
-descendants exiting. Preserve that failure and the rejected empty native01
-resource sample; neither is accepted as complete lifecycle evidence.
-
-The same per-view I/O worker now retires its temporary profile after close.
-One explicit Host group observes completion/errors, including failed creation;
-it adds no global scheduler or UI wait. Six focused contracts include partial
-effects, an unavailable parent and a real Windows file lock. Native03 passed four
-actual page/origin/reload/storage stages, normal exit and profile retirement:
-two SDK temporary roots disappeared, the Host application root remained, and
-sampled child identities exited. Source/artifact identities and subsequent
-whole-SDK checks live in the product handoff. This closes this family's local
-review, not universal browser support, GF04 as a whole or GF06 adoption. At that
-checkpoint the other seven reviews remained open. Final full02 passed 220 contracts / 36
-harnesses plus CPU smoke, doc/strict/tool/format checks and three ordinary builds.
-Final native04 (`2d82cfd9…`, PID 9768) repeated the finite fixture on those frozen
-runtime inputs with twenty observed descendants, two removed temporary roots
-and retained Host storage. Thirteen report/corruption checks reject incomplete
-evidence. Full01 fixture-style failure and the unobserved native01 profile
-identities remain documented; no historical qualification is rewritten.
-
-## GF02 / GF04 workspace model checkpoint
-
-[Decision 0017](decisions/0017-Workspace-Invariants-And-Mutation-Authority.md)
-reviews the full model, value, error and session surface against Standalone and
-the published-pin Agent/Builder consumers. Three actual runtime reds and two
-successful forbidden compilations are retained. Live state and untrusted
-versioned snapshots now share one private field definition and one invariant
-validator. Raw live-model deserialization and mutable floating topology are
-removed; rejected operations retain allocator cursors as well as content.
-Same-pane pre-move order, all four exhausted cursor kinds, empty-main identity
-reuse and fixed v1 wire compatibility are qualified. Ratio normalization lives
-with value types rather than reversing their dependency on the mutable model.
-
-Final full06 passed 223 contracts / 36 harnesses, two compile-fail docs, CPU
-smoke, strict/tool/format checks and ordinary builds. The first native run
-exposed an additional existing probe defect: Main step zero was counted despite
-readiness deferral and no submission. That exit0 run remains rejected.
-[Decision 0018](decisions/0018-Frame-Probe-Submission-Admission.md) admits normal
-steps from the existing published snapshot stamp, retaining deferred attempts
-and requiring the next qualified step to keep its logical identity. Native02
-injected once through the existing renderer hook: one unsubmitted attempt then
-64 successful Main and 64 successful Float submissions. The ordinary build was
-restored and native03 independently completed all 128 successful submissions.
-Both exited normally; no native child identities remained. Two CLI negatives
-prove the feature/report guard returns before creating a native window.
-
-The final report-only consistency tightening is independently qualified by
-13 actual-report/corruption checks, including the original native rejection;
-Rust inputs remain identical to full06. The product handoff binds current
-ordinary artifacts and native processes; no physical input, user assistance,
-remote CI or product adoption is inferred. The model family is locally closed;
-the projection family and five other family reviews remain open, as do the
-remaining GF03–GF06 programme exits.
-
-## GF02 / GF04 Workspace projection checkpoint
-
-[Decision 0019](decisions/0019-Workspace-Projection-Admission-And-Geometry.md)
-reviews all six production modules and actual Standalone/Agent/Builder callers.
-Four initial red contracts and two additional actual RTL failures are preserved.
-Projection now has typed header/identity failures; frame construction rejects
-missing or invalid geometry instead of publishing a partial target map. One
-private numeric owner serves frame, route and split admission. Full authored
-tab order and split bounds survive clipping, while pointer-facing pane surfaces
-respect inherited clips. Reveal records a checkpoint only for a realized tab.
-
-Pane/split frames retain actual layout direction. Physical horizontal drops and
-deltas translate to authored order, and resize sessions borrow one complete
-split-frame snapshot. There is no default-LTR compatibility branch, new model
-generation, runtime or dependency. The [complete public contract](DOCK.md)
-defines projection callbacks, identity limits, coherent frames, Host native/input
-admission and preview API migration; low-level DTO construction keeps explicit
-caller preconditions instead of pretending to prove freshness.
-
-Final frozen full02 passed 224 contracts / 36 harnesses, CPU smoke, two existing
-compile-fail docs, strict feature/tool/format checks and ordinary builds. Actual
-ordinary Standalone 2fb2719f… / PID 27024 passed the existing inputs case with
-64 Main and 64 Float submitted steps, then normal exit and no live descendants.
-Full01's three test-fixture strict failures and earlier focused/compile failures
-remain recorded. The latter also exposed Core `ElementScopeExhausted` lacking
-the standard error trait; it remains a specific open Core item.
-
-Evidence and exact source/artifact/process identities are under
-`target/research/workspace-projection-20261031`. The local projection family is
-closed; five other family reviews remain open. Agent/Builder still resolve the
-published 9e31f07 revision and require the recorded API migration during GF06.
-No physical input, additional original scenario pass, remote CI, current product
-adoption or overall programme completion is inferred.
-
-## GF02 / GF04 Core numeric admission checkpoint
-
-[Decision 0020](decisions/0020-Core-Geometry-Admission-And-Failure-Identity.md)
-closes the reproduced value/layout boundary. The original external compile red
-retains scope-error `?` rejection; three runtime reds preserve invalid rectangles
-becoming clips, 36 accepted nonfinite input/path combinations and successful
-publication of finite-input overflow. Scope exhaustion now implements standard
-Error. `Size`/`Rect` own basic validity, and image/Dock/text metrics reuse it.
-The existing conversion is unchanged inside one private Style-to-Taffy bridge;
-all layout entries share its finite admission. Typed errors identify invalid
-input/output elements, and existing retained recovery remains the only reset.
-Finite negative normalization, negative margins and zero-sized geometry remain.
-
-Final full01 passed 227 contracts / 37 harnesses, CPU smoke, two existing
-compile-fail docs, feature/strict/tool/format checks and ordinary builds. Actual
-ordinary Standalone 639d0624… / PID 56704 passed the inputs probe with 64 submitted
-Main and 64 submitted Float steps, zero injection, normal exit and no live owned
-descendants. Its runtime inputs and actual executable match that frozen build.
-The import failure and two fixture-ID failures remain preserved; the latter
-correctly rejected grandchild ID 3 after the preceding rounded node became empty.
-
-Evidence is under `target/research/core-family-20261031`. This closes this Core
-boundary, not the complete Core family: render payload visibility/primitive
-semantics, the owner-registry failure contract and remaining actual export/caller
-coverage still need review. Source candidates are not reported as reproduced
-runtime defects or fixed by these tests. No new physical/DPI/reader result,
-measured speed improvement, remote CI or immutable product adoption is claimed.
-Five full family reviews and the remaining GF03–GF06 exits are still open.
-
-## GF02 / GF04 Core render and owner checkpoint
-
-[Decision 0021](decisions/0021-Core-Render-Payloads-Strokes-And-Owner-Updates.md)
-closes the three source candidates with actual evidence: external payload import
-failed, an outer stroke bend had no coverage, and failed owner updates corrupted
-old references in same/new-instance cases. Original red01 remains. `Polyline`
-now names the existing Style field, one private stroke body fills bevel joins
-and shares ordinary inner edges, and one staged registry update preserves old
-state on capacity failure. Signatures, vertex/shader format, existing error code,
-instance/window retirement and source payload ownership remain explicit.
-
-The [complete render preparation contract](RENDER-PREPARATION.md) maps value,
-paint, vertex/image/text data, raw-helper preconditions and Host/renderer limits.
-The seven source owners and current SDK/Agent/Builder caller hashes are recorded
-in `target/research/core-render-20261031/audit.json`. Short/reversed/self-crossing
-stroke overlap remains an explicit limit; it is not an unimplemented global
-path-union feature hidden by the original no-gap claim.
-
-Focused01 and frozen full01 passed: 230 contracts / 38 harnesses, CPU smoke,
-two existing compile-fail docs, feature/doc/strict/tool/format checks and both
-ordinary standard builds. Actual Standalone 7cb53376… / PID 61908 passed the
-existing hidden/nonactive inputs case with 64 Main and 64 Float submissions,
-zero injection, normal exit and no live owned descendants. Its current runtime
-and executable identity match full01. CPU topology and native integration keep
-their different scopes; no new physical pixels, input, DPI, reader or speed
-improvement is claimed. Exact receipts are under that same research directory.
-
-The full Core family remains open for its remaining current exports/callers and
-text/semantic/inspection/trace/raster/resource contracts. Five family reviews and
-the other GF03–GF06 exits remain open; local qualification is not remote CI or
-immutable product adoption.
-
-## GF05 bounded CPU checkpoint
-
-[Decision 0013](decisions/0013-Reproducible-Cpu-Workload-And-Trace-Cost-Baseline.md)
-and [the performance procedure](PERFORMANCE.md) define the one benchmark owner,
-trace admission simplification, reproducible inputs and evidence limits. Six
-runs retain 6,912 CPU pipeline frames and 288 complete traces; work signatures,
-counts and event structure agree. The final full02 passed the existing 215
-contracts, benchmark smoke, strict/doc/tool/format checks and standard builds.
-The no-argument Cargo failure is preserved and corrected. This closes the
-headless workload/cost slice, not GF05: native/consumer shared capture ownership,
-resource review and current immutable joint adoption remain open.
-
-## Baseline and initial findings
-
-The starting source is public `9e31f07d8dc4fa351418bc7321b4afff45783d0d`,
-sealed tree `780f82079f05610d844218175a0852105fb6536d3c3751028a4bd423ae48b546`.
-Actual local inventory is under `target/research/framework-refinement-20261031`.
-It found ten workspace packages: eight libraries and two examples; 353 Rust
-source files / 116,130 lines **including tests and both examples**. These counts
-are inventory, not product complexity or a new qualification.
-
-- Existing package directions agree with [the map](ARCHITECTURE.md). Preserve
-  this structure while reviewing internal responsibilities; there is no evidence
-  yet that merging or splitting crates would improve it.
-- At baseline, Standalone `main.rs` had 3,028 lines and `gallery.rs` 1,539. Review
-  their remaining state, event/command and projection responsibilities. Extract
-  only cohesive responsibilities while preserving the same App owner; splitting
-  files alone does not resolve ownership.
-- At baseline, Core `text_input.rs` had 1,221 lines. Review editor-state/context responsibilities
-  and error interoperability. At baseline `TextInputError` had no Display/Error
-  implementation; the finding below addresses that specific failure contract.
-- Public API inventories combine historical amendments with current contracts.
-  Reorganize them around actual capabilities and exports, preserving historical
-  evidence references without presenting them as current independent acceptance.
-- Native host preparation returns between text/layout updates in more than one
-  host. The actual Agent divider capture and fixed 64-step consumer regression
-  motivate GF03. Do not assume the same defect in Standalone before reproducing it.
-- Native adapter stdio starts a detached process-lifetime worker and exposes no
-  shutdown/join handle. The current native callers and embedded reuse were
-  reviewed under [decision 0014](decisions/0014-Stdio-Wait-Budget-And-Process-Lifetime.md):
-  retain this explicit process boundary, not a flag-based cancellation promise.
-  The review reproduced a 25 ms condition wait taking 10.01 seconds and retiring
-  transport; the bounded shared-deadline reply path and real process EOF/size/
-  successor-request contracts are now qualified in the GF04 checkpoint below.
-
-## GF02 findings in progress
-
-[Decision 0007](decisions/0007-Text-Ownership-Errors-And-Example-Composition.md)
-defines the current bounded change. These are findings within GF02, not newly
-invented programme exits.
-
-- **Text error interoperability:** ordinary host `?` conversion originally failed
-  to compile. Existing typed variants now implement the standard error traits;
-  ellipsis/native wrappers retain their authoritative cause. An external consumer
-  regression protects conversion, downcasting, failed-reset buffer preservation
-  and wrapped clipboard/edit causes. No error-string matching or new error model.
-- **Font/editor ownership:** the private text context module owns font identity,
-  registration and cache invalidation. The existing editor owns buffer/history.
-  Public names and measurement semantics remain the same.
-- **Example composition:** state, action dispatch, pointer input, native services
-  and stateless construction move to the owners in [the map](ARCHITECTURE.md#standalone-composition).
-  One App remains authoritative. All 88 original root function bodies, including
-  the const ID constructor, match their recorded token hashes after migration.
-  The frozen run02 passed 212 contracts, documentation, all/base strict checks,
-  three Node tool groups, format and both standard builds with no input drift.
-  The prior run01 passed contracts but failed strict checking for test-module
-  placement; the failure is retained and fixed without weakening the check.
-- **Example-only public scene:** caller review found the fixed
-  `ViewportScene::acceptance_scene` used only by Standalone and library tests,
-  with no Vesta product caller. It moves to the private demonstration owner;
-  existing tests keep their private fixture and assertions. Migration is explicit
-  in rc.2 notes. No additional geometry or scene abstraction is introduced.
-  Run03 caught three renderer test callers missed by the initial search; they
-  now use the same input data from a private test-only fixture, preserving all
-  assertions. The failed compile remains part of the evidence.
-- **API support authority:** the single family support/migration matrix moves
-  from the renderer document to [SDK documentation](SUPPORTED-API.md). The
-  renderer links it and retains its own contracts; no second export/state list.
-  Both reductions follow [decision 0008](decisions/0008-Example-Scene-And-Api-Boundary-Ownership.md).
-  Final frozen run05 passed all 212 contracts across 32 harnesses, doc tests,
-  all/base strict checks, three Node tool groups, format and both standard builds.
-  All 52 original viewport function bodies match, and the demo/test scene data
-  retain the original fields. The fresh resolved architecture check, generated
-  public rustdoc with warnings denied, and 55 local document links passed in
-  docs01. The public fixture is absent from generated API documentation.
-  The run04 controller and Cargo were verified absent on resumption, without a
-  terminal receipt. Its unchanged source snapshot and interruption remain in
-  `run04/recovery.json`; it is not counted as a passing run.
-- **Historical acceptance wording:** the old API matrix still called GPW04–06
-  incomplete, although the authoritative 2026-10-29 product audit recorded three
-  owner-waived/dependency exits. The current matrix now distinguishes that
-  acceptance from actual physical observations and unsupported platform limits.
-  The original evidence and broader historical percentages are not rewritten.
-- **Retained error-family interoperability:** the wider inventory found 17 flat
-  public error enums missing the standard traits, plus three typed wrappers
-  (`MarkdownError`, `MarkdownProjectionError`, `WebLinkOpenError`) with no source
-  chain. The external consumer compile failures and wrapper runtime failures are
-  retained in `target/research/public-errors-20261031`. The repair follows
-  [decision 0012](decisions/0012-Public-Error-Interoperability.md), preserving the
-  variants, owner and validation behavior without another wrapper/dependency.
-  All four focused consumer harnesses passed (nine contracts). Frozen errors01
-  then passed 215 contracts across 33 harnesses, documentation, all/base strict
-  checks, three Node tool groups, format and both standard builds without input
-  drift. The 37 named error definitions remain unchanged; all six new wrapper
-  source branches retain their original typed cause. No new native interaction
-  or Vesta adoption is claimed. This family is closed; GF02's other findings and
-  the programme remain open.
-
-The remaining public families, gallery composition, host frame convergence and
-transport lifetime are not signed off by this subset. Qualification inputs and
-the original compile failure are retained under
-`target/research/refinement-text-host-20261031`.
-
-This checkpoint qualifies the changed source/software responsibilities, not the
-whole programme. No new native interaction, physical DPI/reader observation,
-remote CI or Vesta adoption is claimed. Final result paragraphs and the source
-receipt are documentation-only updates after the frozen commands; production
-inputs must still match those commands byte for byte.
-
-## Validation discipline
-
-### GF03 current finding and evidence
-
-[Decision 0009](decisions/0009-Bounded-Host-Frame-Settlement.md) keeps the policy
-with the host. In `frame-settlement-20261031/before01`, the exact hidden native
-split sweep reached the renderer only 13/64 times in Main and 1/64 in Float.
-The unchanged draft and normal process exit did not make that a passing result.
-The same default workload in after01 reached/submitted 64/64 in each window,
-with two preparation passes at most. Documents01 submitted 64/64 per window with
-at most three passes and retained each window's Markdown selection/copy binding.
-Focus02 submitted 64/64 per window with Main at most three passes and Float two,
-while retaining independent focus memories and one Float caret-session owner.
-These are logical/native CPU paths, not physical input or presentation timing.
-
-Focus01's final fixture assertion incorrectly expected another window's remembered
-focus to be erased. It failed and is retained. Existing `set_window_focus` and
-`WindowTextSession` contracts require separate window memories and one active
-editor owner; focus02 checks both memories and that owner instead. No production
-focus behavior was changed to satisfy the fixture. The existing 45 default
-Standalone contracts passed. Frozen frame01 then passed all 212 contracts across
-32 harnesses, documentation, all/base strict checks, three Node tool groups,
-formatting and both standard builds, with unchanged inputs. The final two-example
-build has a different executable identity from focus02 despite identical Rust
-inputs; its exact standard executable passed the directed finalfocus01 run with
-the same 64/64 per-window submissions and three/two-pass bounds. Earlier scenes
-retain their actual executable hashes rather than inheriting this new identity.
-
-The verifier was rebound to each actual native PID. Eight actual-report and
-corruption reviews retain the original red result and reject a missing step,
-missing renderer call, capture loss and foreign PID. Corrupted reports are not
-new native evidence. Receipts are in `target/research/frame-settlement-20261031`.
-
-The deferred-input review reproduced another native failure. An injected acquire
-deferral retained a 360-wide text viewport after the CPU hit/focus layout became
-174 wide. The same immutable PaintList now supplies text views before renderer
-entry through one private helper using the existing snapshot viewport algorithm.
-The existing caret regression uses that production helper; its formerly separate
-test projection is removed. No public API, text algorithm or scheduling layer is
-added. RenderOutput remains a completed-renderer observation for other callers.
-
-Deferredafter03 used the existing fault-injection feature: 64/64 draws in each
-window entered the renderer but correctly submitted zero frames at the injected
-step. All 128 current text bounds/clipped hit tests agreed and no presented
-revision advanced; every step subsequently recovered a real successful submission.
-There were 128 actual target rebuild deliveries. Successful probe frames also
-compare all text fields with the production painter's output. Preparedfocus01
-on the final ordinary standard binary submitted 64/64 per window with at most
-three passes, retaining both focus memories and the single caret owner.
-Frozen prepared01 passed 212 contracts across 32 harnesses, documentation,
-all/base strict checks, three Node tool groups, formatting and both standard builds.
-Rust inputs match both native builds; feature/executable identities stay separate.
-
-The original deferredbefore01 native exit1, deferredafter01 missing-import compile
-failure and deferredafter02 fixture's premature target access remain recorded.
-The final fixture waits for actual presented-revision recovery rather than a fixed
-number of ticks. Six actual-report/corruption checks preserve the red result and
-reject stale geometry, false publication, absent recovery and missing ordinary
-submission. Their modified reports are verifier tests, not native observations.
-
-The bounded-exit review follows [decision 0010](decisions/0010-Prepared-Input-Readiness-And-Budget-Exit.md).
-Actual budgetbefore03 native 24240 exhausted a controlled one-pass limit but still
-admitted native-event classification and a real semantic Focus request, retaining
-its pointer capture. Windows now own explicit CPU-input readiness, set only after
-coherent text/hit installation. Native/accessibility admission blocks partial
-preparation, lifecycle events remain available, and existing query dirty state
-blocks semantic/logical commands until presented publication. Cancellation and
-admission move from the GPU module to the window owner; no SDK runtime/API is added.
-
-Budgetcursorafter01 verified 64 controlled exits per window: no renderer entry,
-no presented revision, released captures, preserved focus/draft, rejected semantic
-and logical requests, lifecycle admission and recovery after every step. A separate
-cursor red showed that blocking motion lost the latest coordinate; the fix samples
-motion/leave while suppressing hit/gesture dispatch. All 128 cursor observations
-passed. Its 132 total budget markers include four warm-up exits; the workload itself
-contains exactly 128. This deliberately reduced limit exercises the production
-exit, not a naturally observed eight-pass exhaustion. Budgetcursordeferred01 on
-the fault-feature binary retained valid CPU input through 128 acquire deferrals
-and actual recoveries. The final ordinary eight-pass binary passed budgetfocus01,
-with 64/64 submissions per window and three/two passes. Frozen budget02 passed
-212 contracts across 32 harnesses, documentation, all/base strict checks, tools,
-formatting and both standard builds. All three native Rust inputs match it exactly.
-Twelve actual-report/corruption checks passed, preserving historical report scopes;
-new optional cursor/readiness observations are explicit rather than retroactive.
-
-Original private-method compile failure, probe control overwrite, insufficient
-turnaround width delta and stale-cursor failures remain recorded. The query-enabled
-earlier probe accidentally entered normal stdio startup; current in-process probes
-are isolated from that branch. Earlier geometry evidence remains at its actual
-identity, but the old assertion that no stdin worker started is not substantiated.
-
-The external Builder bridge review now has a reproduced immutable-snapshot
-failure: its text height changed from 243.6 to 365.40002 while the old candidate
-still accepted host focus. The product fixes its own pure UI retry and explicit
-facade readiness. It removes its renderer text callback and projects the same
-prepared snapshot geometry, keeping business/author/Worker updates once per draw.
-An unmounted facade now returns unchanged instead of exhausting the host's loop.
-The existing settings contract also caught a real duplicate local identity 550;
-only the fixed reset control moves, with no new registry or scope.
-
-Vesta ADR-0684 and its external
-`Docs/Research/Evidence/builder-embedded-frame-20261031/qualification.json` own
-the full product evidence. Agent 84 and Builder 29 contracts passed, with one
-existing manual GPU profile ignored; strict checks and format passed. Actual
-standard Builder PID 53108 completed five native resize/mount/unmount/restore
-cases, 372 submissions and normal GPU retirement. Private controls retained their
-identities and rejected command focus. The old full Builder script's menu/status
-assumptions and Creation Scene prerequisite remain unqualified. Its unsuccessful
-edits are retained as research, while `--builder-frame` qualifies only the changed
-no-Scene frame contract. Original failures and an executable replacement caught
-before launch are preserved; a normal standard rebuild supplied the final identity.
-
-That product still consumes public 9e31f07 through all eight selectors, rather
-than this SDK's newer local source. Its 2,561 runtime inputs were stable through
-the actual native run; later Agent/Data source changes are separately listed and
-do not inherit the result. No SDK native rerun, physical-input result, remote CI
-or immutable joint adoption is claimed by this external checkpoint.
-
-GF03 remaining consumer work is specific. Builder's host budget exhaustion and
-GPU deferral/loss need directed qualification; a headless facade suspension check
-does not sign them. The independent Agent findings below now have a bounded
-qualification; its successor shared Core configuration and joint SDK adoption
-remain separate. Motion has no editor or stateful width-feedback reconciliation:
-its source keeps one presented hit/layout frame until submission and invalidates
-it on resize/scale/target preparation. It needs no speculative eight-pass loop;
-this is a source review, not additional Motion native acceptance.
-
-Vesta ADR-0686 and its external
-`Docs/Research/Evidence/agent-input-projection-20261031/qualification.json` record
-the native Agent closure. The real baseline retained old text geometry in all
-three injected acquire deferrals, then retained capture/click history after a
-controlled one-pass budget exit. The facade's existing three-state candidate
-authority now belongs to the same App as the native path. One private method
-installs hit geometry, CPU layout and all text viewports; the misleading
-accessibility-layout cache becomes input-layout state, and semantic publication
-no longer writes it. One suspension path preserves draft/logical focus and retires
-capture/click sequences. Embedded controllers do not own a native renderer loop.
-
-Agent 84 and Builder 29 contracts, one original ignored manual GPU test, and both
-strict checks retain their actual receipts. A final two-file pointer-observation
-delta passed fresh feature strict and native checks. Actual FI Desktop 9fc192c5 /
-PID 49728 passed text/layout agreement, pending presented commands, retirement,
-partial-input denial, cached cursor/leave observations and real subsequent
-submission. The native process exited normally with GPU retirement and no
-backend, author data or OS input. The original failures and fixture corrections
-remain recorded. This is logical input in a real native renderer, not natural
-eight-pass exhaustion, physical interaction or display latency.
-
-Ordinary Desktop b11e5187 and Builder 9d7ae288 were restored and rebuilt. The
-554 selected UI inputs remain current; shared Core/Runtime and Cargo.lock changed
-during the final build, so the current complete product delivery is still pending
-its Core owner. The receipt retains those exact configuration/source deltas and
-the probe's original executable/dependency identity. No new immutable SDK adoption,
-remote CI, full Builder fault qualification or programme completion follows.
-
-GF05 must also resolve Builder's shared frame scopes: its current entry point
-does not start the shared capture. Hook up the existing bounded capture convention
-or remove those unused scopes before signing diagnostics; the separate existing
-product recorder is not evidence that these scopes were collected. No trace cost
-or performance improvement is signed by this functional checkpoint.
-
-### GF04 current findings and evidence
-
-[Decision 0011](decisions/0011-Unavailable-Input-Sequences-And-Shared-Preview-Cancellation.md)
-closes the two cancellation leads with actual failures. A headless baseline
-restored the shared slider from 0.91 to 0.52 yet kept the other window's query
-current, and interpreted the next press as `Word`. Unavailable retirement now
-clears only its existing text-bridge click sequence. The value-cancellation
-coordinator aggregates real retirement outcomes and invalidates/redraws shared
-projections once; empty or foreign cleanup does not create a redraw loop.
-Native-ID resolution delegates to one private logical-window retirement body.
-There is no new public API, freshness flag, document model or cancellation runtime.
-
-The same focused contract preserves foreign click history, text/logical focus,
-historical snapshots and valid ordinary click pairs. It rejects the old shared
-command until a fresh presentation, and checks idempotent/foreign cleanup. The
-initial private-method access compile failure remains recorded; the production
-owner reuses its internal bridge selector and the test uses existing command
-dispatch. Frozen cancel01 passed 213 contracts across 32 harnesses, documentation,
-all/base strict checks, tools, format and both default standard builds.
-
-The new private native report case `cancellation` separately requires all three
-new observations. Actual Main/Float each passed 64 controlled one-pass exits,
-scoped click reset, live numeric preview rollback, rejected old command in the
-other window, and actual presentation recovery. There are 132 budget markers
-including four warm-up exits. Eight actual-report/corruption checks reject stale
-clicks, missing samples/rollback/shared pending and a foreign PID, while retaining
-the historical budget report's older scope and original red result.
-
-The final standard build has a different executable identity from the first
-native run, with identical Rust inputs. It was therefore reverified directly at
-`f4ff1a36…` / PID 67812: both windows again passed every step. Earlier PID 11056
-retains its actual `9a47fc8b…` identity. This is controlled native CPU/window-path
-qualification, with no physical input, natural eight-pass exhaustion, display
-timing, Root adoption or remote CI claim. Evidence is in
-`target/research/input-cancellation-20261031` and the related frame/software runs.
-
-The known stdio callers opt in once at native startup, matching the documented
-process-lifetime transport. No current consumer requirement justifies a generic
-transport runtime. [Decision 0014](decisions/0014-Stdio-Wait-Budget-And-Process-Lifetime.md)
-retains the explicit no-join/no-cancel limit and fixes the reproduced condition
-budget defect: a 25 ms request took 10.0106849 seconds and retired transport.
-The existing reply function now shares the condition deadline across polls,
-reply waits and sleep. Expiry rejects a late reply yet permits the next request;
-actual channel disconnection retires transport. No new API, wrapper, dependency
-or runtime thread is introduced.
-
-The public test exercises invalid input, bounded wait, a healthy successor and
-EOF in an actual child process. Another child must exit on oversized input while
-stdin remains open; closing the pipe cannot supply a false pass. Both children
-are normal Cargo test harness processes with explicit handles and reader joins.
-Final focused03 passed 15 adapter contracts and strict checking. Frozen
-stdio-lifecycle/full02 passed 217 contracts / 34 harnesses, CPU workload smoke,
-documentation, all/base strict checks, six Node contracts, format and standard
-builds. All inputs stayed unchanged; the original red and earlier fixture
-versions remain under `target/research/stdio-lifecycle-20261031`. This closes the
-bounded transport finding, not the remaining interaction/resource or native and
-current consumer-adoption exits.
-
-GF01's maintained gate is `tools/verify/architecture.mjs`, with its focused
-contract and Windows workflow step. It requires full Cargo metadata and enabled
-declared library features; `--no-deps` is not accepted. Production paths include
-normal/build edges, and development-only test dependencies do not imply runtime
-coupling. The source inventory/qualification receipts for this checkpoint are
-under `target/research/framework-refinement-20261031`.
-
-Keep the previous 210 SDK software contracts and their exact source identity.
-Use focused checks for changed code, final family/feature checks for delivery,
-and native evidence only for the scenes actually affected. Test current normal,
-error, cancellation and resource-bound behavior, rather than static labels or
-private helper constants. Use this repository's default Cargo target; preserve
-the user's live Agent and other owners' processes. Historical source archives and
-release receipts are immutable. A changed development tree must be explicitly
-resealed and qualified before publication; old green CI is not its qualification.
+| Core | [Text/semantics/resources](TEXT-AND-OBSERVATION.md), [CPU preparation](RENDER-PREPARATION.md) | Complete 41-module/eight-group review; numeric admission, one cumulative finalization, text raster/cache ownership, current platform mappings, owner-registry atomic failure and standard error causes. Local checkpoints: core-text-resources and core-family. |
+| Widgets | [Controlled projections](WIDGETS.md) | Complete 73-module/seven-group review; one controlled state/projection boundary, corrected invalid geometry/menu/status behavior and shared Core finalization. Local checkpoint: widgets-family. |
+| Native adapter | [Native input/services](NATIVE.md) | Complete 17-module/seven-group review; current capture/platform identities, coordinate and service failure boundaries, bounded stdio deadline and explicit process-lifetime transport. Local checkpoints: native-family and stdio-lifecycle. |
+| Vulkan renderer | [Rendering and retirement](VULKAN.md) | Complete 24-module/nine-group review; one recording authority, truthful capture/submission outcomes, bounded observation, one device allocator, terminal renderer/readback context leases and existing-worker retirement. Local checkpoints: vulkan-family, native-collection-cost and gpu-allocation-lease. |
+| Workspace model | [Model/session](WORKSPACE.md) | Private validated representation, checked atomic identity capacity, versioned restore and narrow native-placement operations. Local checkpoint: workspace-model. |
+| Workspace projection | [Dock/geometry](DOCK.md) | One borrowed model and fallible coherent frame; full ordering/direction and one numeric admission owner. Local checkpoint: workspace-projection. |
+| WebView | [Carrier/lifetime](WEBVIEW.md) | Stable creation identity, actual native synchronization, per-view profile/I/O disposal and off-loop retirement. Local checkpoint: webview-family. |
+| Viewport | [Projection/geometry](VIEWPORT.md) | One camera/projection/ray owner and Gizmo length; clipping/picking/packing admission; private example scene; real near/far pixel correction. Local checkpoint: viewport-family. |
+
+These rows summarize completed source/caller reviews. The actual implementations,
+Cargo graph and capability contracts remain authoritative; this is not a second
+export list or executable configuration. Unchanged families retain their original
+qualification. Later renderer allocation changes have their own directed evidence
+and the final full software run, rather than inheriting an unrelated old green.
+
+## Evidence needed for the gate claims
+
+Evidence directories are local immutable research receipts, not distributed SDK
+API. Paths below are relative to this repository unless a product root is given.
+The historical document records the earlier per-case sources, corrections and
+failed observations. Never rewrite an original receipt into a successor pass.
+
+| Requirement | Authoritative evidence inspected for this reconciliation |
+| --- | --- |
+| Current runtime/software identity | target/research/gpu-allocation-lease-20261031/full01/qualification.json and checkpoint-final.json: 236 contracts / 39 harnesses, two compile-fail docs, all/base strict, tool groups, format and ordinary Standalone/Motion; frozen runtime inputs match ac13. |
+| Exact remote CI and process cleanup | The same directory's delivery01, ci08 and post01: ac13 main/origin, exact CI41216612630 success, 493-file source tree dcf9bb7b, 56 registered identities/direct families retired and both SDK standard locks free. |
+| Main/Float bounded frame preparation | target/research/frame-settlement-20261031 and the historical GF03 section: original geometry/budget/capture failures, source-bound successors and actual successful later submissions. |
+| Real Agent and Builder integration | D:/Vesta/Docs/Research/Evidence/agent-input-projection-20261031/qualification.json and D:/Vesta/target/research/builder-renderer-loss-20261031/checkpoint01.json: controlled budget/deferral, typed device/surface recovery and ordinary restore. |
+| One consumer candidate | D:/Vesta/target/research/builder-projection-20261031/checkpoint01.json and paired03/analysis.json: 32 existing contracts, strict, 560 samples / 140 equivalent steps with actual stable identities and both locales/themes. |
+| Actual popup cancellation/target ownership | D:/Vesta/target/research/builder-catalog-factory-20261031/checkpoint-final.json: pending Escape red, then native06 eight true phases including actual index-1 target/job/publication, stable native IDs, focus and normal shutdown. |
+| Public readback terminal owner | target/research/gpu-allocation-lease-20261031/red01 and green01: a real completed first-frame result outlives App/renderers; only the repaired lease retains context, then releases it through the existing worker. Main/Float offscreen and rejected/fresh presented captures also pass. |
+| CPU capture costs and limits | target/research/ui-workloads-20261031 and [the performance procedure](PERFORMANCE.md): 6,912 pipeline frames / 288 traces, same work signatures, disabled idle and overflow/deadline ownership; slow/noisy observations retained. |
+| Native collection/idle/resources | target/research/native-collection-cost-20261031/checkpoint-final.json: 1,536 equivalent collection-matrix frames plus 1,024 allocator-only ABBA frames, fixed registered-font identities, actual ordinary idle and exact-process sampling. |
+| Minimal reusable native host | target/research/native-host-recipe-20261031/checkpoint-final.json and [HOSTING](HOSTING.md): five real native width steps, logical edit/Undo, geometry agreement, normal GPU retirement and reusable public API composition. |
+| Current consumer resolution | D:/Vesta/target/research/builder-catalog-factory-20261031/adopt02 and consumers04: eight immutable ac13 package sources in one byte-equal Git checkout; all 15 production plus one direct-test consumer compile all targets with unchanged captured inputs. |
+| Ordinary actual consumers | The product checkpoint records Builder321f6bfc / PID50828 with two PNGs and 403 native frames, Agent1b179eb1 / PID28824 with 11 trace frames / 10 submissions, normal exits/GPU retirement, five rejected private flags, and 107 retired identities/direct families. |
+
+The last ordinary product build exits0 but has one concurrent foreign SOP
+edge-selection source change. Its UI slice and recorded PEs are qualified;
+full_current_product_source_qualified remains false. The 16-consumer compile is
+separate, current captured-source evidence. Neither statement overwrites the
+other or certifies unfinished domain/Agent capabilities.
+
+## Performance interpretation
+
+The CPU recorder removes a repeated session/deadline check at one authoritative
+append boundary; detailed capture still costs work. Native collection/idle
+sampling does not add an application scheduler. One allocator per device removes
+independent retained pools: the allocator-only ABBA private-commit median falls
+from 1,260,990,464 to 722,595,840 bytes (538,394,624 bytes). This is process private
+commit, not VRAM or a general leak/speed guarantee. An earlier slower matrix is
+retained; the paired call-time result does not justify a universal frame claim.
+
+The consumer's extra projector alone measures 179/3,738/139/134 microseconds for
+creation/development/about/todo. Aggregate timings vary on the shared machine.
+The change removes demonstrated duplicate work; it does not establish a fixed
+native improvement percentage. Use the existing recorder as the sole call-tree
+and self-time analyzer.
+
+## Final remaining delivery actions
+
+1. Qualify and seal this documentation-only reconciliation against the unchanged
+   ac13 runtime. Verify links, inventory, current graph and matching published API
+   documentation. Preserve the old plan byte for byte and prove the source delta.
+2. Publish the exact final source revision and observe its own completed CI;
+   ac13's green cannot qualify changed documentation/source identity by itself.
+3. Coordinate Vesta's eight selectors/lock and one Git checkout to that final
+   immutable revision. Respect the current Root UI/source update owner and live
+   handles. Verify consumer/build identities, actual standard-program adoption
+   and cleanup. Retain already-qualified native scenes when runtime bytes and
+   relevant environment are unchanged; document directed successor requirements.
+4. Audit every row and requirement from evidence before completing the goal.
+   Any uncertain or insufficient proof remains open; no source seal, status text
+   or narrow fixture can substitute for the stated gate.
+
+## Preserved acceptance and scope limits
+
+The original 118 product exits retain their 115 actual qualifications and three
+owner-waived/dependency limits. Root544's six actual DPI samples remain untouched.
+No logical fixture adds a physical input, Reader, actual cross-monitor DPI or
+physical device-removal result. UI-DOC-TABLE-001 retains its original unbound
+Host/input report; a generic table fixture does not close that report.
+
+This programme is the bounded refinement of the existing supported desktop UI
+framework. New platforms/widgets, broad application business features, registry
+publication and a final product release require their own scope and evidence.
+No excluded physical/product gate is silently marked passed by this ledger.
