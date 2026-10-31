@@ -192,6 +192,15 @@ stored error or observation timeout; an unrepresentable caller deadline is a
 `retirement_budget` error. None authorizes releasing unfinished GPU owners.
 The existing worker owns retired resources and never joins the UI thread.
 
+An externally held `CaptureReadback` is also a GPU owner. Its private context
+lease outlives its staging buffer, so the result can safely outlive its renderer
+without transferring the final device allocator release to the consumer thread.
+Drop that result before expecting complete context retirement; `rgba()` returns
+ordinary CPU bytes and adds no GPU lease. The renderer likewise drops its
+allocation owners before its terminal context field. Both paths reuse the
+existing worker and retirement monitor; see
+[decision 0032](decisions/0032-Terminal-Context-Ownership-For-Allocation-Leases.md).
+
 ## Evidence limits
 
 The current decisions are [0026](decisions/0026-Presented-Capture-And-Submission-Outcome.md)

@@ -83,8 +83,15 @@ pub(super) fn run() -> Result<(), Box<dyn Error>> {
     app.require_native_capture_completion();
     let retirement = app.gpu.as_ref().map(GpuState::retirement_monitor);
     let context_probe = render_backend::retirement_probe_enabled()
-        .then(|| app.gpu.as_ref().and_then(GpuState::gpu_context))
+        .then(|| {
+            app.gpu
+                .as_ref()
+                .and_then(GpuState::gpu_context)
+                .map(|gpu| Arc::downgrade(&gpu))
+        })
         .flatten();
+    #[cfg(feature = "gpu-fault-injection")]
+    let capture_probe = app.gpu.as_mut().and_then(GpuState::take_retirement_capture);
     let smoke = app.smoke;
     let missing_frame = smoke && app.rendered_frames == 0;
     let fatal = app.fatal_error.take();
@@ -111,8 +118,38 @@ pub(super) fn run() -> Result<(), Box<dyn Error>> {
                 );
             }
             observed?;
-            // This disposable probe deliberately keeps the final context on the
-            // event thread after frames retire, exercising its independent slot.
+            #[cfg(feature = "gpu-fault-injection")]
+            if render_backend::retirement_probe_enabled() {
+                let lease_error = |message: &str| vesta_gpui_vulkan::RendererError {
+                    code: "native_vulkan_readback_context_lease",
+                    stage: "retirement_capture",
+                    fault: vesta_gpui_vulkan::RendererFault::Other,
+                    message: message.into(),
+                    element: None,
+                };
+                let readback = capture_probe
+                    .ok_or_else(|| lease_error("retirement probe did not capture a real frame"))?
+                    .wait(Duration::from_secs(5))?;
+                let held = context_probe
+                    .as_ref()
+                    .is_some_and(|gpu| gpu.upgrade().is_some());
+                eprintln!(
+                    "UI-R07 readback: real_frame={} context_held_after_renderer_drop={held}",
+                    readback.frame
+                );
+                if !held {
+                    return Err(lease_error("public readback outlived its GPU context"));
+                }
+                drop(readback);
+                retirement.observe(Duration::from_secs(5))?;
+                let released = context_probe
+                    .as_ref()
+                    .is_none_or(|gpu| gpu.upgrade().is_none());
+                eprintln!("UI-R07 readback: released=true context_retired_on_worker={released}");
+                if !released {
+                    return Err(lease_error("public readback context did not retire"));
+                }
+            }
             drop(context_probe);
             retirement.observe(Duration::from_secs(5))?;
             if smoke {

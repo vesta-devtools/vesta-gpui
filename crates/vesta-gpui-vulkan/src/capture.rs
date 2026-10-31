@@ -109,13 +109,25 @@ impl CaptureTicket {
     }
 }
 
-#[derive(Debug)]
 pub struct CaptureReadback {
     pub region: CaptureRegion,
     pub frame: u64,
     pub offscreen: bool,
     buffer: Subbuffer<[u8]>,
     format: Format,
+    // A public readback may outlive its renderer; release its buffer before this lease.
+    _gpu: Arc<crate::GpuContext>,
+}
+impl std::fmt::Debug for CaptureReadback {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CaptureReadback")
+            .field("region", &self.region)
+            .field("frame", &self.frame)
+            .field("offscreen", &self.offscreen)
+            .field("buffer", &self.buffer)
+            .field("format", &self.format)
+            .finish_non_exhaustive()
+    }
 }
 impl CaptureReadback {
     /// RGBA8/sRGB with the render target's alpha. Map on a worker after completion.
@@ -251,6 +263,7 @@ impl WindowRenderer {
                     offscreen,
                     buffer,
                     format: image.format(),
+                    _gpu: self.gpu.clone(),
                 },
                 sender,
             ));

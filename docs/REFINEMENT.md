@@ -4,6 +4,16 @@ Requested: 2026-10-31. Status: Active.
 Authority: this repository. Products track adoption in their own integration records.
 Decision: [0006](decisions/0006-Explicit-Architecture-And-Refinement-Gates.md).
 
+Resource ownership continuation, 2026-10-31: [decision 0032](decisions/0032-Terminal-Context-Ownership-For-Allocation-Leases.md)
+closes the reproduced public readback last-owner gap. A retained first-frame
+readback now keeps its device context after App/renderers retire; releasing the
+result permits normal context retirement on the existing worker. The renderer's
+terminal context field also outlives its allocation owners. Original red01,
+green01, two offscreen PNGs and both Main/Float rejected/fresh presented capture
+sequences remain in `target/research/gpu-allocation-lease-20261031/`. These
+directed qualifications preserve the collection/idle and allocator ABBA evidence;
+they do not assert a new speed result or current product adoption.
+
 Current cross-host cursor, 2026-10-31: Vesta's external Builder budget and
 Main/Float device/surface-loss records now qualify their scoped paths; its
 ordinary trace capture is connected. Those records do not qualify all current

@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "d3f160c4d2938ce73fce901116454310c3c9c4389bb5076e579411efe9156ebc",
+  "tree_sha256": "dcf9bb7b92a236539eec63002fc936a4d39f8092f74f452f668bf435a5154848",
   "files": [
     {
       "path": ".gitattributes",
@@ -85,8 +85,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/application_run.rs",
-      "bytes": 13442,
-      "sha256": "1fce6ced7c96f08041007f6c8e44a07fce0358be1ff01af9d0f243df29679d8a"
+      "bytes": 15115,
+      "sha256": "8a52d83459da7a842d651e4d24baff875f1074fe401119e2c0b5299e1c46a947"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/application_state.rs",
@@ -380,8 +380,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/render_backend.rs",
-      "bytes": 35392,
-      "sha256": "d87be275e5b3847d46b7d01eaf6a15be7208b6ef890965c6be5dd2b3e58cc10c"
+      "bytes": 36121,
+      "sha256": "56c30ea5a08016a0f63bd33aa3ee578cccf64143ea9f92f8218ff483c149d507"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/scroll_geometry.rs",
@@ -820,8 +820,8 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/capture.rs",
-      "bytes": 8392,
-      "sha256": "bac357dc1df699585553a6a6c3ebbac0531cc53c5eb2828472f456e48fcea151"
+      "bytes": 8964,
+      "sha256": "4b46653f40644ad1506fa419c192e76f0d7861b154d8e9325adcae5b0eea5c95"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/capture/offscreen.rs",
@@ -880,8 +880,8 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/lib.rs",
-      "bytes": 38667,
-      "sha256": "cbb47a4415fa8c7d22162c3235d627906016bf1aed12214c56f9e2fafbd018d6"
+      "bytes": 38755,
+      "sha256": "d5e7ea25a81edd21c6de2c43632248567e2dee8aa743f057dde197e988c3df2f"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/painter.rs",
@@ -2125,8 +2125,8 @@
     },
     {
       "path": "docs/ARCHITECTURE.md",
-      "bytes": 12953,
-      "sha256": "26b37633f979aafecf94a816118fac592035de83a427cada87c146b41390dd8b"
+      "bytes": 13352,
+      "sha256": "6f84f6575d93dce1f176de1ec70b5aa925703212f1d3cfa5fcf0d45ec1812eaa"
     },
     {
       "path": "docs/DOCK.md",
@@ -2155,8 +2155,8 @@
     },
     {
       "path": "docs/REFINEMENT.md",
-      "bytes": 53984,
-      "sha256": "65e8b7e2ae3743ed3d1251fa7b9d11f867cf4e0cce20eae6c470c4ea22fed9a4"
+      "bytes": 54733,
+      "sha256": "9ba1c09b0fa791a700e4a439a060b2d7324a2989c0dd01602a57c25ed5947e4b"
     },
     {
       "path": "docs/RELEASING.md",
@@ -2195,8 +2195,8 @@
     },
     {
       "path": "docs/VULKAN.md",
-      "bytes": 14209,
-      "sha256": "be6c3361b61a0d996ebb0cdf7f3b323e38a9248abba4f1ae3b90d26f1f7d62ff"
+      "bytes": 14806,
+      "sha256": "c6d5b6ab916e52e3d2ddc6cab24b67948fe3367ddcb5e3fc7660ee0f085146e7"
     },
     {
       "path": "docs/WEBVIEW.md",
@@ -2367,6 +2367,11 @@
       "path": "docs/decisions/0031-Recovery-Retry-Observation-States.md",
       "bytes": 1690,
       "sha256": "5ba763a0a7fca0744178afb51891a521ad093f4063becc3b52266deee80ea323"
+    },
+    {
+      "path": "docs/decisions/0032-Terminal-Context-Ownership-For-Allocation-Leases.md",
+      "bytes": 2757,
+      "sha256": "a8c8ca6331855389904426450ad2fb4dcd24daf5f31dcf39add7e0bf4cd37bd4"
     },
     {
       "path": "release/0.1.0-rc.1.md",

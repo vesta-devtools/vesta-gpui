@@ -356,6 +356,8 @@ pub(super) struct RenderFrame<'a> {
     pub profile_context: super::frame_profile::FrameContext,
 }
 pub(super) struct GpuState {
+    #[cfg(feature = "gpu-fault-injection")]
+    retirement_capture: Option<vesta_gpui_vulkan::CaptureTicket>,
     renderer: Option<Box<vesta_gpui_vulkan::WindowRenderer>>,
     creation: Option<RendererCreation>,
     updates: RendererUpdates,
@@ -497,6 +499,8 @@ impl GpuState {
         let _ = primary;
         Self {
             retirement: creation.retirement_monitor(),
+            #[cfg(feature = "gpu-fault-injection")]
+            retirement_capture: None,
             renderer: None,
             creation: Some(creation),
             updates: RendererUpdates::default(),
@@ -617,6 +621,10 @@ impl GpuState {
             .map(|renderer| renderer.gpu_context())
             .or_else(|| self.updates.context())
     }
+    #[cfg(feature = "gpu-fault-injection")]
+    pub fn take_retirement_capture(&mut self) -> Option<vesta_gpui_vulkan::CaptureTicket> {
+        self.retirement_capture.take()
+    }
     pub fn swapchain_recreations(&self) -> u32 {
         self.retired_recreations
             + self
@@ -727,6 +735,14 @@ impl GpuState {
         let Some(gpu) = &mut state.renderer else {
             return Ok(None);
         };
+        #[cfg(feature = "gpu-fault-injection")]
+        if retirement_probe_enabled() && state.retirement_capture.is_none() {
+            state.retirement_capture =
+                Some(gpu.capture_next_frame(vesta_gpui_vulkan::CaptureRegion {
+                    origin: [0, 0],
+                    extent: [1, 1],
+                })?);
+        }
         gpu.enable_cpu_profiling(frame.cpu_profile.is_some());
         let previous_retry = gpu.frame_retry();
         let clear = frame

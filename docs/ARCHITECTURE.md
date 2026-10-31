@@ -79,6 +79,10 @@ and target-specific paths; native support is still Windows-preview scope.
 5. The renderer retains only the resources needed by submitted work, then retires
    them through its existing owner. Submission, GPU completion and physical
    display are distinct facts. Recovery preserves caller-owned CPU state.
+   One device context owns the allocator for its generation. A public GPU
+   readback retains that context until after its staging buffer drops; renderer
+   allocation fields also drop before their context. Final device retirement
+   remains on the existing worker. CPU pixel bytes carry no GPU ownership.
 6. Trace capture is opt-in and bounded. Native adapter export can freeze data and
    hand file output to the host's worker. The stdio helper is explicitly started,
    process-lifetime stdin/stdout transport, started once by a native process host;
@@ -180,8 +184,9 @@ recorded call analysis remains inside the existing recorder. The private recorde
 entry coordinator owns append-time admission, retaining one global capture and
 one session state; it adds no thread-local cache or generation model.
 
-The current API inventories contain historical notes. GF02 will reconcile them
-against actual exports; undocumented or redundant exports remain review items,
-not implicitly supported features. Reuse the existing text/layout/render engines
-and stable identities. Review evidence before merging packages or introducing a
-trait, runtime, task pool or additional authoritative state.
+The GF02 family ledger records the completed local export/caller reviews and
+their migrations. Historical inventories retain their recorded scope; current
+support follows the capability contracts and actual exports. Reuse the existing
+text/layout/render engines and stable identities. Review evidence before merging
+packages or introducing a trait, runtime, task pool or additional authoritative
+state. Remaining programme and product-adoption exits stay in REFINEMENT.md.

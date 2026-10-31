@@ -77,7 +77,6 @@ pub struct WindowRenderer {
     capture: capture::CaptureState,
     presented_frames: u64,
     window: Arc<Window>,
-    gpu: Arc<GpuContext>,
     retirement: Arc<retirement::Slot<retirement::Owner>>,
     swapchain: Arc<Swapchain>,
     render_pass: Arc<RenderPass>,
@@ -110,6 +109,8 @@ pub struct WindowRenderer {
     samples: SampleCount,
     #[cfg(feature = "viewport")]
     scene_frames: u32,
+    // Drop allocation owners before the last context can retire the device allocator.
+    gpu: Arc<GpuContext>,
 }
 
 impl Drop for WindowRenderer {
