@@ -41,6 +41,16 @@ pub enum PointerEditError {
     InvalidThreshold,
 }
 
+impl std::fmt::Display for PointerEditError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::InvalidGeometry => "invalid pointer edit geometry",
+            Self::InvalidThreshold => "invalid pointer edit drag threshold",
+        })
+    }
+}
+impl std::error::Error for PointerEditError {}
+
 /// One preview/commit/cancel cycle. The host keeps the preview and typed validation;
 /// this session keeps only the stable owner and the immutable value to restore.
 #[derive(Clone, Copy, Debug, PartialEq)]

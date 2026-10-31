@@ -106,6 +106,20 @@ pub enum UiQueryError {
     InvalidCursor,
 }
 
+impl std::fmt::Display for UiQueryError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::InvalidLimits => "invalid UI query limits",
+            Self::InconsistentPresentation => "inconsistent UI presentation",
+            Self::ForeignWindow => "UI query belongs to another window",
+            Self::StaleSnapshot => "UI snapshot is stale",
+            Self::NodeNotCaptured => "node was not captured in the UI snapshot",
+            Self::InvalidCursor => "invalid UI query cursor",
+        })
+    }
+}
+impl std::error::Error for UiQueryError {}
+
 #[derive(Clone, Copy, Debug)]
 pub struct UiQuery {
     pub snapshot: UiSnapshotId,

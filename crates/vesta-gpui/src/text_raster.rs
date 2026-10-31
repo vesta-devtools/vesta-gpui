@@ -37,6 +37,15 @@ pub enum TextRasterError {
     InvalidViewport,
 }
 
+impl std::fmt::Display for TextRasterError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidViewport => f.write_str("invalid or oversized text raster viewport"),
+        }
+    }
+}
+impl std::error::Error for TextRasterError {}
+
 const GLYPH_CACHE_ENTRIES: usize = 4096;
 const GLYPH_CACHE_BYTES: usize = 8 * 1024 * 1024;
 const GLYPH_RUN_CACHE_ENTRIES: usize = 256;

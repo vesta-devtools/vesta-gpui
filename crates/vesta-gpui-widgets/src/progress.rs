@@ -18,6 +18,16 @@ pub enum ProgressStateError {
     NonFinitePhase,
 }
 
+impl std::fmt::Display for ProgressStateError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::NonFiniteValue => "progress value must be finite",
+            Self::NonFinitePhase => "progress animation phase must be finite",
+        })
+    }
+}
+impl std::error::Error for ProgressStateError {}
+
 pub fn progress_bar_state(
     root: WidgetIdentity,
     fill: WidgetIdentity,

@@ -130,7 +130,14 @@ impl std::fmt::Display for WebLinkOpenError {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-impl std::error::Error for WebLinkOpenError {}
+impl std::error::Error for WebLinkOpenError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Destination(error) => Some(error),
+            Self::Launch(error) => Some(error),
+        }
+    }
+}
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn open_web_link(destination: &str) -> Result<(), WebLinkOpenError> {

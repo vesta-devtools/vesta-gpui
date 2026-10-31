@@ -49,6 +49,15 @@ pub enum KeymapError {
     Duplicate(KeyChord),
 }
 
+impl std::fmt::Display for KeymapError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Duplicate(chord) => write!(f, "duplicate key binding {chord:?}"),
+        }
+    }
+}
+impl std::error::Error for KeymapError {}
+
 /// Typed shortcut registry. The host decides when text editing or a popup owns a key.
 pub struct Keymap<Action> {
     bindings: HashMap<KeyChord, Action>,

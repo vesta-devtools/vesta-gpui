@@ -9,6 +9,17 @@ pub enum TextBridgeRegistrationError {
     DuplicateWindow(UiWindowId),
 }
 
+impl std::fmt::Display for TextBridgeRegistrationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::DuplicateWindow(id) => {
+                write!(f, "text input window is already registered: {id:?}")
+            }
+        }
+    }
+}
+impl std::error::Error for TextBridgeRegistrationError {}
+
 /// A host registers a window before dispatch and removes it after ending its
 /// author-independent text session. Unknown/closed windows never create state
 /// implicitly; registering an existing identity cannot overwrite active IME.

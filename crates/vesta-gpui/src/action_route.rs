@@ -16,6 +16,18 @@ pub enum ActionRouteError {
     UnknownActionTarget(ElementId),
 }
 
+impl std::fmt::Display for ActionRouteError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::DuplicateElement(id) => write!(f, "duplicate element identity {id:?}"),
+            Self::DuplicateElementKey(key) => write!(f, "duplicate element key {key:?}"),
+            Self::DuplicateAction(id) => write!(f, "duplicate action for element {id:?}"),
+            Self::UnknownActionTarget(id) => write!(f, "unknown action target {id:?}"),
+        }
+    }
+}
+impl std::error::Error for ActionRouteError {}
+
 /// A tree event visits ancestors before its target, then returns through them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EventPhase {

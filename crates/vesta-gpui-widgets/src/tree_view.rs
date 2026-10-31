@@ -28,6 +28,17 @@ pub enum TreeViewError {
     LeafHasDescendants,
 }
 
+impl std::fmt::Display for TreeViewError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::DuplicateId => "duplicate tree item identity",
+            Self::InvalidDepth => "invalid tree item depth",
+            Self::LeafHasDescendants => "tree leaf has descendants",
+        })
+    }
+}
+impl std::error::Error for TreeViewError {}
+
 /// UI expansion state; the host remains authoritative for the tree entries.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TreeExpansionState<K: Ord> {

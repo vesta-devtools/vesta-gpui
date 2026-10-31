@@ -34,6 +34,16 @@ pub enum TileGridError {
     DuplicateElement(ElementId),
 }
 
+impl std::fmt::Display for TileGridError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidGeometry => f.write_str("invalid tile grid geometry"),
+            Self::DuplicateElement(id) => write!(f, "duplicate tile grid element {id:?}"),
+        }
+    }
+}
+impl std::error::Error for TileGridError {}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TileGridDirection {
     Left,

@@ -40,6 +40,17 @@ pub enum SuggestionError {
     DuplicateCandidate,
 }
 
+impl std::fmt::Display for SuggestionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Composing => "suggestion request is unavailable during text composition",
+            Self::ReusedRequestId => "suggestion request identity was already used",
+            Self::DuplicateCandidate => "duplicate suggestion candidate identity",
+        })
+    }
+}
+impl std::error::Error for SuggestionError {}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct SuggestionState<K> {
     request: Option<SuggestionRequest>,

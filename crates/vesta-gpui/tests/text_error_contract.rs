@@ -1,7 +1,8 @@
 use std::error::Error;
 use vesta_gpui::{
-    FontRole, StyledTextError, TEXT_INPUT_MAX_BYTES, TextInputContext, TextInputError,
-    TextInputState, TextInputViewError,
+    ActionRoute, ActionRouteError, Element, ElementId, ElementKey, FontRole, KeymapError,
+    StyledTextError, TEXT_INPUT_MAX_BYTES, TextInputContext, TextInputError, TextInputState,
+    TextInputViewError, TextRasterError, UiQueryError,
 };
 
 fn host_replace(
@@ -14,10 +15,14 @@ fn host_replace(
 }
 
 #[test]
-fn rejected_edit_composes_with_host_errors_without_erasing_its_typed_cause_or_buffer() {
+fn rejected_operations_preserve_typed_causes_and_original_state() {
     fn host_error<E: Error + Send + Sync + 'static>() {}
     host_error::<StyledTextError>();
     host_error::<TextInputViewError>();
+    host_error::<ActionRouteError>();
+    host_error::<KeymapError>();
+    host_error::<UiQueryError>();
+    host_error::<TextRasterError>();
     let mut context = TextInputContext::default();
     let mut editor = TextInputState::default();
     host_replace(&mut context, &mut editor, "retained draft").expect("initial draft");
@@ -47,4 +52,18 @@ fn rejected_edit_composes_with_host_errors_without_erasing_its_typed_cause_or_bu
             .and_then(|cause| cause.downcast_ref::<TextInputError>()),
         Some(&TextInputError::TooLong)
     );
+
+    fn host_route(root: &Element) -> Result<ActionRoute<u8>, Box<dyn Error + Send + Sync>> {
+        Ok(ActionRoute::build(root, [(root.id, 1), (root.id, 2)])?)
+    }
+    let root = Element::container(ElementId::new(101), ElementKey::new("host.root"));
+    let rejected = host_route(&root).expect_err("ambiguous action rejected");
+    assert_eq!(
+        rejected.downcast_ref::<ActionRouteError>(),
+        Some(&ActionRouteError::DuplicateAction(root.id))
+    );
+    assert!(rejected.source().is_none());
+    assert!(!rejected.to_string().is_empty());
+    let route = ActionRoute::build(&root, [(root.id, 1_u8)]).expect("valid action after rejection");
+    assert_eq!(route.action_at(root.id), Some(&1));
 }

@@ -242,6 +242,19 @@ pub enum RampError {
     DuplicateElement(ElementId),
 }
 
+impl std::fmt::Display for RampError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidWidth => f.write_str("invalid ramp width"),
+            Self::InvalidPosition => f.write_str("invalid ramp point position"),
+            Self::UnorderedPoints => f.write_str("ramp points are not ordered"),
+            Self::DuplicatePoint(id) => write!(f, "duplicate ramp point {id}"),
+            Self::DuplicateElement(id) => write!(f, "duplicate ramp element {id:?}"),
+        }
+    }
+}
+impl std::error::Error for RampError {}
+
 pub fn ramp_editor<A>(
     ids: RampIds,
     points: Vec<RampPoint<A>>,

@@ -26,7 +26,16 @@ impl std::fmt::Display for MarkdownProjectionError {
     }
 }
 
-impl std::error::Error for MarkdownProjectionError {}
+impl std::error::Error for MarkdownProjectionError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Anchor(error) => Some(error),
+            Self::Geometry(error) => Some(error),
+            Self::Accessibility(error) => Some(error),
+            Self::UnshapedBlock(_) | Self::MissingLayout(_) | Self::StaleWidth(_) => None,
+        }
+    }
+}
 impl From<MarkdownAnchorError> for MarkdownProjectionError {
     fn from(error: MarkdownAnchorError) -> Self {
         Self::Anchor(error)

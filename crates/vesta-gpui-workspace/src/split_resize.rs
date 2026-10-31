@@ -11,6 +11,16 @@ pub enum SplitResizeError {
     InvalidRatio,
 }
 
+impl std::fmt::Display for SplitResizeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::InvalidGeometry => "invalid split resize geometry",
+            Self::InvalidRatio => "split resize ratio must be finite and within [0, 1]",
+        })
+    }
+}
+impl std::error::Error for SplitResizeError {}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SplitResizeSession {
     container: ContainerRef,

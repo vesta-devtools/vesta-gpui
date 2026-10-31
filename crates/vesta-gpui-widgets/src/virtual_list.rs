@@ -20,6 +20,18 @@ pub enum VirtualListError {
     ItemCountMismatch,
 }
 
+impl std::fmt::Display for VirtualListError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::InvalidGeometry => "invalid virtual list geometry",
+            Self::ContentTooLarge => "virtual list content exceeds its extent limit",
+            Self::ViewportTooDense => "virtual list viewport exceeds its row limit",
+            Self::ItemCountMismatch => "virtual list item count does not match its range",
+        })
+    }
+}
+impl std::error::Error for VirtualListError {}
+
 /// Visible indices and scroll geometry for one immutable list projection.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct VirtualListRange {

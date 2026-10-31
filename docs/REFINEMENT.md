@@ -108,6 +108,20 @@ invented programme exits.
   owner-waived/dependency exits. The current matrix now distinguishes that
   acceptance from actual physical observations and unsupported platform limits.
   The original evidence and broader historical percentages are not rewritten.
+- **Retained error-family interoperability:** the wider inventory found 17 flat
+  public error enums missing the standard traits, plus three typed wrappers
+  (`MarkdownError`, `MarkdownProjectionError`, `WebLinkOpenError`) with no source
+  chain. The external consumer compile failures and wrapper runtime failures are
+  retained in `target/research/public-errors-20261031`. The repair follows
+  [decision 0012](decisions/0012-Public-Error-Interoperability.md), preserving the
+  variants, owner and validation behavior without another wrapper/dependency.
+  All four focused consumer harnesses passed (nine contracts). Frozen errors01
+  then passed 215 contracts across 33 harnesses, documentation, all/base strict
+  checks, three Node tool groups, format and both standard builds without input
+  drift. The 37 named error definitions remain unchanged; all six new wrapper
+  source branches retain their original typed cause. No new native interaction
+  or Vesta adoption is claimed. This family is closed; GF02's other findings and
+  the programme remain open.
 
 The remaining public families, gallery composition, host frame convergence and
 transport lifetime are not signed off by this subset. Qualification inputs and

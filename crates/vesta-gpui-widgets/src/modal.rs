@@ -12,6 +12,16 @@ pub enum ModalStackError {
     Full,
 }
 
+impl std::fmt::Display for ModalStackError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Duplicate => "modal is already in the stack",
+            Self::Full => "modal stack capacity reached",
+        })
+    }
+}
+impl std::error::Error for ModalStackError {}
+
 #[derive(Clone, Debug)]
 pub struct ModalStack<Id> {
     entries: Vec<Id>,

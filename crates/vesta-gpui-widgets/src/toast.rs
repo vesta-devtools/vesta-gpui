@@ -25,6 +25,17 @@ pub enum ToastQueueError {
     InvalidTimeout,
 }
 
+impl std::fmt::Display for ToastQueueError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Duplicate(id) => write!(f, "duplicate notification identity {id:?}"),
+            Self::Full => f.write_str("notification queue capacity reached"),
+            Self::InvalidTimeout => f.write_str("notification deadline must be in the future"),
+        }
+    }
+}
+impl std::error::Error for ToastQueueError {}
+
 #[derive(Clone, Debug)]
 pub struct ToastQueue<A> {
     entries: VecDeque<ToastNotice<A>>,

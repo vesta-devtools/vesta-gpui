@@ -20,6 +20,15 @@ pub enum RadioGroupError {
     DuplicateValue(ElementId),
 }
 
+impl std::fmt::Display for RadioGroupError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::DuplicateValue(id) => write!(f, "duplicate radio-group value {id:?}"),
+        }
+    }
+}
+impl std::error::Error for RadioGroupError {}
+
 /// The selected enabled choice is the Tab stop; otherwise use the first enabled
 /// choice without silently changing the caller's selection. Empty groups are valid.
 pub fn radio_group<K: Eq + Hash, A>(

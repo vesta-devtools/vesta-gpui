@@ -75,7 +75,16 @@ impl std::fmt::Display for MarkdownError {
     }
 }
 
-impl std::error::Error for MarkdownError {}
+impl std::error::Error for MarkdownError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Layout(error) => Some(error),
+            Self::ParagraphTooLong { .. } | Self::IdentityExhausted | Self::RevisionExhausted => {
+                None
+            }
+        }
+    }
+}
 
 impl MarkdownView {
     pub fn parse(text: &str) -> Result<Self, MarkdownError> {

@@ -208,6 +208,20 @@ pub enum TableViewError {
     DuplicateElement(ElementId),
 }
 
+impl std::fmt::Display for TableViewError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::EmptyColumns => f.write_str("table requires at least one column"),
+            Self::InvalidColumnWidth => f.write_str("invalid table column width"),
+            Self::InvalidResizeBounds => f.write_str("invalid table column resize bounds"),
+            Self::CellCount => f.write_str("table row cell count does not match its columns"),
+            Self::InvalidViewport => f.write_str("invalid table viewport"),
+            Self::DuplicateElement(id) => write!(f, "duplicate table element {id:?}"),
+        }
+    }
+}
+impl std::error::Error for TableViewError {}
+
 #[must_use]
 pub fn table_column_width_at(
     start_width: f32,

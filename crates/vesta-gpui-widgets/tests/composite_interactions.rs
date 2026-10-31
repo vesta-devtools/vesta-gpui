@@ -15,6 +15,8 @@ fn target(window: u64, id: u64) -> InputTarget {
     }
 }
 
+#[path = "composite_interactions/errors.rs"]
+mod errors;
 #[path = "composite_interactions/feedback.rs"]
 mod feedback;
 #[path = "composite_interactions/validation.rs"]

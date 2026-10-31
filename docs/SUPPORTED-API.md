@@ -7,6 +7,25 @@ pending the current exported RC's GPR-01–06 qualification; it is not an immuta
 release or a signature for every public symbol. New source-workspace modules do
 not inherit older SDK qualification merely because their package version is0.1.0.
 
+## Failure interoperability
+
+Public named error types implement `Display` and `std::error::Error`, including
+Core routing/query/raster, Widget validation/state, native window registration
+and workspace split setup failures. Existing variants and payloads remain the
+machine-readable authority. Hosts may propagate them with ordinary `?`, retain
+their typed identity by downcasting, and display the contextual message. Display
+wording is not a stable code or a string-matching interface.
+
+Wrappers carrying a typed error expose that original cause through `source()`;
+leaf variants have no cause. `TextInputBridgeError<E>` implements the standard
+error trait conditionally when the injected clipboard error is `Error + 'static`;
+the clipboard service itself has no new trait bound. Legacy string-valued
+diagnostic payloads remain strings, not fabricated error objects. There is no
+SDK-wide umbrella error or second validation layer. See
+[decision 0012](decisions/0012-Public-Error-Interoperability.md).
+
+## Package boundaries
+
 | Package | Intended0.1 boundary | Explicit experimental or Host boundary |
 | --- | --- | --- |
 | `vesta-gpui` | Supported candidate: stable identity, typed Action, layout/retained invalidation, text/editor state, paint/hit/semantic projections and bounded read-only `UiSnapshot`. | Host supplies fonts, current complete trees, identities, service policy and author data. Inspection grants no command execution or OS access. |
