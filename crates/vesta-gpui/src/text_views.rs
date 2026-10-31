@@ -25,7 +25,9 @@ impl std::fmt::Display for TextInputViewError {
 }
 impl std::error::Error for TextInputViewError {}
 
-/// Rebuilt from one window's current renderer output. Content, drafts, validation
+/// Rebuilt from one window's current immutable text layout geometry. A host may
+/// project paint snapshots before submission or use completed renderer output;
+/// it must use the same layout for its input/hit maps. Content, drafts, validation
 /// and platform IME objects remain host-owned; absent fields have no stale geometry.
 #[derive(Clone, Debug)]
 pub struct TextInputViews<K> {

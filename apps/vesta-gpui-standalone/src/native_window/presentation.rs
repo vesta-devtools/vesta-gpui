@@ -461,6 +461,19 @@ impl App {
                 continue;
             }
             frame_trace.mark(FrameStage::Paint);
+            host.text_views =
+                match text_views_from_paint(host.ui_window, host.scopes.gallery, &paint) {
+                    Ok(views) => views,
+                    Err(error) => {
+                        self.fatal_error = Some(format!("text_input_views: {error:?}"));
+                        self.native_windows.insert(window_id, host);
+                        return;
+                    }
+                };
+            if let Some(view) = host.text_views.get(TextFieldKind::Area) {
+                host.area_scroll_y = view.scroll_y;
+            }
+            frame_trace.mark(FrameStage::TextViews);
             host.hit_test = HitTestTree::build(&root, &layout);
             frame_trace.mark(FrameStage::Hit);
             host.caret_blink.update(
@@ -533,19 +546,16 @@ impl App {
             if self.smoke {
                 host.smoke_frames += 1;
             }
-            host.text_views =
-                match text_views_for(host.ui_window, host.scopes.gallery, &output.text_inputs) {
-                    Ok(views) => views,
-                    Err(error) => {
-                        self.fatal_error = Some(format!("text_input_views: {error:?}"));
-                        self.native_windows.insert(window_id, host);
-                        return;
-                    }
-                };
-            if let Some(view) = host.text_views.get(TextFieldKind::Area) {
-                host.area_scroll_y = view.scroll_y;
+            if let Err(error) = frame_reflow_probe::verify_rendered_text_views(
+                host.ui_window,
+                host.scopes.gallery,
+                &host.text_views,
+                &output.text_inputs,
+            ) {
+                self.fatal_error = Some(error);
+                self.native_windows.insert(window_id, host);
+                return;
             }
-            frame_trace.mark(FrameStage::TextViews);
             // A modal dialog owned by this window isolates the semantic tree the same way the main
             // window does, so assistive technology cannot reach the background (ADR-0254).
             let isolated = if self.overlay_owner == Some(host.ui_window) {

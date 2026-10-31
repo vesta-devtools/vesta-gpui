@@ -31,7 +31,7 @@ for (const step of steps) {
   const value = name => counters.find(e => e.name === name)?.args?.value;
   const source = value('reflow.source'), index = value('reflow.index');
   const content = value('reflow.case') ?? 0;
-  assert.ok([0, 1, 2].includes(content), 'known case required');
+  assert.ok([0, 1, 2, 3].includes(content), 'known case required');
   cases.add(content);
   assert.ok(source === 0 || source === 1, 'source counter required');
   const row = results[source];
@@ -48,13 +48,25 @@ for (const step of steps) {
   row.submitted += Number(frame.markers.some(marker => marker.name === 'present.submitted'));
   row.max_passes = Math.max(row.max_passes, passes);
   if (renderer !== 1 || passes < 1 || passes > 8) failures.push({source, index, renderer, passes});
+  if (content === 3) {
+    assert.equal(value('reflow.geometry_agrees'), 1, 'deferred text and current hit bounds must agree');
+    assert.equal(value('reflow.presented_unchanged'), 1, 'deferred CPU preparation cannot publish a presented snapshot');
+    assert.ok(!frame.markers.some(marker => marker.name === 'present.submitted'), 'injected acquire deferral cannot submit');
+    const next = steps[steps.indexOf(step) + 1];
+    assert.ok(data.gpui_frames.some(recovery => recovery.name === frame.name
+      && recovery.start_us > frame.start_us + frame.duration_us
+      && (!next || recovery.start_us < next.ts)
+      && recovery.markers.some(marker => marker.name === 'present.submitted')), 'each deferred step must recover outside its draw');
+  } else if (!frame.markers.some(marker => marker.name === 'present.submitted')) {
+    failures.push({source, index, reason: 'missing successful submission'});
+  }
 }
 assert.ok(results.every(row => row.steps === 64));
 assert.equal(cases.size, 1, 'one isolated case per report');
 const budget_skips = data.traceEvents.filter(e => e.name === 'frame.skipped.layout_budget').length;
 const result = {status: failures.length || budget_skips ? 'failed' : 'passed', windows: results,
   native_pid: nativePid,
-  case: ['inputs', 'documents', 'focus'][[...cases][0]],
+  case: ['inputs', 'documents', 'focus', 'deferred'][[...cases][0]],
   failures, budget_skips, physical_input: false, gpu_or_display_latency: false};
 console.log(JSON.stringify(result, null, 2));
 if (result.status !== 'passed') process.exitCode = 1;

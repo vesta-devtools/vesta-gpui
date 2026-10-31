@@ -103,7 +103,7 @@ use window_accessibility::{TextFieldStates, enrich_window_text};
 use window_collections::collection_focus;
 use window_collections::{CollectionDataAction, CollectionFocus, collection_projection_focus};
 use window_focus::{CaretRevealFrame, complete_caret_reveal, retire_caret_reveal};
-use window_focus::{TextSessionExit, TextViews, text_views_for};
+use window_focus::{TextSessionExit, TextViews, text_views_for, text_views_from_paint};
 use window_idle::CaretBlink;
 use window_keyboard::{demo_keymap, key_chord_caption};
 use window_menus::*;

@@ -1,6 +1,7 @@
 # Bounded host frame settlement
 
-Status: Accepted; Main/Float settlement qualified, remaining GF03 boundaries open.
+Status: Accepted; Main/Float settlement and stable CPU text projection qualified;
+remaining GF03 boundaries open.
 Date: 2026-10-31.
 
 ## Finding and evidence required
@@ -54,3 +55,26 @@ Actual native processes exited and GPU resources retired normally. These are
 CPU-path observations, not physical input or display latency measurements.
 Receipts are in `target/research/frame-settlement-20261031`; the programme records
 the prepared-input/backend-deferral and Builder bridge issues still to review.
+
+## Prepared input during renderer deferral
+
+The host accepts its stable CPU hit/routes/scroll projection before calling the
+renderer, but installs text viewports only after successful submission. A deferred
+acquire can therefore leave text pointer mapping from another layout. Reproduce
+this with the existing finite acquire-fault feature and the same split sweep.
+The intended owner is the prepared PaintList: a private example helper projects
+its text commands using the existing snapshot viewport method, before renderer
+entry. It shares that immutable geometry with hit/paint; it does not reimplement
+text layout or publish a new presented query/accessibility snapshot on deferral.
+Keep the existing RenderOutput geometry available to callers; no public API or
+second input/frame runtime is needed. Retain a red capture before the change.
+
+The native red capture retained a 360-wide text view for a new 174-wide input
+layout. After the change, 128 acquire-injected steps retained coherent current
+text/hit geometry without publishing a presented revision, then each recovered
+through actual submission and target rebuilding. Successful frames compare the
+private prepared views with the production painter's output. The final default
+standard executable also passed the directed focus sweep; the family qualification
+passed all 212 contracts and strict/build checks. Original compile and fixture
+failures remain in the receipts. This closes the stable-CPU/backend-deferral
+finding, not partial preparation on budget exhaustion or the consumer bridge.

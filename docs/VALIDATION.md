@@ -27,6 +27,22 @@ actually run successfully before it can be reported as passing.
 
 ## Refinement checkpoint — 2026-10-31
 
+The subsequent prepared-input checkpoint fixes a native deferred-acquire mismatch:
+text mapping retained width 360 while the new hit layout used width 174. A private
+helper now derives both windows' text geometry from the current PaintList before
+rendering, using the existing snapshot algorithm. The fault-feature native run
+verified 128 deferred steps, no submitted/presented revision at those steps,
+matching text/clipped-hit bounds, and actual recovery between every step with
+128 target rebuild deliveries. The final ordinary binary's directed focus sweep
+submitted 64/64 per window and compared prepared text views with the painter.
+Prepared01 passed all 212 contracts, documentation, strict/feature/tool/format
+checks and both standard builds with unchanged source. Six real-report/corruption
+reviews passed. Original semantic, compile and premature-fixture-access failures
+remain under `target/research/frame-settlement-20261031`; software receipts are in
+`target/research/refinement-text-host-20261031/prepared01`. This is injected native
+CPU-path qualification, not physical input or GPU/display timing. Partial layout
+budget exits and consumer integration remain open in GF03.
+
 Main/Float now reconcile changed text/document/focus/scroll projections in a
 bounded draw before the renderer. The actual native forward/reverse split sweep
 originally reached the renderer 13/64 times in Main and 1/64 in Float. After the

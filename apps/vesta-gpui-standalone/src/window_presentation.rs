@@ -553,6 +553,28 @@ impl App {
                 continue;
             }
             frame_trace.mark(FrameStage::Paint);
+            let text_views =
+                match text_views_from_paint(STANDALONE_WINDOW, self.scopes.gallery, &paint) {
+                    Ok(views) => views,
+                    Err(error) => {
+                        self.fatal_error = Some(format!("text_input_views: {error:?}"));
+                        return;
+                    }
+                };
+            self.text_view = text_views.get(TextFieldKind::Main);
+            self.search_view = text_views.get(TextFieldKind::Search);
+            self.area_view = text_views.get(TextFieldKind::Area);
+            if let Some(view) = self.area_view {
+                self.area_scroll_y = view.scroll_y;
+            }
+            self.number_view = text_views.get(TextFieldKind::Number);
+            self.vector_views =
+                std::array::from_fn(|axis| text_views.get(TextFieldKind::Vector(axis as u8)));
+            self.color_hex_view = text_views.get(TextFieldKind::ColorHex);
+            self.password_view = text_views.get(TextFieldKind::Password);
+            self.table_note_view = text_views.get(TextFieldKind::TableNote);
+            self.readonly_label_view = text_views.get(TextFieldKind::Label);
+            frame_trace.mark(FrameStage::TextViews);
             self.hit_test = HitTestTree::build(&built.root, &layout);
             let hovered = self.hit_test.hit(self.cursor);
             if self.hovered != hovered {
@@ -665,28 +687,15 @@ impl App {
                     self.fatal_error = Some("settled UI frame did not reuse atlas glyphs".into());
                 }
             }
-            let text_views =
-                match text_views_for(STANDALONE_WINDOW, self.scopes.gallery, &output.text_inputs) {
-                    Ok(views) => views,
-                    Err(error) => {
-                        self.fatal_error = Some(format!("text_input_views: {error:?}"));
-                        return;
-                    }
-                };
-            self.text_view = text_views.get(TextFieldKind::Main);
-            self.search_view = text_views.get(TextFieldKind::Search);
-            self.area_view = text_views.get(TextFieldKind::Area);
-            if let Some(view) = self.area_view {
-                self.area_scroll_y = view.scroll_y;
+            if let Err(error) = frame_reflow_probe::verify_rendered_text_views(
+                STANDALONE_WINDOW,
+                self.scopes.gallery,
+                &text_views,
+                &output.text_inputs,
+            ) {
+                self.fatal_error = Some(error);
+                return;
             }
-            self.number_view = text_views.get(TextFieldKind::Number);
-            self.vector_views =
-                std::array::from_fn(|axis| text_views.get(TextFieldKind::Vector(axis as u8)));
-            self.color_hex_view = text_views.get(TextFieldKind::ColorHex);
-            self.password_view = text_views.get(TextFieldKind::Password);
-            self.table_note_view = text_views.get(TextFieldKind::TableNote);
-            self.readonly_label_view = text_views.get(TextFieldKind::Label);
-            frame_trace.mark(FrameStage::TextViews);
             if let Some(adapter) = &mut self.accessibility {
                 let accessibility_root =
                     accessibility_root(&built.root, isolated_accessibility_root);

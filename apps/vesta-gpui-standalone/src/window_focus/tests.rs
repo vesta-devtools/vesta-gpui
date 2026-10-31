@@ -566,24 +566,7 @@ fn caret_probe_frame(
     let (paint, stable) = prepare_caret_probe(app, item);
     let focus_root = app.focus_root_for_window(STANDALONE_WINDOW);
     process_caret_probe(app, &paint, STANDALONE_WINDOW, stable, focus_root);
-    let entries = paint
-        .commands()
-        .iter()
-        .filter_map(|command| match command {
-            vesta_gpui::PaintCommand::TextInput {
-                element,
-                bounds,
-                clip,
-                snapshot,
-                ..
-            } => Some((
-                *element,
-                snapshot.viewport(*bounds, *clip, Point::default()),
-            )),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-    text_views_for(STANDALONE_WINDOW, app.scopes.gallery, &entries)
+    text_views_from_paint(STANDALONE_WINDOW, app.scopes.gallery, &paint)
         .expect("window-qualified text views")
         .get(field)
         .expect("retained current editor view")

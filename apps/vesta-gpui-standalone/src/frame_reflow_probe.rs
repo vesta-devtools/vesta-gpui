@@ -11,6 +11,7 @@ enum Case {
     Inputs,
     Documents,
     Focus,
+    Deferred,
 }
 
 impl Case {
@@ -26,6 +27,7 @@ impl Case {
             "inputs" => Ok(Self::Inputs),
             "documents" => Ok(Self::Documents),
             "focus" => Ok(Self::Focus),
+            "deferred" if cfg!(feature = "gpu-fault-injection") => Ok(Self::Deferred),
             _ => Err("frame_reflow_invalid_case"),
         }
     }
@@ -40,7 +42,31 @@ impl Case {
 }
 
 pub(super) fn requested() -> bool {
-    std::env::args().any(|arg| arg.starts_with(PREFIX))
+    static REQUESTED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *REQUESTED.get_or_init(|| std::env::args().any(|arg| arg.starts_with(PREFIX)))
+}
+
+/// Compare the private CPU projection with the production painter on actual
+/// successful probe frames; ordinary application frames do no comparison work.
+pub(super) fn verify_rendered_text_views(
+    window: UiWindowId,
+    gallery: ElementScope,
+    prepared: &TextViews,
+    rendered: &[(ElementId, vesta_gpui::TextInputViewport)],
+) -> Result<(), String> {
+    if !requested() {
+        return Ok(());
+    }
+    let rendered = text_views_for(window, gallery, rendered)
+        .map_err(|e| format!("frame_reflow_rendered_views: {e:?}"))?;
+    for field in TextFieldKind::ALL {
+        if prepared.get(field) != rendered.get(field) {
+            return Err(format!(
+                "frame_reflow_paint_view_mismatch: {window:?} {field:?}"
+            ));
+        }
+    }
+    Ok(())
 }
 
 pub(super) fn recording() -> Result<Option<vesta_gpui_winit::UiTraceRecording>, Box<dyn Error>> {
@@ -89,6 +115,7 @@ pub(super) struct Probe {
     floating: FloatingWindowId,
     step: usize,
     warm: usize,
+    recover_after: Option<vesta_gpui::UiSnapshotId>,
     started: Instant,
     pub(super) completed: bool,
 }
@@ -99,6 +126,8 @@ impl App {
             return Ok(());
         }
         self.demo.busy = false;
+        // Local presented snapshots only; no stdin worker or automation input.
+        self.ui_query = ui_query::Store::new(true);
         let case = Case::from_arguments(&std::env::args().collect::<Vec<_>>())?;
         let inputs = self
             .demo
@@ -167,6 +196,7 @@ impl App {
             floating,
             step: 0,
             warm: 8,
+            recover_after: None,
             started: Instant::now(),
             completed: false,
         });
@@ -215,10 +245,26 @@ impl Probe {
         if !available || app.gpu.as_ref().is_none_or(|gpu| !gpu.available()) {
             return Ok(false);
         }
-        if self.warm > 0 {
+        if self.warm > 0 || self.recover_after.is_some() {
             app.redraw();
             app.redraw_native_window(id);
-            self.warm -= 1;
+            self.warm = self.warm.saturating_sub(1);
+            if self
+                .recover_after
+                .is_some_and(|before| app.ui_query.next(before.window) != Some(before))
+            {
+                self.recover_after = None;
+            }
+            return Ok(false);
+        }
+        if app
+            .window
+            .as_ref()
+            .is_none_or(|window| app.display_blocked(window.id()))
+            || app.display_blocked(id)
+        {
+            app.redraw();
+            app.redraw_native_window(id);
             return Ok(false);
         }
         if self.step == STEPS * 2 {
@@ -327,14 +373,89 @@ impl Probe {
         }
         {
             let _step = vesta_gpui::trace::span("fixture", "reflow.step");
+            let owner = if source == 0 {
+                STANDALONE_WINDOW
+            } else {
+                app.native_windows
+                    .get(&id)
+                    .ok_or("frame_reflow_float_lost")?
+                    .ui_window
+            };
+            let before_presented = app.ui_query.next(owner);
             vesta_gpui::trace::counter("fixture", "reflow.source", source as f64);
             vesta_gpui::trace::counter("fixture", "reflow.index", step as f64);
             vesta_gpui::trace::counter("fixture", "reflow.ratio", f64::from(ratio));
             vesta_gpui::trace::counter("fixture", "reflow.case", self.case as u8 as f64);
+            #[cfg(feature = "gpu-fault-injection")]
+            if self.case == Case::Deferred {
+                let gpu = if source == 0 {
+                    app.gpu.as_mut()
+                } else {
+                    app.native_windows
+                        .get_mut(&id)
+                        .map(|host| &mut host.surface)
+                }
+                .ok_or("frame_reflow_deferred_surface_missing")?;
+                gpu.capture_renderer()
+                    .map_err(|e| format!("frame_reflow_deferred_renderer: {e:?}"))?
+                    .inject_acquire_faults();
+            }
             if source == 0 {
                 app.redraw();
             } else {
                 app.redraw_native_window(id);
+            }
+            if self.case == Case::Deferred {
+                let (view, bounds, hits, area) = if source == 0 {
+                    (
+                        app.area_view,
+                        app.focus_rects.get(&app.scopes.gallery.element(TEXT_AREA)),
+                        &app.hit_test,
+                        app.scopes.gallery.element(TEXT_AREA),
+                    )
+                } else {
+                    let host = app
+                        .native_windows
+                        .get(&id)
+                        .ok_or("frame_reflow_float_lost")?;
+                    (
+                        host.text_views.get(TextFieldKind::Area),
+                        host.focus_rects
+                            .get(&host.scopes.gallery.element(TEXT_AREA)),
+                        &host.hit_test,
+                        host.scopes.gallery.element(TEXT_AREA),
+                    )
+                };
+                let agrees = view.zip(bounds).is_some_and(|(view, bounds)| {
+                    view.bounds == *bounds
+                        && view.clip.width > 0.0
+                        && view.clip.height > 0.0
+                        && hits.hit(Point::new(
+                            view.clip.x + view.clip.width * 0.5,
+                            view.clip.y + view.clip.height * 0.5,
+                        )) == Some(area)
+                });
+                vesta_gpui::trace::counter(
+                    "fixture",
+                    "reflow.geometry_agrees",
+                    if agrees { 1.0 } else { 0.0 },
+                );
+                if !agrees {
+                    return Err(format!(
+                        "frame_reflow_deferred_geometry_mismatch: source={source} step={step} view={view:?} bounds={bounds:?}"
+                    ));
+                }
+                let unchanged = before_presented.is_some_and(|id| id.revision > 1)
+                    && app.ui_query.next(owner) == before_presented;
+                vesta_gpui::trace::counter(
+                    "fixture",
+                    "reflow.presented_unchanged",
+                    if unchanged { 1.0 } else { 0.0 },
+                );
+                if !unchanged {
+                    return Err("frame_reflow_deferred_published_snapshot".into());
+                }
+                self.recover_after = before_presented;
             }
         }
         self.step += 1;

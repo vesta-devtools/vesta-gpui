@@ -18,6 +18,13 @@ entries, preserves its draft, closes normally and retires GPU owners. It perform
 no OS input, preference restore/save or user-workspace persistence. It cannot be
 combined with ordinary smoke, UI stdio, native-input or another trace recording.
 
+With `--features gpu-fault-injection`, `--probe-frame-case=deferred` uses the
+existing finite acquire failures at each split step. It requires current text
+and hit bounds to agree while no new presented snapshot is published, then
+requires recovery between steps. All probe cases compare prepared text geometry
+with actual successful renderer output. The prepared CPU input projection and
+the last successful presented/query snapshot have distinct ownership.
+
 The verifier checks complete capture, one CPU frame and renderer attempt per
 step, bounded preparation and explicit budget deferrals. An optional numeric
 third argument binds the report to the launched process PID. Submission markers

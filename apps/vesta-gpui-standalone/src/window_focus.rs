@@ -359,6 +359,33 @@ impl App {
     }
 }
 
+/// Input geometry belongs to the same prepared CPU projection as hit/scroll.
+/// Renderer submission may defer without replacing that projection.
+pub(super) fn text_views_from_paint(
+    window: UiWindowId,
+    gallery: ElementScope,
+    paint: &PaintList,
+) -> Result<TextViews, vesta_gpui::TextInputViewError> {
+    let entries = paint
+        .commands()
+        .iter()
+        .filter_map(|command| match command {
+            vesta_gpui::PaintCommand::TextInput {
+                element,
+                bounds,
+                clip,
+                snapshot,
+                ..
+            } => Some((
+                *element,
+                snapshot.viewport(*bounds, *clip, Point::default()),
+            )),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    text_views_for(window, gallery, &entries)
+}
+
 pub(super) fn text_views_for(
     window: UiWindowId,
     gallery: ElementScope,

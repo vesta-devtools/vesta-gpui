@@ -58,8 +58,11 @@ and target-specific paths; native support is still Windows-preview scope.
    a frame for input and rendering. The Agent consumer currently bounds its own
    settlement to eight passes. Standalone now bounds its Main/Float preparation
    the same way, with one trace/timing frame and at most one renderer attempt per
-   draw. This is host policy, not a shared SDK scheduling API. Remaining prepared
-   input geometry on renderer deferral and consumer-bridge integration remain
+   draw. This is host policy, not a shared SDK scheduling API. A stable CPU
+   PaintList supplies both hit and text-input geometry before renderer entry;
+   acquire deferral does not mix those with an older text viewport. Presented
+   queries, accessibility and IME publication still follow successful submission.
+   Budget-exhausted partial preparation and consumer-bridge integration remain
    under review in GF03.
 5. The renderer retains only the resources needed by submitted work, then retires
    them through its existing owner. Submission, GPU completion and physical

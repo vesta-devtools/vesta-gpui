@@ -21,7 +21,7 @@ exits, not estimated feature percentages or the number of tests.
 | --- | --- | --- |
 | GF01 — Architecture authority | Current eight-library graph, state/lifecycle ownership map, resolved dependency boundary gate and corruption checks | Completed 2026-10-31: actual all-feature Cargo metadata accepted; corruption contract rejects reverse/optional/target/build/transitive native and UI leaks; no new Rust/native qualification |
 | GF02 — API and module reduction | Audit actual public surfaces against current documentation and callers; remove unjustified wrappers/exports, untangle mixed responsibilities, provide migrations for changed public contracts | In progress; text/ownership/composition, private fixture and API-authority changes qualified; remaining families open |
-| GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | In progress; actual Main/Float reflow starvation reproduced and fixed; prepared-input and consumer integration audits remain |
+| GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | In progress; Main/Float reflow starvation and deferred text/hit mismatch reproduced and fixed; budget-exhausted preparation and consumer integration remain |
 | GF04 — Interaction and lifecycle | Close concrete existing input/text/IME/focus/popup/selection/resource gaps; make transport, cancellation, error and ownership limits explicit; preserve existing accepted scenarios | Open |
 | GF05 — Performance and diagnostics | Reproducible static/resize/text/collection workloads, disabled/enabled trace cost, bounds/retention/idle checks; select and fix measured bottlenecks with comparable evidence | Open |
 | GF06 — Usability and delivery | Small reusable host recipe, capability-oriented docs, matching exports, clean feature checks and CI, exact SDK source identity and immutable Vesta consumer validation | Open |
@@ -153,14 +153,40 @@ corruption reviews retain the original red result and reject a missing step,
 missing renderer call, capture loss and foreign PID. Corrupted reports are not
 new native evidence. Receipts are in `target/research/frame-settlement-20261031`.
 
-Remaining GF03 review is concrete: Main/Float advance CPU routes/scroll geometry
-before a renderer result, while text input viewports are currently installed
-from successful renderer output. Audit that boundary during backend deferral;
-the public paint command already carries the immutable snapshot and bounds used
-by the production painter. Also review Builder's embedded Agent `layout()`
-changed result: its current draw asks for a later redraw but still submits the
-earlier widget. Do not call that a reproduced Builder starvation defect or copy
-business/author updates into a generic retry loop. These findings keep GF03 open.
+The deferred-input review reproduced another native failure. An injected acquire
+deferral retained a 360-wide text viewport after the CPU hit/focus layout became
+174 wide. The same immutable PaintList now supplies text views before renderer
+entry through one private helper using the existing snapshot viewport algorithm.
+The existing caret regression uses that production helper; its formerly separate
+test projection is removed. No public API, text algorithm or scheduling layer is
+added. RenderOutput remains a completed-renderer observation for other callers.
+
+Deferredafter03 used the existing fault-injection feature: 64/64 draws in each
+window entered the renderer but correctly submitted zero frames at the injected
+step. All 128 current text bounds/clipped hit tests agreed and no presented
+revision advanced; every step subsequently recovered a real successful submission.
+There were 128 actual target rebuild deliveries. Successful probe frames also
+compare all text fields with the production painter's output. Preparedfocus01
+on the final ordinary standard binary submitted 64/64 per window with at most
+three passes, retaining both focus memories and the single caret owner.
+Frozen prepared01 passed 212 contracts across 32 harnesses, documentation,
+all/base strict checks, three Node tool groups, formatting and both standard builds.
+Rust inputs match both native builds; feature/executable identities stay separate.
+
+The original deferredbefore01 native exit1, deferredafter01 missing-import compile
+failure and deferredafter02 fixture's premature target access remain recorded.
+The final fixture waits for actual presented-revision recovery rather than a fixed
+number of ticks. Six actual-report/corruption checks preserve the red result and
+reject stale geometry, false publication, absent recovery and missing ordinary
+submission. Their modified reports are verifier tests, not native observations.
+
+Remaining GF03 review is concrete: a draw that exhausts its layout budget can
+have partially advanced CPU route/focus/scroll state before its final hit/text
+projection is ready. Audit that exit and command admission against the last
+presented observation. Also review Builder's embedded Agent `layout()` changed
+result: its current draw asks for a later redraw but still submits the earlier
+widget. Do not call that a reproduced Builder starvation defect or copy business/
+author updates into a generic retry loop. These findings keep GF03 open.
 
 GF01's maintained gate is `tools/verify/architecture.mjs`, with its focused
 contract and Windows workflow step. It requires full Cargo metadata and enabled
