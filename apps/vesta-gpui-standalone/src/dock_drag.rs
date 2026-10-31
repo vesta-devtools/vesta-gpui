@@ -44,13 +44,8 @@ impl App {
 
 /// Keyboard resizing stays host-side: `vesta-gpui` has no windowing dependency,
 /// so this maps winit keys onto the shared pixel-delta helper.
-pub(crate) fn split_ratio_for_key(
-    rect: Rect,
-    axis: SplitAxis,
-    current: f32,
-    key: &Key,
-) -> Option<f32> {
-    let delta = match (axis, key) {
+pub(crate) fn split_ratio_for_key(frame: DockSplitFrame, current: f32, key: &Key) -> Option<f32> {
+    let delta = match (frame.axis, key) {
         (SplitAxis::Row, Key::Named(NamedKey::ArrowLeft))
         | (SplitAxis::Column, Key::Named(NamedKey::ArrowUp)) => -16.0,
         (SplitAxis::Row, Key::Named(NamedKey::ArrowRight))
@@ -62,7 +57,11 @@ pub(crate) fn split_ratio_for_key(
         _ => return None,
     };
     Some(vesta_gpui_workspace::split_ratio_from_delta(
-        rect, axis, current, delta,
+        frame.rect,
+        frame.axis,
+        frame.flow_direction,
+        current,
+        delta,
     ))
 }
 
@@ -450,24 +449,23 @@ impl App {
         }) else {
             return false;
         };
-        let bounds = if window == STANDALONE_WINDOW {
-            self.dock_frame.split_rect(container, split, axis)
+        let frame = if window == STANDALONE_WINDOW {
+            self.dock_frame.split_frame(container, split, axis)
         } else {
             self.native_windows
                 .values()
                 .find(|host| host.ui_window == window)
-                .and_then(|host| host.dock_frame.split_rect(container, split, axis))
+                .and_then(|host| host.dock_frame.split_frame(container, split, axis))
         };
-        let (Some(bounds), Some(ratio)) = (
-            bounds,
+        let (Some(frame), Some(ratio)) = (
+            frame,
             dock_split_ratio(&self.demo.workspace, container, split),
         ) else {
             return false;
         };
         let target = InputTarget { window, element };
-        let Ok(session) = vesta_gpui_workspace::SplitResizeSession::new(
-            target, container, split, axis, bounds, ratio,
-        ) else {
+        let Ok(session) = vesta_gpui_workspace::SplitResizeSession::new(target, frame, ratio)
+        else {
             return false;
         };
         self.set_window_focus(window, Some(element));

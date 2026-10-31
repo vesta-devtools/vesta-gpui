@@ -262,7 +262,19 @@ impl App {
             let workspace_rect = layout
                 .node(host.scopes.workspace.element(1))
                 .map(|node| node.rect);
-            host.dock_frame = DockFrame::from_layout(&workspace_regions, &layout, workspace_rect);
+            host.dock_frame =
+                match DockFrame::from_layout(&workspace_regions, &layout, workspace_rect) {
+                    Ok(frame) => frame,
+                    Err(error) => {
+                        host.dock_frame = DockFrame::default();
+                        self.native_windows.insert(window_id, host);
+                        self.cancel_unavailable_interactions(&std::collections::HashSet::from([
+                            window_id,
+                        ]));
+                        self.fatal_error = Some(format!("workspace_dock_frame: {error}"));
+                        return;
+                    }
+                };
             self.sync_palette_layout(host.ui_window, host.scopes.root, &layout);
             self.sync_suggestion_layout(host.ui_window, host.scopes.gallery, &layout);
             host.ramp_track_rect = layout.node(ramp_track).map(|node| node.rect);

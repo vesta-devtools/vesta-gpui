@@ -1,5 +1,5 @@
 use super::*;
-use vesta_gpui::{ElementIdAllocator, LayoutEngine, Viewport};
+use vesta_gpui::{ElementIdAllocator, FlowDirection, LayoutEngine, Rect, Viewport};
 use vesta_workspace::{Pane, PanelTypeId, WorkspaceNode};
 
 #[test]
@@ -185,6 +185,24 @@ fn pane_header_routes_history_and_active_item_commands_without_mutating_dock_tre
     assert_eq!(zoomed.regions.panes.len(), 1);
     assert_eq!(zoomed.regions.panes[0].pane, PaneId(1));
     assert_eq!(model, before);
+    let mut duplicate = header(model.pane(PaneId(1)).expect("pane"));
+    duplicate.commands.push(duplicate.commands[0].clone());
+    assert_eq!(
+        workspace_view_with_header(
+            scope,
+            &model,
+            WidgetTheme::dark(),
+            WorkspaceViewInteraction::default(),
+            None,
+            |_| duplicate.clone(),
+            |_| None
+        )
+        .expect_err("duplicate command identity must be rejected before projection"),
+        WorkspaceProjectionError::DuplicateHeaderCommandId {
+            pane: PaneId(1),
+            command: 1
+        }
+    );
 }
 
 #[test]
@@ -271,6 +289,34 @@ fn pane_tab_list_reports_horizontal_overflow_for_active_tab_reveal() {
 
 #[test]
 fn nested_split_regions_resolve_their_own_layout_bounds() {
+    for (axis, rect) in [
+        (SplitAxis::Row, Rect::new(f32::NAN, 0.0, 800.0, 500.0)),
+        (SplitAxis::Column, Rect::new(0.0, f32::NAN, 800.0, 500.0)),
+    ] {
+        let ratio = split_ratio_at(
+            rect,
+            axis,
+            FlowDirection::LeftToRight,
+            Point::new(20.0, 20.0),
+            MIN_DOCK_PANE_EXTENT,
+        );
+        assert!(
+            ratio.is_finite(),
+            "nonfinite origin must not escape split admission"
+        );
+        assert_eq!(ratio, 0.5);
+    }
+    let overflow = Rect::new(f32::MAX, 0.0, f32::MAX, 500.0);
+    assert_eq!(
+        split_ratio_at(
+            overflow,
+            SplitAxis::Row,
+            FlowDirection::LeftToRight,
+            Point::new(20.0, 20.0),
+            MIN_DOCK_PANE_EXTENT
+        ),
+        0.5
+    );
     let root = WorkspaceNode::split(
         SplitId(1),
         SplitAxis::Row,
@@ -334,15 +380,176 @@ fn nested_split_regions_resolve_their_own_layout_bounds() {
     assert!(inner.rect.width < outer.rect.width);
     assert!(inner.rect.height <= outer.rect.height);
     let pointer = Point::new(inner.rect.right(), inner.rect.y);
-    let ratio = split_ratio_at(inner.rect, SplitAxis::Row, pointer, MIN_DOCK_PANE_EXTENT);
+    let ratio = split_ratio_at(
+        inner.rect,
+        SplitAxis::Row,
+        FlowDirection::LeftToRight,
+        pointer,
+        MIN_DOCK_PANE_EXTENT,
+    );
     assert!(ratio <= 1.0 - MIN_DOCK_PANE_EXTENT / inner.rect.width);
     assert_eq!(
         split_ratio_at(
             inner.rect,
             SplitAxis::Row,
+            FlowDirection::LeftToRight,
             Point::new(inner.rect.x + inner.rect.width * 0.5, inner.rect.y),
             MIN_DOCK_PANE_EXTENT,
         ),
         0.5,
+    );
+    for direction in [
+        vesta_gpui::FlowDirection::LeftToRight,
+        vesta_gpui::FlowDirection::RightToLeft,
+    ] {
+        let mut directional = model.clone();
+        directional
+            .set_split_ratio(ContainerRef::Main, SplitId(1), 0.25)
+            .expect("authored ratio");
+        let mut projected = workspace_view(scope, &directional, WidgetTheme::dark())
+            .expect("directional projection");
+        projected.element.style = projected.element.style.flow_direction(direction);
+        let directional_layout = LayoutEngine
+            .compute(&projected.element, Viewport::new(800.0, 500.0, 1.0))
+            .expect("directional layout");
+        let handle = projected
+            .actions
+            .iter()
+            .find(|(_, action)| {
+                matches!(
+                    action,
+                    WorkspaceViewAction::BeginResize {
+                        split: SplitId(1),
+                        ..
+                    }
+                )
+            })
+            .expect("outer resize handle")
+            .0;
+        let handle = directional_layout.node(handle).expect("handle layout").rect;
+        let frame = DockFrame::from_layout(
+            &projected.regions,
+            &directional_layout,
+            Some(Rect::new(0.0, 0.0, 800.0, 500.0)),
+        )
+        .expect("directional frame");
+        let split = frame
+            .split_frame(ContainerRef::Main, SplitId(1), SplitAxis::Row)
+            .expect("split bounds");
+        assert_eq!(split.flow_direction, direction);
+        let owner = vesta_gpui::UiWindowId(1);
+        let session = SplitResizeSession::new(
+            vesta_gpui::InputTarget {
+                window: owner,
+                element: projected.actions[0].0,
+            },
+            split,
+            0.25,
+        )
+        .expect("directional resize session");
+        let ratio = session
+            .ratio_for_pointer(
+                owner,
+                Point::new(
+                    handle.x + handle.width * 0.5,
+                    handle.y + handle.height * 0.5,
+                ),
+            )
+            .expect("owning window");
+        assert!(
+            (ratio - 0.25).abs() < 0.02,
+            "resize pointer must retain the authored ratio in either direction: {direction:?} {ratio}"
+        );
+    }
+}
+
+#[test]
+fn incomplete_dock_layout_cannot_resolve_a_shifted_insertion_slot() {
+    let pane = PaneId(1);
+    let mut model =
+        WorkspaceModel::with_tree(WorkspaceNode::leaf(pane), [Pane::new(pane)]).expect("model");
+    model
+        .add_item(pane, "First", PanelTypeId::new("test"))
+        .expect("first");
+    let last = model
+        .add_item(pane, "Second", PanelTypeId::new("test"))
+        .expect("second");
+    let scope = ElementIdAllocator.allocate_scope().expect("scope");
+    let view = workspace_view(scope, &model, WidgetTheme::dark()).expect("projection");
+    let layout = LayoutEngine
+        .compute(&view.element, Viewport::new(800.0, 500.0, 1.0))
+        .expect("layout");
+    let close = view
+        .actions
+        .iter()
+        .find(|(_, action)| *action == WorkspaceViewAction::CloseTab(last))
+        .expect("close action")
+        .0;
+    let rect = layout.node(close).expect("close geometry").rect;
+    let point = Point::new(rect.x + rect.width * 0.5, rect.y + rect.height * 0.5);
+    let complete = DockFrame::from_layout(
+        &view.regions,
+        &layout,
+        Some(Rect::new(0.0, 0.0, 800.0, 500.0)),
+    )
+    .expect("complete frame");
+    assert_eq!(
+        complete.target(point, &model).map(|target| target.action),
+        Some(vesta_workspace::DockAction::Merge { pane, slot: 2 })
+    );
+    let mut incomplete = view.regions.clone();
+    incomplete.tabs[0].tab = scope.element(0x7fff_fffe);
+    let partial = DockFrame::from_layout(
+        &incomplete,
+        &layout,
+        Some(Rect::new(0.0, 0.0, 800.0, 500.0)),
+    );
+    assert_eq!(
+        partial.expect_err("missing tab layout must not shift insertion order"),
+        vesta_gpui::LayoutError::MissingLayout(incomplete.tabs[0].tab)
+    );
+    assert_eq!(
+        DockFrame::from_layout(
+            &view.regions,
+            &layout,
+            Some(Rect::new(f32::NAN, 0.0, 800.0, 500.0))
+        )
+        .expect_err("invalid bounds"),
+        vesta_gpui::LayoutError::InvalidConstraint
+    );
+    let disabled =
+        DockFrame::from_layout(&view.regions, &layout, Some(Rect::new(0.0, 0.0, 0.0, 0.0)))
+            .expect("zero-area layout is legitimate");
+    assert!(disabled.target(point, &model).is_none());
+
+    let mut clipped =
+        workspace_view(scope, &model, WidgetTheme::dark()).expect("clipped projection");
+    clipped.element.style = clipped
+        .element
+        .style
+        .size(Dimension::Px(800.0), Dimension::Px(500.0))
+        .flex(0.0, 0.0);
+    let parent = Element::container(
+        scope.element(0x7fff_fffd),
+        ElementKey::new("clipped.parent"),
+    )
+    .styled(
+        Style::default()
+            .size(Dimension::Px(150.0), Dimension::Px(100.0))
+            .clipped(),
+    )
+    .child(clipped.element);
+    let clipped_layout = LayoutEngine
+        .compute(&parent, Viewport::new(800.0, 500.0, 1.0))
+        .expect("clipped layout");
+    let frame = DockFrame::from_layout(
+        &clipped.regions,
+        &clipped_layout,
+        Some(Rect::new(0.0, 0.0, 800.0, 500.0)),
+    )
+    .expect("clipped frame");
+    assert!(
+        frame.target(Point::new(300.0, 200.0), &model).is_none(),
+        "clipped pane content cannot claim a drop outside its inherited viewport"
     );
 }

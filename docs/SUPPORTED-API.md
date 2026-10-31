@@ -10,7 +10,7 @@ not inherit older SDK qualification merely because their package version is0.1.0
 
 ## Failure interoperability
 
-Public named error types implement `Display` and `std::error::Error`, including
+The reviewed error families implement `Display` and `std::error::Error`, including
 Core routing/query/raster, Widget validation/state, native window registration
 and workspace split setup failures. Existing variants and payloads remain the
 machine-readable authority. Hosts may propagate them with ordinary `?`, retain
@@ -24,6 +24,10 @@ the clipboard service itself has no new trait bound. Legacy string-valued
 diagnostic payloads remain strings, not fabricated error objects. There is no
 SDK-wide umbrella error or second validation layer. See
 [decision 0012](decisions/0012-Public-Error-Interoperability.md).
+
+This is not yet a guarantee for every exported failure. The complete projection
+review found Core `ElementScopeExhausted` still lacks the standard error trait;
+that specific compile failure remains open in the Core family ledger.
 
 ## Package boundaries
 
@@ -39,7 +43,7 @@ another executable API registry.
 | `vesta-gpui-winit` | Supported candidate: native event/IME normalization, injected clipboard, AccessKit adaptation, read-only `popup_monitor_bounds`, explicit UI transport/context adapters and native trace export helpers. | Host owns event loop, text sessions, command authority, process-level stdio and export worker lifetime. Exact reader TextRange and unqualified IMEs/platforms remain gaps. Monitor queries do not manage windows. |
 | `vesta-gpui-vulkan` | Supported candidate: native 2D renderer creation/presentation, asynchronous creation/update tickets, retries/reconfiguration, image resolution/fitting, explicit retirement, bounded capture and opt-in CPU/GPU observation. | Vulkan driver/loader required. Capture mapping/encoding belongs off the UI thread; native-child/OS-compositor pixels and automatic device-loss recovery are not promised. Platform placement queries belong to the winit adapter. |
 | `vesta-workspace` | Experimental: validated pane/tab/split/floating model and versioned layout data. [Model contract and migration](WORKSPACE.md). | Host owns native presentation and persistence I/O; this is not an author-document model. Physical Workspace qualification retains its GPW01–06 evidence/waivers. |
-| `vesta-gpui-workspace` | Experimental: projections and typed Dock/split/drag intent over that same workspace authority. | The legacy programme accepted remaining GPW04/05 manual checks by owner waiver and closed GPW06's dependent acceptance prerequisite. No new held-input or cross-monitor observations were made; this is not a general platform guarantee. |
+| `vesta-gpui-workspace` | Experimental: projections and typed Dock/split/drag intent over that same workspace authority. [Complete geometry/input contract and migration](DOCK.md). | Host owns current frame/model coherence, direction, native mapping and input admission. The legacy programme accepted remaining GPW04/05 manual checks by owner waiver and closed GPW06's dependent acceptance prerequisite. No new held-input or cross-monitor observations were made; this is not a general platform guarantee. |
 | `vesta-gpui-webview` | Experimental: optional native browser ownership and bounded local asset handling. [Full contract](WEBVIEW.md). | Requires Windows WebView2 and explicit Host retirement observation; permissions, durable application profiles and page/product actions remain Host-owned. Not browser-WASM GPUI or a general renderer guarantee. |
 | `vesta-viewport` | Experimental, optional: neutral preview camera/scene/geometry contracts used by native consumers. | Not a Core operation backend, Graph author model, full3D editor or engine interoperability guarantee. Plain2D library consumers need not enable it. |
 
@@ -76,7 +80,7 @@ or qualify a later RC's changed source automatically.
 | Consumer input | Required handling |
 | --- | --- |
 | Older same-version source SDK | Compare exact revision/tree and required exports. Matching `0.1.0` alone is insufficient. SDK17 and Motion01 remain historical qualified inputs; newer Tree/temporary-editor changes require the new common candidate. |
-| Existing constructor or state APIs | Retain original signatures and semantics. New explicit presentation/retained-content/exchange helpers are opt-in; Host lifecycle and stable IDs remain authoritative. No hidden provider, clock, document write or alternative model is introduced. |
+| Existing supported constructor or state APIs | Retain original signatures and semantics. New explicit presentation/retained-content/exchange helpers are opt-in; Host lifecycle and stable IDs remain authoritative. Experimental Workspace changes have explicit [model](WORKSPACE.md) and [projection](DOCK.md) migrations. No hidden provider, clock, document write or alternative model is introduced. |
 | Pre-release identity/theme corrections | Follow the [Core](../crates/vesta-gpui/SUPPORTED-API.md) duplicate-key error and [Widgets](../crates/vesta-gpui-widgets/SUPPORTED-API.md) progress/theme-token migration notes. These already documented source changes are not silently rewritten as compatible old artifacts. |
 | Released supported0.1 contract | Compatible fixes use an explicit new patch and consumer adoption; incompatible supported changes require0.2 plus migration notes. Experimental capabilities advertise their limits and never silently replace supported behavior. |
 | Local product development vs immutable adoption | All participating Hosts must resolve one family revision/content identity. Local path coherence is development integration; immutable adoption requires exact revision/tree pinning and affected-consumer qualification under [the current programme](REFINEMENT.md). A former monorepo export is not this repository's source authority. |

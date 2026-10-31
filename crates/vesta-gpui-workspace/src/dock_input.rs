@@ -1,5 +1,6 @@
 //! Display admission and retirement for the existing container-owned Dock gesture.
 use crate::dock::{DockDropTarget, DockFrame, DockWindowGeometry, WorkspaceTabDrag};
+use crate::geometry::{finite_point, hittable_rect};
 use vesta_gpui::Point;
 use vesta_workspace::{ContainerRef, DockAction, ItemId, WorkspaceModel};
 
@@ -58,12 +59,12 @@ pub fn route_dock_pointer_with_admission(
         source.client.x + cursor.x * source.scale,
         source.client.y + cursor.y * source.scale,
     );
-    if !screen.x.is_finite() || !screen.y.is_finite() {
+    if !finite_point(screen) {
         return None;
     }
     for (geometry, frame) in windows_front_to_back {
         // Unknown bounds cannot establish that the window behind is exposed.
-        if !valid_window_rect(geometry.outer) {
+        if !hittable_rect(geometry.outer) {
             return None;
         }
         if !geometry.outer.contains(screen) {
@@ -80,7 +81,7 @@ pub fn route_dock_pointer_with_admission(
             (screen.x - geometry.client.x) / geometry.scale,
             (screen.y - geometry.client.y) / geometry.scale,
         );
-        if !local.x.is_finite() || !local.y.is_finite() {
+        if !finite_point(local) {
             return None;
         }
         return Some((geometry.container, local, frame.target(local, model)));
@@ -97,23 +98,8 @@ pub fn route_dock_pointer_with_admission(
 fn valid_window_geometry(geometry: DockWindowGeometry) -> bool {
     geometry.scale.is_finite()
         && geometry.scale > 0.0
-        && valid_window_rect(geometry.outer)
-        && valid_window_rect(geometry.client)
-}
-
-fn valid_window_rect(rect: vesta_gpui::Rect) -> bool {
-    rect.width > 0.0
-        && rect.height > 0.0
-        && [
-            rect.x,
-            rect.y,
-            rect.width,
-            rect.height,
-            rect.right(),
-            rect.bottom(),
-        ]
-        .into_iter()
-        .all(f32::is_finite)
+        && hittable_rect(geometry.outer)
+        && hittable_rect(geometry.client)
 }
 
 /// All-admitted routing for callers without a display suspension lifecycle.

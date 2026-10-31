@@ -50,6 +50,44 @@ pub(crate) fn qualify(model: &WorkspaceModel, scope: ElementScope) {
         let mut model = model.clone();
         let mut states = HashMap::<PaneId, ScrollAreaState>::new();
         let mut previous = HashMap::<PaneId, TabRevealGeometry>::new();
+        let (view, layout) = frame(&model, scope, &states, direction, 320.0);
+        let region = view.regions.panes[0];
+        states
+            .entry(region.pane)
+            .or_default()
+            .sync_layout(layout.node(region.tab_list).expect("list"));
+        let active = model
+            .pane(region.pane)
+            .expect("pane")
+            .active
+            .expect("active");
+        let mut unrealized = view.regions.clone();
+        unrealized.tabs.retain(|tab| tab.item != active);
+        assert!(!reveal_active_tabs(
+            &unrealized,
+            &layout,
+            &model,
+            &mut states,
+            &mut previous,
+            |p| p.pane
+        ));
+        assert!(
+            previous.is_empty(),
+            "missing active tab must not certify reveal completion"
+        );
+        assert!(
+            reveal_active_tabs(
+                &view.regions,
+                &layout,
+                &model,
+                &mut states,
+                &mut previous,
+                |p| p.pane
+            ),
+            "same geometry must reveal when the active tab is realized"
+        );
+        states.clear();
+        previous.clear();
         for width in [320.0, 180.0, 440.0] {
             let (view, layout) = frame(&model, scope, &states, direction, width);
             let region = view.regions.panes[0];

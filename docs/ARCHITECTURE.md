@@ -101,6 +101,12 @@ owners; a session only holds an untrusted snapshot until restore. Native Hosts
 use narrow placement/title operations instead of mutating topology through a
 floating-window reference. ID capacity is checked before compound changes.
 
+The [Dock projection](DOCK.md) borrows that model. One private numeric module
+admits frame, resize and routing geometry. A complete fallible frame preserves
+all tab ordering and layout direction; it is derived data, not a second model
+revision. The Host publishes coherent model/regions/layout, owns native window
+mapping and admission, and retires stale geometry-dependent interactions.
+
 The [family boundary](SUPPORTED-API.md) owns the package support matrix and common
 migration policy. Core, Widgets and renderer inventories own their detailed
 contracts; the renderer does not define another package's support policy.

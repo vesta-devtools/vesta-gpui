@@ -358,10 +358,13 @@ fn dock_gestures_cancel_when_their_stable_targets_are_removed_or_reset() {
             window: STANDALONE_WINDOW,
             element: ElementId::new(1),
         },
-        ContainerRef::Main,
-        SplitId(1),
-        SplitAxis::Row,
-        Rect::new(0.0, 0.0, 800.0, 400.0),
+        vesta_gpui_workspace::DockSplitFrame {
+            container: ContainerRef::Main,
+            split: SplitId(1),
+            axis: SplitAxis::Row,
+            rect: Rect::new(0.0, 0.0, 800.0, 400.0),
+            flow_direction: vesta_gpui::FlowDirection::LeftToRight,
+        },
         original,
     )
     .expect("split preview");
@@ -488,10 +491,13 @@ fn dock_gestures_cancel_when_their_stable_targets_are_removed_or_reset() {
                 window: STANDALONE_WINDOW,
                 element: ElementId::new(1),
             },
-            ContainerRef::Main,
-            SplitId(1),
-            SplitAxis::Row,
-            Rect::new(0.0, 0.0, 800.0, 400.0),
+            vesta_gpui_workspace::DockSplitFrame {
+                container: ContainerRef::Main,
+                split: SplitId(1),
+                axis: SplitAxis::Row,
+                rect: Rect::new(0.0, 0.0, 800.0, 400.0),
+                flow_direction: vesta_gpui::FlowDirection::LeftToRight,
+            },
             dock_split_ratio(&app.demo.workspace, ContainerRef::Main, SplitId(1))
                 .expect("live split"),
         )
@@ -543,10 +549,13 @@ fn dock_gestures_cancel_when_their_stable_targets_are_removed_or_reset() {
                 window: STANDALONE_WINDOW,
                 element: ElementId::new(1),
             },
-            ContainerRef::Main,
-            SplitId(1),
-            SplitAxis::Row,
-            Rect::new(0.0, 0.0, 800.0, 400.0),
+            vesta_gpui_workspace::DockSplitFrame {
+                container: ContainerRef::Main,
+                split: SplitId(1),
+                axis: SplitAxis::Row,
+                rect: Rect::new(0.0, 0.0, 800.0, 400.0),
+                flow_direction: vesta_gpui::FlowDirection::LeftToRight,
+            },
             dock_split_ratio(&app.demo.workspace, ContainerRef::Main, SplitId(1))
                 .expect("live split"),
         )
@@ -625,10 +634,13 @@ fn splitter_retirement_preserves_replacement_capture() {
             app.workspace_resize = Some(
                 vesta_gpui_workspace::SplitResizeSession::new(
                     target,
-                    ContainerRef::Main,
-                    SplitId(1),
-                    SplitAxis::Row,
-                    Rect::new(0.0, 0.0, 800.0, 400.0),
+                    vesta_gpui_workspace::DockSplitFrame {
+                        container: ContainerRef::Main,
+                        split: SplitId(1),
+                        axis: SplitAxis::Row,
+                        rect: Rect::new(0.0, 0.0, 800.0, 400.0),
+                        flow_direction: vesta_gpui::FlowDirection::LeftToRight,
+                    },
                     original,
                 )
                 .expect("split preview"),

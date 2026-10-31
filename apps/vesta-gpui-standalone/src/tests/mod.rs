@@ -1161,6 +1161,7 @@ fn tab_drag_targets_reorder_split_and_float_through_workspace_actions() {
     let pane = model.panes().first().expect("demo pane").id;
     let frame = DockFrame {
         panes: vec![DockPaneFrame {
+            flow_direction: vesta_gpui::FlowDirection::LeftToRight,
             pane,
             container: ContainerRef::Main,
             root: Rect::new(0.0, 0.0, 400.0, 300.0),
@@ -1179,12 +1180,14 @@ fn tab_drag_targets_reorder_split_and_float_through_workspace_actions() {
         ],
         splits: vec![
             DockSplitFrame {
+                flow_direction: vesta_gpui::FlowDirection::LeftToRight,
                 container: ContainerRef::Main,
                 split: SplitId(1),
                 axis: SplitAxis::Row,
                 rect: Rect::new(0.0, 0.0, 400.0, 300.0),
             },
             DockSplitFrame {
+                flow_direction: vesta_gpui::FlowDirection::LeftToRight,
                 container: ContainerRef::Main,
                 split: SplitId(2),
                 axis: SplitAxis::Column,
@@ -1449,6 +1452,7 @@ fn workspace_drag_crosses_native_containers_and_commits_the_stable_target() {
     };
     let frame_for = |pane, container, width, height| DockFrame {
         panes: vec![DockPaneFrame {
+            flow_direction: vesta_gpui::FlowDirection::LeftToRight,
             pane,
             container,
             root: Rect::new(0.0, 0.0, width, height),

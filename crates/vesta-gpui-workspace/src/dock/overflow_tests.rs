@@ -81,7 +81,8 @@ fn qualify_direction(model: &WorkspaceModel, scope: ElementScope, direction: Flo
         &view.regions,
         &layout,
         Some(Rect::new(0.0, 0.0, 320.0, 240.0)),
-    );
+    )
+    .expect("complete scrolled frame");
     assert!(
         layout
             .node(view.regions.tabs[0].tab)
@@ -138,4 +139,62 @@ fn qualify_direction(model: &WorkspaceModel, scope: ElementScope, direction: Flo
         actual, expected,
         "one atomic Dock action preserves exact item order"
     );
+    for (x, side) in [
+        (1.0, Side::Left),
+        (319.0, Side::Right),
+        (20.0, Side::Left),
+        (300.0, Side::Right),
+    ] {
+        let target = frame
+            .target(Point::new(x, 120.0), model)
+            .expect("physical side target");
+        let mut changed = model.clone();
+        changed
+            .dock_item(first, target.action)
+            .expect("dock at physical side");
+        let moved = changed
+            .root()
+            .panes()
+            .into_iter()
+            .find(|id| {
+                changed
+                    .pane(*id)
+                    .expect("pane")
+                    .items
+                    .iter()
+                    .any(|item| item.id == first)
+            })
+            .expect("moved pane");
+        let mut projected = crate::workspace_view(scope, &changed, WidgetTheme::dark())
+            .expect("reproject moved model");
+        projected.element.style = projected.element.style.flow_direction(direction);
+        let projected_layout = LayoutEngine
+            .compute(&projected.element, Viewport::new(320.0, 240.0, 1.0))
+            .expect("moved layout");
+        let bounds = |pane| {
+            projected_layout
+                .node(
+                    projected
+                        .regions
+                        .panes
+                        .iter()
+                        .find(|r| r.pane == pane)
+                        .expect("pane region")
+                        .root,
+                )
+                .expect("pane layout")
+                .rect
+        };
+        let moved_bounds = bounds(moved);
+        let old_bounds = bounds(pane.id);
+        let correct = match side {
+            Side::Left => moved_bounds.right() <= old_bounds.x + 0.01,
+            Side::Right => moved_bounds.x + 0.01 >= old_bounds.right(),
+            _ => unreachable!(),
+        };
+        assert!(
+            correct,
+            "physical dock side must survive direction projection: {direction:?} {side:?}"
+        );
+    }
 }

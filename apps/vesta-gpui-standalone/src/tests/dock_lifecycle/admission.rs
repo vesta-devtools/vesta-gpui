@@ -77,6 +77,7 @@ pub(super) fn current_scope_rejects_cached_workspace_targets() {
             }
             let frame = |pane, container| DockFrame {
                 panes: vec![DockPaneFrame {
+                    flow_direction: vesta_gpui::FlowDirection::LeftToRight,
                     pane,
                     container,
                     root: Rect::new(0.0, 0.0, 400.0, 300.0),

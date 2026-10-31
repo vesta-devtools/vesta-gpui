@@ -238,10 +238,13 @@ fn splitter_geometry_restores_owned_preview() {
             app.workspace_resize = Some(
                 vesta_gpui_workspace::SplitResizeSession::new(
                     target,
-                    container,
-                    split,
-                    axis,
-                    Rect::new(0.0, 0.0, 800.0, 400.0),
+                    vesta_gpui_workspace::DockSplitFrame {
+                        container,
+                        split,
+                        axis,
+                        rect: Rect::new(0.0, 0.0, 800.0, 400.0),
+                        flow_direction: vesta_gpui::FlowDirection::LeftToRight,
+                    },
                     original,
                 )
                 .expect("owned splitter session"),

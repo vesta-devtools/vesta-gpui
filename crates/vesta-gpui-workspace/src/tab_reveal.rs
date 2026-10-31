@@ -52,9 +52,6 @@ pub fn reveal_active_tabs<K: Eq + Hash>(
             visible: Size::new(visible.width, visible.height),
             content_width: list.scroll_content.unwrap_or_default().0,
         };
-        if previous.insert(region.pane, geometry) == Some(geometry) {
-            continue;
-        }
         let Some(tab) = regions
             .tabs
             .iter()
@@ -63,6 +60,9 @@ pub fn reveal_active_tabs<K: Eq + Hash>(
         else {
             continue;
         };
+        if previous.insert(region.pane, geometry) == Some(geometry) {
+            continue;
+        }
         let state = states.entry(state_key(region)).or_default();
         if tab.rect.width + 4.0 >= visible.width {
             let old = state.offset();

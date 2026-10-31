@@ -7,10 +7,12 @@
 
 mod dock;
 mod dock_input;
+mod geometry;
 pub use dock_input::{
     cancel_tab_drag, finish_tab_drag_from, finish_tab_drag_with_admission, route_dock_pointer,
     route_dock_pointer_with_admission,
 };
+pub use geometry::{split_ratio_at, split_ratio_from_delta};
 mod split_resize;
 pub use split_resize::{SplitResizeError, SplitResizeSession};
 mod tab_reveal;
@@ -20,15 +22,15 @@ pub use dock::{
     DOCK_DRAG_THRESHOLD, DockDragVisual, DockDropTarget, DockFrame, DockPaneFrame, DockSplitFrame,
     DockTabFrame, DockTabSplitRegion, DockWindowGeometry, FloatingMoveDrag, WorkspaceTabDrag,
     begin_tab_drag, dock_drag_overlay, dock_edge, dock_edge_band, dock_edge_preview,
-    dock_split_ratio, dock_tab_split_regions, finish_tab_drag, leave_tab_drag,
-    split_ratio_from_delta, tab_drag_visual, update_tab_drag,
+    dock_split_ratio, dock_tab_split_regions, finish_tab_drag, leave_tab_drag, tab_drag_visual,
+    update_tab_drag,
 };
 
 use std::{error::Error, fmt};
 
 use vesta_gpui::{
     Align, Axis, Dimension, Element, ElementId, ElementKey, ElementKind, ElementScope, FontRole,
-    Insets, Justify, Point, Rect, ScrollbarGutter, ScrollbarStyle, Semantic, SemanticRole, Style,
+    Insets, Justify, Point, ScrollbarGutter, ScrollbarStyle, Semantic, SemanticRole, Style,
     TextHAlign, TextVAlign,
 };
 use vesta_gpui_widgets::{
@@ -140,29 +142,6 @@ pub struct WorkspaceViewInteraction {
 pub const MIN_DOCK_PANE_EXTENT: f32 = 120.0;
 const PANE_NAVIGATION_WIDTH: f32 = 52.0;
 
-/// Resolve one split drag against that split's own layout rectangle.
-#[must_use]
-pub fn split_ratio_at(
-    rect: Rect,
-    axis: SplitAxis,
-    pointer: Point,
-    minimum_pane_extent: f32,
-) -> f32 {
-    let (position, origin, extent) = match axis {
-        SplitAxis::Row => (pointer.x, rect.x, rect.width),
-        SplitAxis::Column => (pointer.y, rect.y, rect.height),
-    };
-    if !extent.is_finite() || extent <= 0.0 || !position.is_finite() {
-        return 0.5;
-    }
-    let minimum = (minimum_pane_extent.max(0.0) / extent).clamp(0.05, 0.5);
-    if minimum >= 0.5 {
-        0.5
-    } else {
-        ((position - origin) / extent).clamp(minimum, 1.0 - minimum)
-    }
-}
-
 impl WorkspaceView {
     #[must_use]
     pub fn action_at(&self, element: ElementId) -> Option<WorkspaceViewAction> {
@@ -173,21 +152,37 @@ impl WorkspaceView {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct WorkspaceIdentityOverflow;
+pub enum WorkspaceProjectionError {
+    IdentityOverflow,
+    InvalidHeaderCommandId { pane: PaneId, command: u8 },
+    DuplicateHeaderCommandId { pane: PaneId, command: u8 },
+}
 
-impl fmt::Display for WorkspaceIdentityOverflow {
+impl fmt::Display for WorkspaceProjectionError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str("workspace identity exceeds the reusable UI projection range")
+        match self {
+            Self::IdentityOverflow => {
+                formatter.write_str("workspace identity exceeds the reusable UI projection range")
+            }
+            Self::InvalidHeaderCommandId { pane, command } => write!(
+                formatter,
+                "pane {} command {command} is outside 1..=15",
+                pane.0
+            ),
+            Self::DuplicateHeaderCommandId { pane, command } => {
+                write!(formatter, "pane {} repeats command {command}", pane.0)
+            }
+        }
     }
 }
 
-impl Error for WorkspaceIdentityOverflow {}
+impl Error for WorkspaceProjectionError {}
 
 pub fn workspace_view(
     scope: ElementScope,
     model: &WorkspaceModel,
     theme: WidgetTheme,
-) -> Result<WorkspaceView, WorkspaceIdentityOverflow> {
+) -> Result<WorkspaceView, WorkspaceProjectionError> {
     workspace_view_with_content(scope, model, theme, |_| None)
 }
 
@@ -199,7 +194,7 @@ pub fn workspace_view_with_content(
     model: &WorkspaceModel,
     theme: WidgetTheme,
     panel_content: impl FnMut(&Pane) -> Option<Element>,
-) -> Result<WorkspaceView, WorkspaceIdentityOverflow> {
+) -> Result<WorkspaceView, WorkspaceProjectionError> {
     workspace_view_with_interaction(
         scope,
         model,
@@ -216,7 +211,7 @@ pub fn workspace_view_with_interaction(
     theme: WidgetTheme,
     interaction: WorkspaceViewInteraction,
     panel_content: impl FnMut(&Pane) -> Option<Element>,
-) -> Result<WorkspaceView, WorkspaceIdentityOverflow> {
+) -> Result<WorkspaceView, WorkspaceProjectionError> {
     workspace_view_with_header(
         scope,
         model,
@@ -238,7 +233,7 @@ pub fn workspace_view_with_header(
     zoomed_pane: Option<PaneId>,
     mut pane_header: impl FnMut(&Pane) -> PaneHeader,
     mut panel_content: impl FnMut(&Pane) -> Option<Element>,
-) -> Result<WorkspaceView, WorkspaceIdentityOverflow> {
+) -> Result<WorkspaceView, WorkspaceProjectionError> {
     workspace_view_with_header_mode(
         scope,
         model,
@@ -261,7 +256,7 @@ pub fn workspace_main_view_with_header(
     zoomed_pane: Option<PaneId>,
     mut pane_header: impl FnMut(&Pane) -> PaneHeader,
     mut panel_content: impl FnMut(&Pane) -> Option<Element>,
-) -> Result<WorkspaceView, WorkspaceIdentityOverflow> {
+) -> Result<WorkspaceView, WorkspaceProjectionError> {
     workspace_view_with_header_mode(
         scope,
         model,
@@ -287,7 +282,7 @@ pub fn workspace_container_view_with_header(
     zoomed_pane: Option<PaneId>,
     mut pane_header: impl FnMut(&Pane) -> PaneHeader,
     mut panel_content: impl FnMut(&Pane) -> Option<Element>,
-) -> Result<Option<WorkspaceView>, WorkspaceIdentityOverflow> {
+) -> Result<Option<WorkspaceView>, WorkspaceProjectionError> {
     let node = match container {
         ContainerRef::Main => model.root(),
         ContainerRef::Floating(window) => {
@@ -337,7 +332,7 @@ fn workspace_view_with_header_mode(
     pane_header: &mut dyn FnMut(&Pane) -> PaneHeader,
     panel_content: &mut dyn FnMut(&Pane) -> Option<Element>,
     include_floating: bool,
-) -> Result<WorkspaceView, WorkspaceIdentityOverflow> {
+) -> Result<WorkspaceView, WorkspaceProjectionError> {
     let mut context = Projection {
         scope,
         model,
@@ -389,7 +384,7 @@ impl Projection<'_> {
         &mut self,
         container: ContainerRef,
         node: &WorkspaceNode,
-    ) -> Result<Element, WorkspaceIdentityOverflow> {
+    ) -> Result<Element, WorkspaceProjectionError> {
         match node {
             WorkspaceNode::Leaf(pane) => self.pane(container, *pane),
             WorkspaceNode::Split {
@@ -482,8 +477,8 @@ impl Projection<'_> {
         &mut self,
         container: ContainerRef,
         id: PaneId,
-    ) -> Result<Element, WorkspaceIdentityOverflow> {
-        let pane = self.model.pane(id).ok_or(WorkspaceIdentityOverflow)?;
+    ) -> Result<Element, WorkspaceProjectionError> {
+        let pane = self.model.pane(id).expect("validated tree owns every pane");
         let content = (self.panel_content)(pane);
         let active_surface = content
             .as_ref()
@@ -507,6 +502,23 @@ impl Projection<'_> {
         self.actions
             .push((body_id, WorkspaceViewAction::DockTarget(id)));
         let header = (self.pane_header)(pane);
+        let mut command_ids = 0_u16;
+        for command in &header.commands {
+            if !(1..=15).contains(&command.id) {
+                return Err(WorkspaceProjectionError::InvalidHeaderCommandId {
+                    pane: id,
+                    command: command.id,
+                });
+            }
+            let bit = 1_u16 << command.id;
+            if command_ids & bit != 0 {
+                return Err(WorkspaceProjectionError::DuplicateHeaderCommandId {
+                    pane: id,
+                    command: command.id,
+                });
+            }
+            command_ids |= bit;
+        }
         let scrollbar = header
             .tab_scrollbar
             .unwrap_or_else(|| self.theme.scrollbar_style());
@@ -770,13 +782,10 @@ impl Projection<'_> {
                     .pointer_events(false),
             );
             for command in header.commands {
-                if !(1..=15).contains(&command.id) {
-                    return Err(WorkspaceIdentityOverflow);
-                }
                 let value =
                     id.0.checked_mul(16)
                         .and_then(|base| base.checked_add(u64::from(command.id)))
-                        .ok_or(WorkspaceIdentityOverflow)?;
+                        .ok_or(WorkspaceProjectionError::IdentityOverflow)?;
                 commands = commands.child(self.header_button(
                     value,
                     (IdentityKind::PaneCommand, IdentityKind::PaneCommandLabel),
@@ -868,7 +877,7 @@ impl Projection<'_> {
         labels: (&str, &str),
         enabled: bool,
         action: WorkspaceViewAction,
-    ) -> Result<Element, WorkspaceIdentityOverflow> {
+    ) -> Result<Element, WorkspaceProjectionError> {
         let (root_kind, label_kind) = kinds;
         let (caption, name) = labels;
         let root = self.scope.element(stable_local(root_kind, value)?);
@@ -989,7 +998,7 @@ impl Projection<'_> {
         kind: IdentityKind,
         value: u64,
         key: String,
-    ) -> Result<Element, WorkspaceIdentityOverflow> {
+    ) -> Result<Element, WorkspaceProjectionError> {
         Ok(Element::container(
             self.scope.element(stable_local(kind, value)?),
             ElementKey::new(key),
@@ -1003,11 +1012,11 @@ impl Projection<'_> {
         ))
     }
 
-    fn floating(&mut self, id: FloatingWindowId) -> Result<Element, WorkspaceIdentityOverflow> {
+    fn floating(&mut self, id: FloatingWindowId) -> Result<Element, WorkspaceProjectionError> {
         let window = self
             .model
             .floating_window(id)
-            .ok_or(WorkspaceIdentityOverflow)?;
+            .expect("floating identity came from the validated model");
         let local = stable_local(IdentityKind::WindowRoot, id.0)?;
         let title_local = stable_local(IdentityKind::WindowTitle, id.0)?;
         self.actions.push((
@@ -1129,10 +1138,10 @@ enum IdentityKind {
     ItemIcon = 35,
 }
 
-fn stable_local(kind: IdentityKind, value: u64) -> Result<u32, WorkspaceIdentityOverflow> {
-    let value = u32::try_from(value).map_err(|_| WorkspaceIdentityOverflow)?;
+fn stable_local(kind: IdentityKind, value: u64) -> Result<u32, WorkspaceProjectionError> {
+    let value = u32::try_from(value).map_err(|_| WorkspaceProjectionError::IdentityOverflow)?;
     if value > 0x00ff_ffff {
-        return Err(WorkspaceIdentityOverflow);
+        return Err(WorkspaceProjectionError::IdentityOverflow);
     }
     Ok(((kind as u32) << 24) | value)
 }

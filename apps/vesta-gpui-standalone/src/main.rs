@@ -172,9 +172,9 @@ use vesta_gpui_winit::{
     TextInputResponse, logical_point, shortcut_chord,
 };
 use vesta_gpui_workspace::{
-    MIN_DOCK_PANE_EXTENT, PaneHeader, PaneHeaderCommand, PaneNavigationDirection,
-    WorkspaceViewAction, WorkspaceViewInteraction, WorkspaceViewRegions, dock_drag_overlay,
-    split_ratio_at, workspace_container_view_with_header,
+    PaneHeader, PaneHeaderCommand, PaneNavigationDirection, WorkspaceViewAction,
+    WorkspaceViewInteraction, WorkspaceViewRegions, dock_drag_overlay,
+    workspace_container_view_with_header,
 };
 use vesta_viewport::{
     Camera, TransformAction, TransformMode, TranslationDrag, ViewportAction, ViewportScene,

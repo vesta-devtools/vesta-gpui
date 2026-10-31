@@ -203,21 +203,21 @@ impl App {
         else {
             return false;
         };
-        let rect = if window == STANDALONE_WINDOW {
-            self.dock_frame.split_rect(container, split, axis)
+        let frame = if window == STANDALONE_WINDOW {
+            self.dock_frame.split_frame(container, split, axis)
         } else {
             self.native_windows
                 .values()
                 .find(|host| host.ui_window == window)
-                .and_then(|host| host.dock_frame.split_rect(container, split, axis))
+                .and_then(|host| host.dock_frame.split_frame(container, split, axis))
         };
-        let (Some(rect), Some(current)) = (
-            rect,
+        let (Some(frame), Some(current)) = (
+            frame,
             dock_split_ratio(&self.demo.workspace, container, split),
         ) else {
             return false;
         };
-        let Some(ratio) = split_ratio_for_key(rect, axis, current, key) else {
+        let Some(ratio) = split_ratio_for_key(frame, current, key) else {
             return false;
         };
         self.demo

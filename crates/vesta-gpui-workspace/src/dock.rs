@@ -11,14 +11,15 @@
 //! so dragging a tab behaves the same in either window.
 
 use vesta_gpui::{
-    Color, Dimension, Element, ElementKey, ElementScope, LayoutTree, Point, Rect, Size, Style,
+    Color, Dimension, Element, ElementKey, ElementScope, FlowDirection, LayoutTree, Point, Rect,
+    Size, Style,
 };
 use vesta_workspace::{
     ContainerRef, DockAction, FloatingWindowId, ItemId, PaneId, Side, SplitAxis, SplitId,
     WindowPlacement, WorkspaceModel, WorkspaceNode,
 };
 
-use crate::{MIN_DOCK_PANE_EXTENT, WorkspaceViewRegions, split_ratio_at};
+use crate::{WorkspaceViewRegions, geometry};
 
 #[cfg(test)]
 pub(crate) mod overflow_tests;
@@ -72,6 +73,7 @@ pub struct DockDragVisual {
 pub struct DockPaneFrame {
     pub pane: PaneId,
     pub container: ContainerRef,
+    pub flow_direction: FlowDirection,
     pub root: Rect,
     pub tab_strip: Rect,
     pub body: Rect,
@@ -84,11 +86,12 @@ pub struct DockTabFrame {
     pub rect: Rect,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct DockSplitFrame {
     pub container: ContainerRef,
     pub split: SplitId,
     pub axis: SplitAxis,
+    pub flow_direction: FlowDirection,
     pub rect: Rect,
 }
 
@@ -102,54 +105,78 @@ pub struct DockFrame {
 }
 
 impl DockFrame {
-    #[must_use]
+    /// Require a complete matching layout; missing nodes never become a partial frame.
     pub fn from_layout(
         regions: &WorkspaceViewRegions,
         layout: &LayoutTree,
         workspace: Option<Rect>,
-    ) -> Self {
+    ) -> Result<Self, vesta_gpui::LayoutError> {
+        use vesta_gpui::LayoutError;
+        if workspace.is_some_and(|rect| !geometry::valid_rect(rect)) {
+            return Err(LayoutError::InvalidConstraint);
+        }
+        let node = |id| {
+            let node = layout.node(id).ok_or(LayoutError::MissingLayout(id))?;
+            if !geometry::valid_rect(node.rect) || !geometry::valid_rect(node.inherited_clip) {
+                return Err(LayoutError::InvalidConstraint);
+            }
+            Ok(node)
+        };
+        let visible = |rect: Rect, clip: Rect| {
+            rect.intersection(clip)
+                .unwrap_or(Rect::new(0.0, 0.0, 0.0, 0.0))
+        };
         let panes = regions
             .panes
             .iter()
-            .filter_map(|region| {
-                let list = layout.node(region.tab_list)?;
-                Some(DockPaneFrame {
+            .map(|region| {
+                let root = node(region.root)?;
+                node(region.tab_strip)?;
+                let list = node(region.tab_list)?;
+                let body = node(region.body)?;
+                let viewport = list.scroll_viewport();
+                if !geometry::valid_rect(viewport) {
+                    return Err(LayoutError::InvalidConstraint);
+                }
+                Ok(DockPaneFrame {
                     pane: region.pane,
                     container: region.container,
-                    root: layout.node(region.root)?.rect,
-                    tab_strip: list.scroll_viewport().intersection(list.inherited_clip)?,
-                    body: layout.node(region.body)?.rect,
+                    flow_direction: root.flow_direction,
+                    root: visible(root.rect, root.inherited_clip),
+                    tab_strip: visible(viewport, list.inherited_clip),
+                    body: visible(body.rect, body.inherited_clip),
                 })
             })
-            .collect();
+            .collect::<Result<Vec<_>, LayoutError>>()?;
         let tabs = regions
             .tabs
             .iter()
-            .filter_map(|region| {
-                Some(DockTabFrame {
+            .map(|region| {
+                Ok(DockTabFrame {
                     pane: region.pane,
-                    rect: layout.node(region.tab)?.rect,
+                    rect: node(region.tab)?.rect,
                 })
             })
-            .collect();
+            .collect::<Result<Vec<_>, LayoutError>>()?;
         let splits = regions
             .splits
             .iter()
-            .filter_map(|region| {
-                Some(DockSplitFrame {
+            .map(|region| {
+                Ok(DockSplitFrame {
                     container: region.container,
                     split: region.split,
                     axis: region.axis,
-                    rect: layout.node(region.root)?.rect,
+                    flow_direction: node(region.root)?.flow_direction,
+                    rect: node(region.root)?.rect,
                 })
             })
-            .collect();
-        Self {
+            .collect::<Result<Vec<_>, LayoutError>>()?;
+        Ok(Self {
             panes,
             tabs,
             splits,
             workspace,
-        }
+        })
     }
 
     #[must_use]
@@ -159,22 +186,42 @@ impl DockFrame {
         split: SplitId,
         axis: SplitAxis,
     ) -> Option<Rect> {
+        self.split_frame(container, split, axis)
+            .map(|frame| frame.rect)
+    }
+
+    #[must_use]
+    pub fn split_frame(
+        &self,
+        container: ContainerRef,
+        split: SplitId,
+        axis: SplitAxis,
+    ) -> Option<DockSplitFrame> {
         self.splits
             .iter()
             .find(|frame| {
                 frame.container == container && frame.split == split && frame.axis == axis
             })
-            .map(|frame| frame.rect)
+            .copied()
     }
 
     /// Resolve the drop a pointer position means inside this window.
     #[must_use]
     pub fn target(&self, point: Point, model: &WorkspaceModel) -> Option<DockDropTarget> {
         let workspace = self.workspace?;
+        if !geometry::hittable_rect(workspace) || !geometry::finite_point(point) {
+            return None;
+        }
         for tab in self.tabs.iter().rev() {
             let Some(pane) = self.panes.iter().find(|pane| pane.pane == tab.pane) else {
                 continue;
             };
+            if !geometry::hittable_rect(tab.rect)
+                || !geometry::hittable_rect(pane.tab_strip)
+                || !geometry::hittable_rect(pane.root)
+            {
+                continue;
+            }
             let split_regions = dock_tab_split_regions(tab.rect);
             if let Some(side) = split_regions
                 .iter()
@@ -189,7 +236,7 @@ impl DockFrame {
                 return Some(DockDropTarget {
                     action: DockAction::Split {
                         pane: pane.pane,
-                        side,
+                        side: authored_side(side, pane.flow_direction),
                     },
                     preview: dock_edge_preview(pane.root, side, 0.42),
                     insertion: None,
@@ -215,14 +262,14 @@ impl DockFrame {
             return Some(DockDropTarget {
                 action: DockAction::WindowSplit {
                     container: self.panes.first()?.container,
-                    side,
+                    side: authored_side(side, self.panes.first()?.flow_direction),
                 },
                 preview: dock_edge_preview(workspace, side, 0.25),
                 insertion: None,
             });
         }
         for pane in self.panes.iter().rev() {
-            if pane.tab_strip.contains(point) {
+            if geometry::hittable_rect(pane.tab_strip) && pane.tab_strip.contains(point) {
                 let pane_tabs = self
                     .tabs
                     .iter()
@@ -281,7 +328,7 @@ impl DockFrame {
             }
         }
         for pane in self.panes.iter().rev() {
-            if !pane.root.contains(point) {
+            if !geometry::hittable_rect(pane.root) || !pane.root.contains(point) {
                 continue;
             }
             if pane.container != ContainerRef::Main
@@ -290,7 +337,7 @@ impl DockFrame {
                 return Some(DockDropTarget {
                     action: DockAction::WindowSplit {
                         container: pane.container,
-                        side,
+                        side: authored_side(side, pane.flow_direction),
                     },
                     preview: dock_edge_preview(pane.root, side, 0.25),
                     insertion: None,
@@ -300,13 +347,13 @@ impl DockFrame {
                 return Some(DockDropTarget {
                     action: DockAction::Split {
                         pane: pane.pane,
-                        side,
+                        side: authored_side(side, pane.flow_direction),
                     },
                     preview: dock_edge_preview(pane.root, side, 0.42),
                     insertion: None,
                 });
             }
-            if pane.body.contains(point) {
+            if geometry::hittable_rect(pane.body) && pane.body.contains(point) {
                 return Some(DockDropTarget {
                     action: DockAction::Merge {
                         pane: pane.pane,
@@ -387,32 +434,14 @@ pub fn dock_split_ratio(
     find(root, split)
 }
 
-/// Move a split by a pixel delta; `Home`/`End`-style jumps pass an infinite delta.
-#[must_use]
-pub fn split_ratio_from_delta(rect: Rect, axis: SplitAxis, current: f32, delta: f32) -> f32 {
-    let extent = match axis {
-        SplitAxis::Row => rect.width,
-        SplitAxis::Column => rect.height,
-    };
-    let position = if delta == f32::NEG_INFINITY {
-        0.0
-    } else if delta == f32::INFINITY {
-        extent
-    } else {
-        current * extent + delta
-    };
-    split_ratio_at(
-        rect,
-        axis,
-        Point::new(rect.x + position, rect.y + position),
-        MIN_DOCK_PANE_EXTENT,
-    )
-}
-
 /// Nearest edge when the pointer sits within a fraction of the rectangle.
 #[must_use]
 pub fn dock_edge(rect: Rect, point: Point, fraction: f32) -> Option<Side> {
-    if !rect.contains(point) || rect.width <= 0.0 || rect.height <= 0.0 {
+    if !geometry::hittable_rect(rect)
+        || !geometry::finite_point(point)
+        || !fraction.is_finite()
+        || !rect.contains(point)
+    {
         return None;
     }
     let distances = [
@@ -430,7 +459,11 @@ pub fn dock_edge(rect: Rect, point: Point, fraction: f32) -> Option<Side> {
 /// Nearest edge when the pointer sits within a fixed band of the rectangle.
 #[must_use]
 pub fn dock_edge_band(rect: Rect, point: Point, band: f32) -> Option<Side> {
-    if !rect.contains(point) {
+    if !geometry::hittable_rect(rect)
+        || !geometry::finite_point(point)
+        || !band.is_finite()
+        || !rect.contains(point)
+    {
         return None;
     }
     [
@@ -472,6 +505,14 @@ pub struct DockWindowGeometry {
     pub outer: Rect,
     pub client: Rect,
     pub scale: f32,
+}
+
+fn authored_side(side: Side, direction: FlowDirection) -> Side {
+    match (side, direction) {
+        (Side::Left, FlowDirection::RightToLeft) => Side::Right,
+        (Side::Right, FlowDirection::RightToLeft) => Side::Left,
+        _ => side,
+    }
 }
 
 /// Start a tab drag. The press activates the tab; a drag begins only once the
@@ -703,6 +744,7 @@ mod tests {
     fn frame() -> DockFrame {
         DockFrame {
             panes: vec![DockPaneFrame {
+                flow_direction: vesta_gpui::FlowDirection::LeftToRight,
                 pane: PANE,
                 container: ContainerRef::Main,
                 root: Rect::new(0.0, 0.0, 800.0, 600.0),

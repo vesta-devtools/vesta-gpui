@@ -484,8 +484,23 @@ impl App {
             self.workspace_rect = layout
                 .node(self.scopes.workspace.element(1))
                 .map(|node| node.rect);
-            self.dock_frame =
-                DockFrame::from_layout(&built.workspace_regions, &layout, self.workspace_rect);
+            self.dock_frame = match DockFrame::from_layout(
+                &built.workspace_regions,
+                &layout,
+                self.workspace_rect,
+            ) {
+                Ok(frame) => frame,
+                Err(error) => {
+                    self.dock_frame = DockFrame::default();
+                    if let Some(window) = &self.window {
+                        self.cancel_unavailable_interactions(&std::collections::HashSet::from([
+                            window.id(),
+                        ]));
+                    }
+                    self.fatal_error = Some(format!("workspace_dock_frame: {error}"));
+                    return;
+                }
+            };
             let constrained_splits = self
                 .dock_frame
                 .splits
@@ -493,12 +508,13 @@ impl App {
                 .filter_map(|frame| {
                     let current =
                         dock_split_ratio(&self.demo.workspace, frame.container, frame.split)?;
-                    let pointer = Point::new(
-                        frame.rect.x + frame.rect.width * current,
-                        frame.rect.y + frame.rect.height * current,
+                    let constrained = vesta_gpui_workspace::split_ratio_from_delta(
+                        frame.rect,
+                        frame.axis,
+                        frame.flow_direction,
+                        current,
+                        0.0,
                     );
-                    let constrained =
-                        split_ratio_at(frame.rect, frame.axis, pointer, MIN_DOCK_PANE_EXTENT);
                     ((constrained - current).abs() > 0.001).then_some((
                         frame.container,
                         frame.split,

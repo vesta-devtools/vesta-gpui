@@ -42,12 +42,12 @@ its existing gate and evidence, rather than expanding a widget catalogue.
 
 | Family | Qualified work retained | Remaining review target |
 | --- | --- | --- |
-| Core | Identity/dependency authority; text/context ownership; error interoperability; frame/trace and inspection contracts | Style/render payload ownership and detailed contract coverage against current exports |
+| Core | Identity/dependency authority; text/context ownership; reviewed error interoperability; frame/trace and inspection contracts | Style/render payload ownership and detailed export coverage; reproduced missing `Error` on `ElementScopeExhausted` (projection focused02) |
 | Widgets | Existing controlled widget contracts, temporary-editor/tree/suggestion and cancellation evidence | Remaining gallery composition and controlled editing/collection/popup public state boundaries |
 | Native adapter | Registered text ownership; typed error causes; stdio deadline/process lifetime | Remaining automation/context/capture and platform-service exported boundaries |
 | Vulkan renderer | CPU preparation, scene admission, frame/retirement contracts; native recipe consumes async tickets | Capture/recovery/profile/resource lifetimes and actual public contract coverage |
 | Workspace model | Complete public family/caller review; one private field representation and invariant validator; checked atomic operations, version-1 recovery and narrow window updates; [contract](WORKSPACE.md) | Local model/caller qualification recorded below; immutable product API migration remains GF06 |
-| Workspace projection | Dependency/authority boundary and original Dock contracts | Public gesture/view geometry ownership against the current model/callers |
+| Workspace projection | Complete view/header/geometry/drag/resize/reveal/overlay review and current caller map; six original failures retained; [contract](DOCK.md) | Local family/software/native qualification recorded below; immutable product API migration remains GF06 |
 | WebView | Complete public surface and existing Agent/Builder callers reviewed; redundant mutable identity removed, partial native sync and real temporary-profile leak fixed; [contract and migration](WEBVIEW.md) | Local API/resource qualification recorded below; immutable product migration remains GF06, not a second family audit |
 | Viewport | Neutral dependency boundary and private demo-fixture removal | Public display/render/lighting ownership and optional renderer-facing contract coverage |
 
@@ -124,6 +124,40 @@ ordinary artifacts and native processes; no physical input, user assistance,
 remote CI or product adoption is inferred. The model family is locally closed;
 the projection family and five other family reviews remain open, as do the
 remaining GF03–GF06 programme exits.
+
+## GF02 / GF04 Workspace projection checkpoint
+
+[Decision 0019](decisions/0019-Workspace-Projection-Admission-And-Geometry.md)
+reviews all six production modules and actual Standalone/Agent/Builder callers.
+Four initial red contracts and two additional actual RTL failures are preserved.
+Projection now has typed header/identity failures; frame construction rejects
+missing or invalid geometry instead of publishing a partial target map. One
+private numeric owner serves frame, route and split admission. Full authored
+tab order and split bounds survive clipping, while pointer-facing pane surfaces
+respect inherited clips. Reveal records a checkpoint only for a realized tab.
+
+Pane/split frames retain actual layout direction. Physical horizontal drops and
+deltas translate to authored order, and resize sessions borrow one complete
+split-frame snapshot. There is no default-LTR compatibility branch, new model
+generation, runtime or dependency. The [complete public contract](DOCK.md)
+defines projection callbacks, identity limits, coherent frames, Host native/input
+admission and preview API migration; low-level DTO construction keeps explicit
+caller preconditions instead of pretending to prove freshness.
+
+Final frozen full02 passed 224 contracts / 36 harnesses, CPU smoke, two existing
+compile-fail docs, strict feature/tool/format checks and ordinary builds. Actual
+ordinary Standalone 2fb2719f… / PID 27024 passed the existing inputs case with
+64 Main and 64 Float submitted steps, then normal exit and no live descendants.
+Full01's three test-fixture strict failures and earlier focused/compile failures
+remain recorded. The latter also exposed Core `ElementScopeExhausted` lacking
+the standard error trait; it remains a specific open Core item.
+
+Evidence and exact source/artifact/process identities are under
+`target/research/workspace-projection-20261031`. The local projection family is
+closed; five other family reviews remain open. Agent/Builder still resolve the
+published 9e31f07 revision and require the recorded API migration during GF06.
+No physical input, additional original scenario pass, remote CI, current product
+adoption or overall programme completion is inferred.
 
 ## GF05 bounded CPU checkpoint
 
