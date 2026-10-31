@@ -67,8 +67,12 @@ and target-specific paths; native support is still Windows-preview scope.
    Incomplete preparation blocks input and releases geometry-dependent capture;
    native lifecycle events remain available. The existing query dirty state
    separately rejects commands until a successful presented publication. These
-   states express different facts, with one owner each. Consumer-bridge
-   integration remains under review in GF03.
+   states express different facts, with one owner each. The product Agent instead
+   shares its existing needs-layout / rebuild-required / prepared candidate state
+   between native and embedded paths on one App. It installs hit, CPU layout and
+   text geometry together; semantic publication cannot replace input geometry.
+   These are host policies, not a new SDK state machine or scheduler. Current
+   joint adoption and Builder budget/fault integration remain open in GF03.
 5. The renderer retains only the resources needed by submitted work, then retires
    them through its existing owner. Submission, GPU completion and physical
    display are distinct facts. Recovery preserves caller-owned CPU state.

@@ -21,7 +21,7 @@ exits, not estimated feature percentages or the number of tests.
 | --- | --- | --- |
 | GF01 — Architecture authority | Current eight-library graph, state/lifecycle ownership map, resolved dependency boundary gate and corruption checks | Completed 2026-10-31: actual all-feature Cargo metadata accepted; corruption contract rejects reverse/optional/target/build/transitive native and UI leaks; no new Rust/native qualification |
 | GF02 — API and module reduction | Audit actual public surfaces against current documentation and callers; remove unjustified wrappers/exports, untangle mixed responsibilities, provide migrations for changed public contracts | In progress; text/ownership/composition, private fixture and API-authority changes qualified; remaining families open |
-| GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | In progress; Main/Float reflow, deferred geometry and controlled budget exits qualified; Builder ordinary frame bridge qualified on its existing SDK pin; consumer budget/fault review and integration remain open |
+| GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | In progress; Main/Float and native Agent CPU/deferral/controlled-budget contracts qualified at recorded inputs; Builder ordinary bridge qualified; Builder budget/fault and current joint integration remain open |
 | GF04 — Interaction and lifecycle | Close concrete existing input/text/IME/focus/popup/selection/resource gaps; make transport, cancellation, error and ownership limits explicit; preserve existing accepted scenarios | In progress; unavailable-window click history and shared-preview publication defects reproduced and qualified; remaining interaction/transport audit open |
 | GF05 — Performance and diagnostics | Reproducible static/resize/text/collection workloads, disabled/enabled trace cost, bounds/retention/idle checks; select and fix measured bottlenecks with comparable evidence | Open |
 | GF06 — Usability and delivery | Small reusable host recipe, capability-oriented docs, matching exports, clean feature checks and CI, exact SDK source identity and immutable Vesta consumer validation | Open |
@@ -254,13 +254,40 @@ or immutable joint adoption is claimed by this external checkpoint.
 
 GF03 remaining consumer work is specific. Builder's host budget exhaustion and
 GPU deferral/loss need directed qualification; a headless facade suspension check
-does not sign them. Independent Agent `window.rs` installs hit/layout state before
-rendering but updates text viewports after renderer output, and its budget exit
-needs admission review. These are source findings to reproduce, not new hardware
-failure claims. Motion has no editor or stateful width-feedback reconciliation:
+does not sign them. The independent Agent findings below now have a bounded
+qualification; its successor shared Core configuration and joint SDK adoption
+remain separate. Motion has no editor or stateful width-feedback reconciliation:
 its source keeps one presented hit/layout frame until submission and invalidates
 it on resize/scale/target preparation. It needs no speculative eight-pass loop;
 this is a source review, not additional Motion native acceptance.
+
+Vesta ADR-0686 and its external
+`Docs/Research/Evidence/agent-input-projection-20261031/qualification.json` record
+the native Agent closure. The real baseline retained old text geometry in all
+three injected acquire deferrals, then retained capture/click history after a
+controlled one-pass budget exit. The facade's existing three-state candidate
+authority now belongs to the same App as the native path. One private method
+installs hit geometry, CPU layout and all text viewports; the misleading
+accessibility-layout cache becomes input-layout state, and semantic publication
+no longer writes it. One suspension path preserves draft/logical focus and retires
+capture/click sequences. Embedded controllers do not own a native renderer loop.
+
+Agent 84 and Builder 29 contracts, one original ignored manual GPU test, and both
+strict checks retain their actual receipts. A final two-file pointer-observation
+delta passed fresh feature strict and native checks. Actual FI Desktop 9fc192c5 /
+PID 49728 passed text/layout agreement, pending presented commands, retirement,
+partial-input denial, cached cursor/leave observations and real subsequent
+submission. The native process exited normally with GPU retirement and no
+backend, author data or OS input. The original failures and fixture corrections
+remain recorded. This is logical input in a real native renderer, not natural
+eight-pass exhaustion, physical interaction or display latency.
+
+Ordinary Desktop b11e5187 and Builder 9d7ae288 were restored and rebuilt. The
+554 selected UI inputs remain current; shared Core/Runtime and Cargo.lock changed
+during the final build, so the current complete product delivery is still pending
+its Core owner. The receipt retains those exact configuration/source deltas and
+the probe's original executable/dependency identity. No new immutable SDK adoption,
+remote CI, full Builder fault qualification or programme completion follows.
 
 GF05 must also resolve Builder's shared frame scopes: its current entry point
 does not start the shared capture. Hook up the existing bounded capture convention

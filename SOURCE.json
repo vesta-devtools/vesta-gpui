@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "a7212ab003d596f5f298bec54507b85d86e71ca7671e54adea26aeecd9db5305",
+  "tree_sha256": "51c07a0dbddd1991e929a12033fa2614efe05c5c4cfdbdf40245ce4134ea8238",
   "files": [
     {
       "path": ".gitattributes",
@@ -2025,8 +2025,8 @@
     },
     {
       "path": "docs/ARCHITECTURE.md",
-      "bytes": 8148,
-      "sha256": "d9f9d8916e3528bc702ebbae9a8fb3671edacfa16e3632c622d2e8008c2af5d3"
+      "bytes": 8509,
+      "sha256": "3e71d8050434dce31563d02e54fe79f1fe8dd32606477d0547aafebe49ba06fa"
     },
     {
       "path": "docs/MAINTENANCE.md",
@@ -2035,8 +2035,8 @@
     },
     {
       "path": "docs/REFINEMENT.md",
-      "bytes": 23538,
-      "sha256": "65eac0e35d3118443048c4492fdbbe49b9b97a49af45a443c3cd1d3db5515c86"
+      "bytes": 25372,
+      "sha256": "e00a5a92e811c8b2c88f4cf01723a5de53e21482f685953e6565773a2fe6ab68"
     },
     {
       "path": "docs/RELEASING.md",
