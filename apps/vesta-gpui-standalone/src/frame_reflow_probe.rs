@@ -12,6 +12,7 @@ enum Case {
     Documents,
     Focus,
     Deferred,
+    Budget,
 }
 
 impl Case {
@@ -28,6 +29,7 @@ impl Case {
             "documents" => Ok(Self::Documents),
             "focus" => Ok(Self::Focus),
             "deferred" if cfg!(feature = "gpu-fault-injection") => Ok(Self::Deferred),
+            "budget" => Ok(Self::Budget),
             _ => Err("frame_reflow_invalid_case"),
         }
     }
@@ -44,6 +46,19 @@ impl Case {
 pub(super) fn requested() -> bool {
     static REQUESTED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *REQUESTED.get_or_init(|| std::env::args().any(|arg| arg.starts_with(PREFIX)))
+}
+
+/// A reduced process-local fixture budget reaches the production bound exit.
+/// Ordinary hosts and other probe cases retain the eight-pass policy.
+pub(super) fn layout_pass_limit() -> u8 {
+    static LIMIT: std::sync::OnceLock<u8> = std::sync::OnceLock::new();
+    *LIMIT.get_or_init(|| {
+        if requested() && std::env::args().any(|arg| arg == "--probe-frame-case=budget") {
+            1
+        } else {
+            FRAME_LAYOUT_PASS_LIMIT
+        }
+    })
 }
 
 /// Compare the private CPU projection with the production painter on actual
@@ -128,6 +143,7 @@ impl App {
         self.demo.busy = false;
         // Local presented snapshots only; no stdin worker or automation input.
         self.ui_query = ui_query::Store::new(true);
+        self.ui_query.control_enabled = true;
         let case = Case::from_arguments(&std::env::args().collect::<Vec<_>>())?;
         let inputs = self
             .demo
@@ -207,7 +223,7 @@ impl App {
         let Some(mut probe) = self.frame_reflow_probe.take() else {
             return false;
         };
-        let result = probe.advance(self);
+        let result = probe.advance(self, event_loop);
         match result {
             Ok(true) => {
                 probe.completed = true;
@@ -227,7 +243,7 @@ impl App {
 }
 
 impl Probe {
-    fn advance(&mut self, app: &mut App) -> Result<bool, String> {
+    fn advance(&mut self, app: &mut App, event_loop: &ActiveEventLoop) -> Result<bool, String> {
         if self.completed {
             return Ok(true);
         }
@@ -253,6 +269,24 @@ impl Probe {
                 .recover_after
                 .is_some_and(|before| app.ui_query.next(before.window) != Some(before))
             {
+                if self.case == Case::Budget {
+                    let native = if self
+                        .recover_after
+                        .is_some_and(|before| before.window == STANDALONE_WINDOW)
+                    {
+                        app.window.as_ref().ok_or("frame_budget_main_lost")?.id()
+                    } else {
+                        id
+                    };
+                    if !app.native_input_layout_ready(native)
+                        || app.unavailable_input(
+                            native,
+                            &WindowEvent::Text("ignored recovery input".into()),
+                        )
+                    {
+                        return Err("frame_budget_recovery_input_still_blocked".into());
+                    }
+                }
                 self.recover_after = None;
             }
             return Ok(false);
@@ -300,7 +334,7 @@ impl Probe {
                     }
                 }
             }
-            if self.case == Case::Focus
+            if matches!(self.case, Case::Focus | Case::Budget)
                 && (host.input.focus()
                     != Some(InputTarget {
                         window: host.ui_window,
@@ -319,7 +353,7 @@ impl Probe {
             {
                 return Err("frame_reflow_text_focus_or_session_owner_mismatch".into());
             }
-            if self.case == Case::Focus {
+            if matches!(self.case, Case::Focus | Case::Budget) {
                 eprintln!(
                     "Frame reflow focus: window_memory_preserved=true single_caret_owner=float physical_focus=false"
                 );
@@ -353,7 +387,13 @@ impl Probe {
         } else {
             STEPS - 1 - step
         };
-        let ratio = 0.15 + position as f32 * 0.006;
+        let ratio = 0.15
+            + position as f32 * 0.006
+            + if self.case == Case::Budget && step >= STEPS / 2 {
+                0.003
+            } else {
+                0.0
+            };
         app.demo
             .workspace
             .set_split_ratio(container, *split, ratio)
@@ -382,6 +422,61 @@ impl Probe {
                     .ui_window
             };
             let before_presented = app.ui_query.next(owner);
+            let budget_target = if self.case == Case::Budget {
+                let gallery = if source == 0 {
+                    app.scopes.gallery
+                } else {
+                    app.native_windows
+                        .get(&id)
+                        .ok_or("frame_reflow_float_lost")?
+                        .scopes
+                        .gallery
+                };
+                let element = gallery.element(TEXT_AREA);
+                let instance = before_presented
+                    .ok_or("frame_budget_missing_presentation")?
+                    .instance;
+                let commands = control(
+                    app,
+                    event_loop,
+                    ui_query::Operation::Commands {
+                        instance,
+                        window: owner,
+                    },
+                )
+                .map_err(|e| format!("frame_budget_commands: {e}"))?;
+                let target = commands["commands"]
+                    .as_array()
+                    .and_then(|commands| {
+                        commands.iter().find(|command| {
+                            command["element"].as_str() == Some(&element.get().to_string())
+                        })
+                    })
+                    .and_then(|command| command["owner"].as_str())
+                    .and_then(|owner| owner.parse::<u64>().ok())
+                    .map(|generation| vesta_gpui::UiTargetRef {
+                        instance,
+                        window: owner,
+                        element,
+                        owner: generation,
+                    })
+                    .ok_or("frame_budget_missing_area_owner")?;
+                app.set_window_focus(owner, Some(element));
+                let target_input = InputTarget {
+                    window: owner,
+                    element,
+                };
+                if source == 0 {
+                    app.input_ownership
+                        .capture_pointer(target_input, vesta_gpui::PointerButton::Primary);
+                } else if let Some(host) = app.native_windows.get_mut(&id) {
+                    host.input
+                        .capture_pointer(target_input, vesta_gpui::PointerButton::Primary);
+                }
+                Some(target)
+            } else {
+                None
+            };
             vesta_gpui::trace::counter("fixture", "reflow.source", source as f64);
             vesta_gpui::trace::counter("fixture", "reflow.index", step as f64);
             vesta_gpui::trace::counter("fixture", "reflow.ratio", f64::from(ratio));
@@ -404,6 +499,141 @@ impl Probe {
                 app.redraw();
             } else {
                 app.redraw_native_window(id);
+            }
+            if let Some(target) = budget_target {
+                let native_id = if source == 0 {
+                    app.window.as_ref().ok_or("frame_budget_main_lost")?.id()
+                } else {
+                    id
+                };
+                let blocked = app
+                    .unavailable_input(native_id, &WindowEvent::Text("ignored probe input".into()));
+                let capture_released = if source == 0 {
+                    app.input_ownership.capture().is_none()
+                } else {
+                    app.native_windows
+                        .get(&id)
+                        .is_some_and(|host| host.input.capture().is_none())
+                };
+                let scale = if source == 0 {
+                    app.window
+                        .as_ref()
+                        .ok_or("frame_budget_main_lost")?
+                        .scale_factor()
+                } else {
+                    app.native_windows
+                        .get(&id)
+                        .ok_or("frame_reflow_float_lost")?
+                        .window
+                        .scale_factor()
+                };
+                let motion_blocked = app.unavailable_input(
+                    native_id,
+                    &WindowEvent::CursorMoved {
+                        device_id: winit::event::DeviceId::dummy(),
+                        position: winit::dpi::PhysicalPosition::new(32.0 * scale, 64.0 * scale),
+                    },
+                );
+                let cached_cursor = if source == 0 {
+                    app.cursor
+                } else {
+                    app.native_windows
+                        .get(&id)
+                        .ok_or("frame_reflow_float_lost")?
+                        .cursor
+                };
+                let left_blocked = app.unavailable_input(
+                    native_id,
+                    &WindowEvent::CursorLeft {
+                        device_id: winit::event::DeviceId::dummy(),
+                    },
+                );
+                let left_cursor = if source == 0 {
+                    app.cursor
+                } else {
+                    app.native_windows
+                        .get(&id)
+                        .ok_or("frame_reflow_float_lost")?
+                        .cursor
+                };
+                let cursor_cached = motion_blocked
+                    && cached_cursor == Point::new(32.0, 64.0)
+                    && left_blocked
+                    && left_cursor == Point::new(-1.0, -1.0);
+                let lifecycle_allowed = [
+                    WindowEvent::CloseRequested,
+                    WindowEvent::RedrawRequested,
+                    WindowEvent::Focused(false),
+                ]
+                .iter()
+                .all(|event| !app.unavailable_input(native_id, event));
+                let focus_preserved = if source == 0 {
+                    app.input_ownership.focus()
+                } else {
+                    app.native_windows
+                        .get(&id)
+                        .and_then(|host| host.input.focus())
+                } == Some(InputTarget {
+                    window: owner,
+                    element: target.element,
+                });
+                let input = control(
+                    app,
+                    event_loop,
+                    ui_query::Operation::Input {
+                        request_id: format!("budget-input-{source}-{step}"),
+                        request: vesta_gpui_winit::UiInputRequest {
+                            target,
+                            revision: before_presented
+                                .ok_or("frame_budget_missing_presentation")?
+                                .revision
+                                - 1,
+                            modifiers: Default::default(),
+                            steps: vec![vesta_gpui_winit::UiInputStep::Text(
+                                "must not replace draft".into(),
+                            )],
+                        },
+                    },
+                );
+                let logical_blocked = matches!(input, Err("presentation_pending"));
+                let command = control(
+                    app,
+                    event_loop,
+                    ui_query::Operation::Invoke {
+                        request_id: format!("budget-{source}-{step}"),
+                        target,
+                        command: vesta_gpui::UiCommand::Focus,
+                    },
+                );
+                let command_blocked = matches!(command, Err("presentation_pending"));
+                let unchanged = before_presented.is_some_and(|id| id.revision > 1)
+                    && app.ui_query.next(owner) == before_presented;
+                for (name, accepted) in [
+                    ("reflow.input_blocked", blocked),
+                    ("reflow.capture_released", capture_released),
+                    ("reflow.command_blocked", command_blocked),
+                    ("reflow.logical_blocked", logical_blocked),
+                    ("reflow.lifecycle_allowed", lifecycle_allowed),
+                    ("reflow.focus_preserved", focus_preserved),
+                    ("reflow.cursor_cached", cursor_cached),
+                    ("reflow.presented_unchanged", unchanged),
+                ] {
+                    vesta_gpui::trace::counter("fixture", name, if accepted { 1.0 } else { 0.0 });
+                }
+                if !(blocked
+                    && capture_released
+                    && command_blocked
+                    && logical_blocked
+                    && lifecycle_allowed
+                    && focus_preserved
+                    && cursor_cached
+                    && unchanged)
+                {
+                    return Err(format!(
+                        "frame_budget_admission_mismatch: source={source} step={step} native_blocked={blocked} capture_released={capture_released} command={command:?} presented_unchanged={unchanged} cursor_cached={cursor_cached}"
+                    ));
+                }
+                self.recover_after = before_presented;
             }
             if self.case == Case::Deferred {
                 let (view, bounds, hits, area) = if source == 0 {
@@ -445,6 +675,24 @@ impl Probe {
                         "frame_reflow_deferred_geometry_mismatch: source={source} step={step} view={view:?} bounds={bounds:?}"
                     ));
                 }
+                let native_id = if source == 0 {
+                    app.window.as_ref().ok_or("frame_reflow_main_lost")?.id()
+                } else {
+                    id
+                };
+                let ready = app.native_input_layout_ready(native_id)
+                    && !app.unavailable_input(
+                        native_id,
+                        &WindowEvent::Text("ignored deferred input".into()),
+                    );
+                vesta_gpui::trace::counter(
+                    "fixture",
+                    "reflow.cpu_input_ready",
+                    if ready { 1.0 } else { 0.0 },
+                );
+                if !ready {
+                    return Err("frame_reflow_stable_cpu_input_blocked_by_acquire".into());
+                }
                 let unchanged = before_presented.is_some_and(|id| id.revision > 1)
                     && app.ui_query.next(owner) == before_presented;
                 vesta_gpui::trace::counter(
@@ -461,5 +709,21 @@ impl Probe {
         self.step += 1;
         self.warm = 4;
         Ok(false)
+    }
+}
+
+fn control(
+    app: &mut App,
+    event_loop: &ActiveEventLoop,
+    operation: ui_query::Operation,
+) -> Result<serde_json::Value, &'static str> {
+    let (reply, receiver) = std::sync::mpsc::sync_channel(1);
+    app.answer_ui_query(event_loop, ui_query::Request { operation, reply });
+    match receiver
+        .try_recv()
+        .map_err(|_| "frame_probe_missing_reply")??
+    {
+        (_, ui_query::Reply::Control(value)) => Ok(value),
+        _ => Err("frame_probe_unexpected_reply"),
     }
 }

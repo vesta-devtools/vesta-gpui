@@ -105,7 +105,7 @@ impl App {
                     .map(|(id, _)| id)
                     .collect()
             };
-            self.cancel_gpu_interactions(&ids);
+            self.cancel_unavailable_interactions(&ids);
             self.mark_recovery_windows(&ids);
             self.gpu_recovery.pending.insert(id, error);
             self.request_all_redraw();
@@ -114,45 +114,6 @@ impl App {
             self.drive_gpu_recovery();
         } else {
             self.fatal_error = Some(error.to_string());
-        }
-    }
-    pub(super) fn cancel_gpu_interactions(&mut self, ids: &HashSet<WindowId>) {
-        let owners = ids
-            .iter()
-            .filter_map(|id| {
-                if self
-                    .window
-                    .as_ref()
-                    .is_some_and(|window| window.id() == *id)
-                {
-                    Some((STANDALONE_WINDOW, ContainerRef::Main))
-                } else {
-                    self.native_windows
-                        .get(id)
-                        .map(|host| (host.ui_window, ContainerRef::Floating(host.logical_id)))
-                }
-            })
-            .collect::<Vec<_>>();
-        for (owner, container) in owners {
-            self.cancel_window_document_input(owner);
-            self.cancel_window_value_edits(owner);
-            self.cancel_workspace_drag_for_container(container);
-            if owner == STANDALONE_WINDOW {
-                self.input_ownership.cancel_capture();
-                self.pointer_click.cancel();
-                self.camera_drag = false;
-                self.camera_pan = false;
-                self.cancel_transform_drag();
-                self.cancel_floating_move();
-                self.last_title_click = None;
-            } else if let Some(host) = self
-                .native_windows
-                .values_mut()
-                .find(|host| host.ui_window == owner)
-            {
-                host.input.cancel_capture();
-                host.pointer_click.cancel();
-            }
         }
     }
     pub(super) fn gpu_update_fault(&mut self, id: WindowId, error: RendererError) {
@@ -174,7 +135,7 @@ impl App {
         };
         self.gpu_recovery.seed = context.map(|context| context.recovery_seed());
         let ids = HashSet::from([id]);
-        self.cancel_gpu_interactions(&ids);
+        self.cancel_unavailable_interactions(&ids);
         self.mark_recovery_windows(&ids);
         if let Some((_, window)) = self
             .recovery_windows()
@@ -529,34 +490,6 @@ impl App {
             return Some(Instant::now() + Duration::from_millis(16));
         }
         None
-    }
-    pub(super) fn recovery_input(&mut self, id: WindowId, event: &WindowEvent) -> bool {
-        if !self.display_blocked(id) {
-            return false;
-        }
-        if let WindowEvent::KeyboardInput {
-            event: key,
-            is_synthetic,
-            ..
-        } = event
-            && vesta_gpui_winit::is_user_key_press(key.state, *is_synthetic)
-            && key.logical_key == Key::Named(NamedKey::F5)
-        {
-            self.retry_gpu();
-            return true;
-        }
-        !matches!(
-            event,
-            WindowEvent::CloseRequested
-                | WindowEvent::Destroyed
-                | WindowEvent::Focused(_)
-                | WindowEvent::Resized(_)
-                | WindowEvent::ScaleFactorChanged { .. }
-                | WindowEvent::RedrawRequested
-                | WindowEvent::ModifiersChanged(_)
-                | WindowEvent::Occluded(_)
-                | WindowEvent::Moved(_)
-        )
     }
     pub(super) fn display_blocked(&self, id: WindowId) -> bool {
         self.gpu_recovery.blocked(id)

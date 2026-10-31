@@ -62,8 +62,13 @@ and target-specific paths; native support is still Windows-preview scope.
    PaintList supplies both hit and text-input geometry before renderer entry;
    acquire deferral does not mix those with an older text viewport. Presented
    queries, accessibility and IME publication still follow successful submission.
-   Budget-exhausted partial preparation and consumer-bridge integration remain
-   under review in GF03.
+   The window owns an explicit validity bit for its input projection, false
+   during preparation and true after coherent text/hit geometry is installed.
+   Incomplete preparation blocks input and releases geometry-dependent capture;
+   native lifecycle events remain available. The existing query dirty state
+   separately rejects commands until a successful presented publication. These
+   states express different facts, with one owner each. Consumer-bridge
+   integration remains under review in GF03.
 5. The renderer retains only the resources needed by submitted work, then retires
    them through its existing owner. Submission, GPU completion and physical
    display are distinct facts. Recovery preserves caller-owned CPU state.

@@ -10,18 +10,27 @@ impl App {
         {
             return;
         }
+        if let Some(owner) = self
+            .native_windows
+            .get(&window_id)
+            .map(|host| host.ui_window)
+        {
+            self.begin_input_layout(owner);
+        }
         let _trace_frame = vesta_gpui::trace::frame("Standalone.Float");
         let mut frame_trace = self.frame_profile.begin();
         let input_watermark = self.lifecycle_profile.begin_frame();
         let mut layout_passes = 0;
+        let layout_pass_limit = frame_reflow_probe::layout_pass_limit();
         loop {
-            if layout_passes == FRAME_LAYOUT_PASS_LIMIT {
+            if layout_passes == layout_pass_limit {
                 vesta_gpui::trace::counter(
                     "standalone.frame",
                     "layout.passes",
                     f64::from(layout_passes),
                 );
                 vesta_gpui::trace::instant("standalone.frame", "frame.skipped.layout_budget");
+                self.cancel_unavailable_interactions(&std::collections::HashSet::from([window_id]));
                 if let Some(host) = self.native_windows.get(&window_id) {
                     host.window.request_redraw();
                 }
@@ -475,6 +484,7 @@ impl App {
             }
             frame_trace.mark(FrameStage::TextViews);
             host.hit_test = HitTestTree::build(&root, &layout);
+            host.input_layout_ready = true;
             frame_trace.mark(FrameStage::Hit);
             host.caret_blink.update(
                 focused_field
@@ -529,7 +539,9 @@ impl App {
                 Ok(None) => {
                     self.native_windows.insert(window_id, host);
                     if self.display_blocked(window_id) {
-                        self.cancel_gpu_interactions(&std::collections::HashSet::from([window_id]));
+                        self.cancel_unavailable_interactions(&std::collections::HashSet::from([
+                            window_id,
+                        ]));
                     }
                     return;
                 }

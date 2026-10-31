@@ -107,6 +107,12 @@ pub(super) struct Store {
 }
 
 impl Store {
+    pub(super) fn invalidate_window(&mut self, window: UiWindowId) {
+        if self.enabled {
+            self.dirty.insert(window);
+        }
+    }
+
     pub(super) fn invalidate_shared(&mut self) {
         if self.enabled {
             // Gallery editors, theme and workspace are shared across native windows.

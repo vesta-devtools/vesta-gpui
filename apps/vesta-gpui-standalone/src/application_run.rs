@@ -61,7 +61,7 @@ pub(super) fn run() -> Result<(), Box<dyn Error>> {
         }
     }
     app.event_proxy = Some(event_loop.create_proxy());
-    if app.ui_query.enabled {
+    if app.ui_query.enabled && !frame_reflow_probe::requested() {
         app.ui_query.control_enabled = std::env::args().any(|arg| arg == "--ui-control-stdio");
         ui_query::start(event_loop.create_proxy(), app.ui_query.control_enabled)?;
     }
@@ -267,7 +267,8 @@ impl ApplicationHandler<UserEvent> for App {
                 self.request_all_redraw();
             }
         }
-        if self.display_blocked(event.window_id)
+        if (self.display_blocked(event.window_id)
+            || !self.native_input_layout_ready(event.window_id))
             && matches!(
                 event.window_event,
                 AccessibilityWindowEvent::ActionRequested(_)

@@ -11,6 +11,7 @@ fn semantic_commands_share_editor_undo_and_deduplicate_requests_without_using_re
         let layout = LayoutEngine
             .compute(&root, Viewport::new(1280.0, 800.0, 1.0))
             .expect("layout");
+        app.input_layout_ready = true;
         let snapshot = app
             .capture_query_snapshot(
                 STANDALONE_WINDOW,
@@ -44,6 +45,21 @@ fn semantic_commands_share_editor_undo_and_deduplicate_requests_without_using_re
         .owners
         .reference(STANDALONE_WINDOW, app.scopes.gallery.element(TEXT_FIELD))
         .expect("owner");
+    app.begin_input_layout(STANDALONE_WINDOW);
+    let pending = Operation::Invoke {
+        request_id: "pending-projection".into(),
+        target,
+        command: UiCommand::Focus,
+    };
+    assert_eq!(app.answer_ui_control(&pending), Err("presentation_pending"));
+    assert_eq!(app.text_state.text(), original);
+    assert!(!app.input_layout_ready);
+    publish(&mut app);
+    assert_eq!(
+        app.answer_ui_control(&pending),
+        Err("presentation_pending"),
+        "a rejected request is never replayed after recovery"
+    );
     let click_target = InputTarget {
         window: STANDALONE_WINDOW,
         element: target.element,

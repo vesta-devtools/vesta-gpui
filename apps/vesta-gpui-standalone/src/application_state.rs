@@ -73,6 +73,7 @@ impl App {
             text_rasterizer: TextRasterizer::default(),
             text_bridge: TextInputBridge::default(),
             input_ownership: InputOwnership::default(),
+            input_layout_ready: false,
             pointer_click: PointerClick::default(),
             clipboard: HostClipboard::default(),
             hit_test: HitTestTree::default(),

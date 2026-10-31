@@ -8,7 +8,7 @@ impl App {
         window_id: WindowId,
         event: WindowEvent,
     ) {
-        if self.recovery_input(window_id, &event) {
+        if self.unavailable_input(window_id, &event) {
             return;
         }
         if let Some(window) = self

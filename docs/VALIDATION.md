@@ -27,6 +27,25 @@ actually run successfully before it can be reported as passing.
 
 ## Refinement checkpoint — 2026-10-31
 
+The bounded-exit checkpoint makes CPU-input readiness explicit per window and
+keeps presented-query freshness separate. Native 24240 demonstrated that a
+controlled budget exit still admitted input/Focus and retained capture. Final
+native 68296 verified 128 one-pass budget exits, no renderer/publication, capture
+release, input/command rejection, lifecycle admission, focus/draft preservation,
+motion/leave position caching and actual recovery per step. A separate native
+failure retained the lost-cursor defect. The reduced fixture limit is not evidence
+of a natural eight-pass exhaustion. Fault-feature native 48968 verified 128
+acquire deferrals with coherent CPU input still usable. Final ordinary native
+48800 submitted 64/64 per window using at most three/two passes. Frozen budget02
+passed 212 contracts across 32 harnesses, documentation, strict/base/feature/tool/
+format checks and both standard builds. Twelve current/historical-report and
+corruption reviews passed. Rust inputs match all three native builds. Receipts
+are in `target/research/frame-settlement-20261031`; original failed runs remain.
+The earlier query-enabled probe also started normal stdio transport; its old
+no-worker comment is corrected by isolating current in-process probes. Neither
+this finding nor the fix erases earlier geometry results or supplies physical
+input, reader, DPI, GPU/display timing, remote CI or consumer-deployment evidence.
+
 The subsequent prepared-input checkpoint fixes a native deferred-acquire mismatch:
 text mapping retained width 360 while the new hit layout used width 174. A private
 helper now derives both windows' text geometry from the current PaintList before

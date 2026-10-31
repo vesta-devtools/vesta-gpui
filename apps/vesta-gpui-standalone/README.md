@@ -30,6 +30,15 @@ step, bounded preparation and explicit budget deferrals. An optional numeric
 third argument binds the report to the launched process PID. Submission markers
 are CPU-side facts, not physical display or input-latency measurements.
 
+`--probe-frame-case=budget` deliberately reduces only that probe process's layout
+budget to one pass. Its real changed-width draws must defer before the renderer,
+release captures and reject incomplete-layout input/commands without changing a
+presented revision, then recover. The usual host policy is eight passes. This
+case does not establish a naturally occurring eight-pass exhaustion. In-process
+probe queries use the ordinary bounded request/reply dispatch without starting
+the stdio worker. Stable CPU input readiness and presented-query freshness are
+separate: acquire deferral may preserve the former while the latter stays pending.
+
 ## Gallery interactions
 
 Collections uses the shared controlled tree module. Its existing thousand-item

@@ -25,13 +25,15 @@ const results = [{window: 'Main', steps: 0, renderer: 0, submitted: 0, max_passe
   {window: 'Float', steps: 0, renderer: 0, submitted: 0, max_passes: 0}];
 const failures = [];
 const cases = new Set();
+let cpuReadinessSamples = 0;
+let cursorSamples = 0;
 for (const step of steps) {
   const within = event => event.ts >= step.ts && event.ts <= step.ts + step.dur + .01;
   const counters = data.traceEvents.filter(e => e.ph === 'C' && within(e));
   const value = name => counters.find(e => e.name === name)?.args?.value;
   const source = value('reflow.source'), index = value('reflow.index');
   const content = value('reflow.case') ?? 0;
-  assert.ok([0, 1, 2, 3].includes(content), 'known case required');
+  assert.ok([0, 1, 2, 3, 4].includes(content), 'known case required');
   cases.add(content);
   assert.ok(source === 0 || source === 1, 'source counter required');
   const row = results[source];
@@ -47,11 +49,26 @@ for (const step of steps) {
   row.renderer += renderer;
   row.submitted += Number(frame.markers.some(marker => marker.name === 'present.submitted'));
   row.max_passes = Math.max(row.max_passes, passes);
-  if (renderer !== 1 || passes < 1 || passes > 8) failures.push({source, index, renderer, passes});
-  if (content === 3) {
-    assert.equal(value('reflow.geometry_agrees'), 1, 'deferred text and current hit bounds must agree');
+  if (renderer !== (content === 4 ? 0 : 1) || passes < 1 || passes > 8) failures.push({source, index, renderer, passes});
+  if (content === 3 || content === 4) {
+    if (content === 3) {
+      assert.equal(value('reflow.geometry_agrees'), 1, 'deferred text and current hit bounds must agree');
+      if (value('reflow.cpu_input_ready') !== undefined) {
+        assert.equal(value('reflow.cpu_input_ready'), 1, 'stable CPU input remains usable during acquire deferral');
+        cpuReadinessSamples++;
+      }
+    }
+    if (content === 4) {
+      assert.equal(passes, 1, 'isolated reduced budget required');
+      assert.equal(data.traceEvents.filter(e => e.name === 'frame.skipped.layout_budget' && within(e)).length, 1);
+      for (const name of ['reflow.input_blocked', 'reflow.capture_released', 'reflow.command_blocked', 'reflow.logical_blocked', 'reflow.lifecycle_allowed', 'reflow.focus_preserved']) assert.equal(value(name), 1, name);
+      if (value('reflow.cursor_cached') !== undefined) {
+        assert.equal(value('reflow.cursor_cached'), 1, 'blocked motion must preserve the latest cursor position');
+        cursorSamples++;
+      }
+    }
     assert.equal(value('reflow.presented_unchanged'), 1, 'deferred CPU preparation cannot publish a presented snapshot');
-    assert.ok(!frame.markers.some(marker => marker.name === 'present.submitted'), 'injected acquire deferral cannot submit');
+    assert.ok(!frame.markers.some(marker => marker.name === 'present.submitted'), 'deferred draw cannot submit');
     const next = steps[steps.indexOf(step) + 1];
     assert.ok(data.gpui_frames.some(recovery => recovery.name === frame.name
       && recovery.start_us > frame.start_us + frame.duration_us
@@ -63,10 +80,14 @@ for (const step of steps) {
 }
 assert.ok(results.every(row => row.steps === 64));
 assert.equal(cases.size, 1, 'one isolated case per report');
+assert.ok(cpuReadinessSamples === 0 || cpuReadinessSamples === 128, 'readiness observations must be complete when supplied');
+assert.ok(cursorSamples === 0 || cursorSamples === 128, 'cursor observations must be complete when supplied');
 const budget_skips = data.traceEvents.filter(e => e.name === 'frame.skipped.layout_budget').length;
-const result = {status: failures.length || budget_skips ? 'failed' : 'passed', windows: results,
+const result = {status: failures.length || (budget_skips && !cases.has(4)) ? 'failed' : 'passed', windows: results,
   native_pid: nativePid,
-  case: ['inputs', 'documents', 'focus', 'deferred'][[...cases][0]],
-  failures, budget_skips, physical_input: false, gpu_or_display_latency: false};
+  case: ['inputs', 'documents', 'focus', 'deferred', 'budget'][[...cases][0]],
+  failures, budget_skips, cpu_input_readiness_observed: cpuReadinessSamples === 128,
+  cursor_cache_observed: cursorSamples === 128,
+  physical_input: false, gpu_or_display_latency: false};
 console.log(JSON.stringify(result, null, 2));
 if (result.status !== 'passed') process.exitCode = 1;

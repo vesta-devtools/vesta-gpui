@@ -21,7 +21,7 @@ exits, not estimated feature percentages or the number of tests.
 | --- | --- | --- |
 | GF01 — Architecture authority | Current eight-library graph, state/lifecycle ownership map, resolved dependency boundary gate and corruption checks | Completed 2026-10-31: actual all-feature Cargo metadata accepted; corruption contract rejects reverse/optional/target/build/transitive native and UI leaks; no new Rust/native qualification |
 | GF02 — API and module reduction | Audit actual public surfaces against current documentation and callers; remove unjustified wrappers/exports, untangle mixed responsibilities, provide migrations for changed public contracts | In progress; text/ownership/composition, private fixture and API-authority changes qualified; remaining families open |
-| GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | In progress; Main/Float reflow starvation and deferred text/hit mismatch reproduced and fixed; budget-exhausted preparation and consumer integration remain |
+| GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | In progress; Main/Float reflow, deferred geometry and controlled budget-exit admission qualified; remaining consumer review/integration open |
 | GF04 — Interaction and lifecycle | Close concrete existing input/text/IME/focus/popup/selection/resource gaps; make transport, cancellation, error and ownership limits explicit; preserve existing accepted scenarios | Open |
 | GF05 — Performance and diagnostics | Reproducible static/resize/text/collection workloads, disabled/enabled trace cost, bounds/retention/idle checks; select and fix measured bottlenecks with comparable evidence | Open |
 | GF06 — Usability and delivery | Small reusable host recipe, capability-oriented docs, matching exports, clean feature checks and CI, exact SDK source identity and immutable Vesta consumer validation | Open |
@@ -43,11 +43,11 @@ are inventory, not product complexity or a new qualification.
 - Existing package directions agree with [the map](ARCHITECTURE.md). Preserve
   this structure while reviewing internal responsibilities; there is no evidence
   yet that merging or splitting crates would improve it.
-- Standalone `main.rs` remains 3,028 lines and `gallery.rs` 1,539 lines. Review
+- At baseline, Standalone `main.rs` had 3,028 lines and `gallery.rs` 1,539. Review
   their remaining state, event/command and projection responsibilities. Extract
   only cohesive responsibilities while preserving the same App owner; splitting
   files alone does not resolve ownership.
-- Core `text_input.rs` is 1,221 lines. Review editor-state/context responsibilities
+- At baseline, Core `text_input.rs` had 1,221 lines. Review editor-state/context responsibilities
   and error interoperability. At baseline `TextInputError` had no Display/Error
   implementation; the finding below addresses that specific failure contract.
 - Public API inventories combine historical amendments with current contracts.
@@ -180,13 +180,47 @@ number of ticks. Six actual-report/corruption checks preserve the red result and
 reject stale geometry, false publication, absent recovery and missing ordinary
 submission. Their modified reports are verifier tests, not native observations.
 
-Remaining GF03 review is concrete: a draw that exhausts its layout budget can
-have partially advanced CPU route/focus/scroll state before its final hit/text
-projection is ready. Audit that exit and command admission against the last
-presented observation. Also review Builder's embedded Agent `layout()` changed
-result: its current draw asks for a later redraw but still submits the earlier
+The bounded-exit review follows [decision 0010](decisions/0010-Prepared-Input-Readiness-And-Budget-Exit.md).
+Actual budgetbefore03 native 24240 exhausted a controlled one-pass limit but still
+admitted native-event classification and a real semantic Focus request, retaining
+its pointer capture. Windows now own explicit CPU-input readiness, set only after
+coherent text/hit installation. Native/accessibility admission blocks partial
+preparation, lifecycle events remain available, and existing query dirty state
+blocks semantic/logical commands until presented publication. Cancellation and
+admission move from the GPU module to the window owner; no SDK runtime/API is added.
+
+Budgetcursorafter01 verified 64 controlled exits per window: no renderer entry,
+no presented revision, released captures, preserved focus/draft, rejected semantic
+and logical requests, lifecycle admission and recovery after every step. A separate
+cursor red showed that blocking motion lost the latest coordinate; the fix samples
+motion/leave while suppressing hit/gesture dispatch. All 128 cursor observations
+passed. Its 132 total budget markers include four warm-up exits; the workload itself
+contains exactly 128. This deliberately reduced limit exercises the production
+exit, not a naturally observed eight-pass exhaustion. Budgetcursordeferred01 on
+the fault-feature binary retained valid CPU input through 128 acquire deferrals
+and actual recoveries. The final ordinary eight-pass binary passed budgetfocus01,
+with 64/64 submissions per window and three/two passes. Frozen budget02 passed
+212 contracts across 32 harnesses, documentation, all/base strict checks, tools,
+formatting and both standard builds. All three native Rust inputs match it exactly.
+Twelve actual-report/corruption checks passed, preserving historical report scopes;
+new optional cursor/readiness observations are explicit rather than retroactive.
+
+Original private-method compile failure, probe control overwrite, insufficient
+turnaround width delta and stale-cursor failures remain recorded. The query-enabled
+earlier probe accidentally entered normal stdio startup; current in-process probes
+are isolated from that branch. Earlier geometry evidence remains at its actual
+identity, but the old assertion that no stdin worker started is not substantiated.
+
+Remaining GF03 consumer review is concrete: Builder's embedded Agent `layout()`
+changed result currently asks for a later redraw but still submits the earlier
 widget. Do not call that a reproduced Builder starvation defect or copy business/
-author updates into a generic retry loop. These findings keep GF03 open.
+author updates into a generic retry loop. Review the other consumer publication
+boundaries too; the programme stays open until that scope has evidence.
+
+GF04 also retains two source-audit leads at unavailable-window cancellation:
+the text bridge's click history is separate from `PointerClick`/capture, and a
+shared value-preview rollback must invalidate/redraw the other window. Reproduce
+and trace their existing reset/notification paths before changing or signing them.
 
 GF01's maintained gate is `tools/verify/architecture.mjs`, with its focused
 contract and Windows workflow step. It requires full Cargo metadata and enabled

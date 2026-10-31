@@ -425,6 +425,8 @@ struct App {
     text_rasterizer: TextRasterizer,
     text_bridge: TextInputBridge,
     input_ownership: InputOwnership,
+    /// True only after text/hit geometry from one complete CPU projection is installed.
+    input_layout_ready: bool,
     pointer_click: PointerClick,
     clipboard: HostClipboard,
     hit_test: HitTestTree,

@@ -27,17 +27,24 @@ impl App {
         {
             return;
         }
+        self.begin_input_layout(STANDALONE_WINDOW);
         let mut frame_trace = self.frame_profile.begin();
         let input_watermark = self.lifecycle_profile.begin_frame();
         let mut layout_passes = 0;
+        let layout_pass_limit = frame_reflow_probe::layout_pass_limit();
         loop {
-            if layout_passes == FRAME_LAYOUT_PASS_LIMIT {
+            if layout_passes == layout_pass_limit {
                 vesta_gpui::trace::counter(
                     "standalone.frame",
                     "layout.passes",
                     f64::from(layout_passes),
                 );
                 vesta_gpui::trace::instant("standalone.frame", "frame.skipped.layout_budget");
+                if let Some(window) = &self.window {
+                    self.cancel_unavailable_interactions(&std::collections::HashSet::from([
+                        window.id(),
+                    ]));
+                }
                 self.request_redraw();
                 return;
             }
@@ -576,6 +583,7 @@ impl App {
             self.readonly_label_view = text_views.get(TextFieldKind::Label);
             frame_trace.mark(FrameStage::TextViews);
             self.hit_test = HitTestTree::build(&built.root, &layout);
+            self.input_layout_ready = true;
             let hovered = self.hit_test.hit(self.cursor);
             if self.hovered != hovered {
                 self.hovered = hovered;
@@ -647,8 +655,8 @@ impl App {
                 Ok(Some(output)) => output,
                 Ok(None) => {
                     if self.display_blocked(window.id()) {
-                        self.cancel_gpu_interactions(&std::collections::HashSet::from([
-                            window.id()
+                        self.cancel_unavailable_interactions(&std::collections::HashSet::from([
+                            window.id(),
                         ]));
                     }
                     return;

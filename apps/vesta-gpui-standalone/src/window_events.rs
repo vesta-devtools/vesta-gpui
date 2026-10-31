@@ -42,7 +42,7 @@ impl App {
             }
             return;
         }
-        if self.recovery_input(window_id, &event) {
+        if self.unavailable_input(window_id, &event) {
             return;
         }
         // Input in the main window always owns the overlays it opens (ADR-0254).
@@ -491,6 +491,133 @@ impl App {
         }
         if self.exit_requested {
             event_loop.exit();
+        }
+    }
+}
+
+impl App {
+    pub(super) fn begin_input_layout(&mut self, window: UiWindowId) {
+        self.ui_query.invalidate_window(window);
+        if window == STANDALONE_WINDOW {
+            self.input_layout_ready = false;
+        } else if let Some(host) = self
+            .native_windows
+            .values_mut()
+            .find(|host| host.ui_window == window)
+        {
+            host.input_layout_ready = false;
+        }
+    }
+
+    pub(super) fn native_input_layout_ready(&self, id: WindowId) -> bool {
+        if self.window.as_ref().is_some_and(|window| window.id() == id) {
+            self.input_layout_ready
+        } else {
+            self.native_windows
+                .get(&id)
+                .is_some_and(|host| host.input_layout_ready)
+        }
+    }
+
+    pub(super) fn unavailable_input(&mut self, id: WindowId, event: &WindowEvent) -> bool {
+        let layout_pending = !self.native_input_layout_ready(id);
+        let display_blocked = self.display_blocked(id);
+        if !layout_pending && !display_blocked {
+            return false;
+        }
+        // Keep native position state current while suppressing geometry-dependent
+        // dispatch. A later press need not be preceded by another motion event.
+        let sample = |cursor: &mut Point, scale| match event {
+            WindowEvent::CursorMoved { position, .. } => *cursor = logical_point(*position, scale),
+            WindowEvent::CursorLeft { .. } => *cursor = Point::new(-1.0, -1.0),
+            _ => {}
+        };
+        if let Some(window) = self.window.as_ref().filter(|window| window.id() == id) {
+            sample(&mut self.cursor, window.scale_factor());
+            if matches!(event, WindowEvent::CursorLeft { .. }) {
+                self.hovered = None;
+                self.tooltip.leave(Instant::now());
+            }
+        } else if let Some(host) = self.native_windows.get_mut(&id) {
+            sample(&mut host.cursor, host.window.scale_factor());
+            if matches!(event, WindowEvent::CursorLeft { .. }) {
+                host.tooltip.leave(Instant::now());
+            }
+        }
+        if display_blocked
+            && let WindowEvent::KeyboardInput {
+                event: key,
+                is_synthetic,
+                ..
+            } = event
+            && vesta_gpui_winit::is_user_key_press(key.state, *is_synthetic)
+            && key.logical_key == Key::Named(NamedKey::F5)
+        {
+            self.retry_gpu();
+            return true;
+        }
+        let blocked = !matches!(
+            event,
+            WindowEvent::CloseRequested
+                | WindowEvent::Destroyed
+                | WindowEvent::Focused(_)
+                | WindowEvent::Resized(_)
+                | WindowEvent::ScaleFactorChanged { .. }
+                | WindowEvent::RedrawRequested
+                | WindowEvent::ModifiersChanged(_)
+                | WindowEvent::Occluded(_)
+                | WindowEvent::Moved(_)
+        );
+        if blocked && self.ui_query.input_origin == vesta_gpui_winit::UiInputOrigin::Command {
+            self.ui_query.input_error = Some(if layout_pending {
+                "presentation_pending"
+            } else {
+                "display_unavailable"
+            });
+        }
+        blocked
+    }
+
+    pub(super) fn cancel_unavailable_interactions(
+        &mut self,
+        ids: &std::collections::HashSet<WindowId>,
+    ) {
+        let owners = ids
+            .iter()
+            .filter_map(|id| {
+                if self
+                    .window
+                    .as_ref()
+                    .is_some_and(|window| window.id() == *id)
+                {
+                    Some((STANDALONE_WINDOW, ContainerRef::Main))
+                } else {
+                    self.native_windows
+                        .get(id)
+                        .map(|host| (host.ui_window, ContainerRef::Floating(host.logical_id)))
+                }
+            })
+            .collect::<Vec<_>>();
+        for (owner, container) in owners {
+            self.cancel_window_document_input(owner);
+            self.cancel_window_value_edits(owner);
+            self.cancel_workspace_drag_for_container(container);
+            if owner == STANDALONE_WINDOW {
+                self.input_ownership.cancel_capture();
+                self.pointer_click.cancel();
+                self.camera_drag = false;
+                self.camera_pan = false;
+                self.cancel_transform_drag();
+                self.cancel_floating_move();
+                self.last_title_click = None;
+            } else if let Some(host) = self
+                .native_windows
+                .values_mut()
+                .find(|host| host.ui_window == owner)
+            {
+                host.input.cancel_capture();
+                host.pointer_click.cancel();
+            }
         }
     }
 }
