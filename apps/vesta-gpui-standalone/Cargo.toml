@@ -31,6 +31,7 @@ vesta-workspace.workspace = true
 
 [dev-dependencies]
 accesskit_consumer = "=0.31.0"
+vesta-gpui-webview.workspace = true
 
 [lints]
 workspace = true

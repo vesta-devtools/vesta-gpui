@@ -1,6 +1,8 @@
 //! Native browser ownership; page permissions and product actions stay with the host.
 mod assets;
+mod retirement;
 pub use assets::{AssetRoot, MAX_RESOURCE_BYTES, Resource};
+pub use retirement::WebRetirement;
 
 #[cfg(any(windows, test))]
 pub(crate) fn project_page_url(entry: &str) -> url::Url {
@@ -134,8 +136,40 @@ pub fn validate_url(value: &str) -> Result<String, WebError> {
     Ok(parsed.to_string())
 }
 
+// Native effects are sequenced here; the native adapter supplies only these two
+// operations. The cache remains owned by the same WebView, not a second model.
+fn synchronize(
+    visible: &mut bool,
+    previous_bounds: &mut Option<Rect>,
+    bounds: Option<Rect>,
+    show: bool,
+    mut set_bounds: impl FnMut(Rect) -> Result<(), WebError>,
+    mut set_visible: impl FnMut(bool) -> Result<(), WebError>,
+) -> Result<(), WebError> {
+    let bounds = bounds.filter(|r| {
+        r.width > 0.0
+            && r.height > 0.0
+            && [r.x, r.y, r.width, r.height].iter().all(|v| v.is_finite())
+    });
+    let show = show && bounds.is_some();
+    if *visible && !show {
+        set_visible(false)?;
+        *visible = false;
+    }
+    if let Some(rect) = bounds.filter(|r| Some(*r) != *previous_bounds) {
+        set_bounds(rect)?;
+        *previous_bounds = Some(rect);
+    }
+    if !*visible && show {
+        set_visible(true)?;
+        *visible = true;
+    }
+    *previous_bounds = bounds;
+    *visible = show;
+    Ok(())
+}
+
 pub struct WebView {
-    pub owner: ViewOwner,
     visible: bool,
     bounds: Option<Rect>,
     application: bool,
@@ -143,53 +177,59 @@ pub struct WebView {
     native: windows::NativeView,
 }
 impl WebView {
-    /// The caller must dispose this view before its parent native window.
+    /// Create synchronously on the native event thread. Dispose this view before
+    /// its parent window. Retain the Host's retirement group through creation
+    /// errors too; after disposing all children, observe it off the live UI loop.
     pub fn create(
         parent: &impl HasWindowHandle,
         owner: ViewOwner,
         page: Page,
         events: EventSink,
+        retirement: &WebRetirement,
     ) -> Result<Self, WebError> {
         #[cfg(target_os = "windows")]
         return Ok(Self {
-            owner,
             visible: false,
             bounds: None,
             application: matches!(page, Page::Application { .. }),
-            native: windows::NativeView::create(parent, owner, page, events)?,
+            native: windows::NativeView::create(parent, owner, page, events, retirement)?,
         });
         #[cfg(not(target_os = "windows"))]
         {
-            let _ = (parent, owner, page, events);
+            let _ = (parent, owner, page, events, retirement);
             Err(WebError::new(
                 "web_platform_unavailable",
                 "The native web carrier currently requires Windows WebView2",
             ))
         }
     }
-    /// Hide before moving/revealing; the host decides when GPUI overlays occlude the slot.
+    /// Synchronize native geometry/visibility. Each successful operation remains
+    /// recorded if a later operation fails; this is not an atomic transaction.
+    /// The host decides when GPUI overlays occlude the native child slot.
     pub fn sync(&mut self, bounds: Option<Rect>, show: bool) -> Result<(), WebError> {
-        let bounds = bounds.filter(|r| {
-            r.width > 0.0
-                && r.height > 0.0
-                && [r.x, r.y, r.width, r.height].iter().all(|v| v.is_finite())
-        });
-        let show = show && bounds.is_some();
         #[cfg(target_os = "windows")]
         {
-            if self.visible && !show {
-                self.native.visible(false)?;
-            }
-            if let Some(rect) = bounds.filter(|r| Some(*r) != self.bounds) {
-                self.native.bounds(rect)?;
-            }
-            if !self.visible && show {
-                self.native.visible(true)?;
-            }
+            let native = &self.native;
+            synchronize(
+                &mut self.visible,
+                &mut self.bounds,
+                bounds,
+                show,
+                |rect| native.bounds(rect),
+                |show| native.visible(show),
+            )
         }
-        self.bounds = bounds;
-        self.visible = show;
-        Ok(())
+        #[cfg(not(target_os = "windows"))]
+        {
+            synchronize(
+                &mut self.visible,
+                &mut self.bounds,
+                bounds,
+                show,
+                |_| Ok(()),
+                |_| Ok(()),
+            )
+        }
     }
     pub fn visible(&self) -> bool {
         self.visible
@@ -242,5 +282,116 @@ impl WebView {
         return self.native.focus_parent();
         #[cfg(not(target_os = "windows"))]
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::Cell;
+
+    #[test]
+    fn synchronization_retains_completed_effects_across_native_failures() {
+        let old = Rect::new(0.0, 0.0, 320.0, 240.0);
+        let next = Rect::new(12.0, 18.0, 400.0, 300.0);
+        let mut visible = true;
+        let mut bounds = Some(old);
+        let native_visible = Cell::new(true);
+        let native_bounds = Cell::new(old);
+        let error = synchronize(
+            &mut visible,
+            &mut bounds,
+            Some(next),
+            false,
+            |_| {
+                Err(WebError::new(
+                    "fixture_bounds",
+                    "controlled native move failure",
+                ))
+            },
+            |value| {
+                native_visible.set(value);
+                Ok(())
+            },
+        )
+        .expect_err("move failed after hide");
+        assert_eq!(error.code, "fixture_bounds");
+        assert_eq!(
+            visible,
+            native_visible.get(),
+            "completed hide must remain observable"
+        );
+        assert_eq!(
+            bounds,
+            Some(old),
+            "failed move preserves its prior observation"
+        );
+        synchronize(
+            &mut visible,
+            &mut bounds,
+            Some(next),
+            true,
+            |rect| {
+                native_bounds.set(rect);
+                Ok(())
+            },
+            |value| {
+                native_visible.set(value);
+                Ok(())
+            },
+        )
+        .expect("retry reveals the hidden child");
+        assert!(visible && native_visible.get());
+        assert_eq!(bounds, Some(native_bounds.get()));
+
+        synchronize(
+            &mut visible,
+            &mut bounds,
+            None,
+            false,
+            |_| Ok(()),
+            |value| {
+                native_visible.set(value);
+                Ok(())
+            },
+        )
+        .expect("hide before second case");
+        let error = synchronize(
+            &mut visible,
+            &mut bounds,
+            Some(next),
+            true,
+            |rect| {
+                native_bounds.set(rect);
+                Ok(())
+            },
+            |_| {
+                Err(WebError::new(
+                    "fixture_show",
+                    "controlled native reveal failure",
+                ))
+            },
+        )
+        .expect_err("show failed after move");
+        assert_eq!(error.code, "fixture_show");
+        assert!(!visible && !native_visible.get());
+        assert_eq!(
+            bounds,
+            Some(native_bounds.get()),
+            "completed move must remain observable"
+        );
+        synchronize(
+            &mut visible,
+            &mut bounds,
+            Some(next),
+            true,
+            |_| panic!("accepted bounds must not be resent on reveal retry"),
+            |value| {
+                native_visible.set(value);
+                Ok(())
+            },
+        )
+        .expect("retry only reveal");
+        assert!(visible && native_visible.get());
     }
 }

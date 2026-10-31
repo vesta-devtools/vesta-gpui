@@ -48,7 +48,7 @@ its existing gate and evidence, rather than expanding a widget catalogue.
 | Vulkan renderer | CPU preparation, scene admission, frame/retirement contracts; native recipe consumes async tickets | Capture/recovery/profile/resource lifetimes and actual public contract coverage |
 | Workspace model | Stable model authority and legacy qualified/waived scope | Current serialized model/error/session exports and caller responsibilities |
 | Workspace projection | Dependency/authority boundary and original Dock contracts | Public gesture/view geometry ownership against the current model/callers |
-| WebView | Existing optional carrier/asset contracts | Public browser callback/profile/asset lifetime and permission boundaries |
+| WebView | Complete public surface and existing Agent/Builder callers reviewed; redundant mutable identity removed, partial native sync and real temporary-profile leak fixed; [contract and migration](WEBVIEW.md) | Local API/resource qualification recorded below; immutable product migration remains GF06, not a second family audit |
 | Viewport | Neutral dependency boundary and private demo-fixture removal | Public display/render/lighting ownership and optional renderer-facing contract coverage |
 
 [Decision 0015](decisions/0015-Minimal-Native-Host-And-Capability-Navigation.md)
@@ -61,8 +61,35 @@ example `6a0900c6…` / PID 33224 passed five native width steps, logical edit/U
 CPU/painter geometry, GPU retirement and normal exit0 with nine complete frame
 attempts / 114 events. Nine report/corruption checks retain the original hidden
 redraw and close-callback failures, including a green exit later rejected by
-stderr review. The eight remaining family reviews above are still open; the
+stderr review. At that checkpoint all eight family reviews were still open; the
 recipe does not supply physical input, reader, remote CI or Vesta adoption.
+
+## GF02 / GF04 WebView family checkpoint
+
+[Decision 0016](decisions/0016-Webview-Identity-And-Native-Sync-Ownership.md)
+reviews every public export, asset capability, native callback and worker,
+against actual Agent/Builder callers. One sync body retains completed native
+effects after a later failure; the mutable event-identity copy is removed.
+Native02 exposed two temporary profile residues despite all twenty sampled
+descendants exiting. Preserve that failure and the rejected empty native01
+resource sample; neither is accepted as complete lifecycle evidence.
+
+The same per-view I/O worker now retires its temporary profile after close.
+One explicit Host group observes completion/errors, including failed creation;
+it adds no global scheduler or UI wait. Six focused contracts include partial
+effects, an unavailable parent and a real Windows file lock. Native03 passed four
+actual page/origin/reload/storage stages, normal exit and profile retirement:
+two SDK temporary roots disappeared, the Host application root remained, and
+sampled child identities exited. Source/artifact identities and subsequent
+whole-SDK checks live in the product handoff. This closes this family's local
+review, not universal browser support, GF04 as a whole or GF06 adoption. The
+other seven family reviews remain open. Final full02 passed 220 contracts / 36
+harnesses plus CPU smoke, doc/strict/tool/format checks and three ordinary builds.
+Final native04 (`2d82cfd9…`, PID 9768) repeated the finite fixture on those frozen
+runtime inputs with twenty observed descendants, two removed temporary roots
+and retained Host storage. Thirteen report/corruption checks reject incomplete
+evidence. Full01 fixture-style failure and the unobserved native01 profile
+identities remain documented; no historical qualification is rewritten.
 
 ## GF05 bounded CPU checkpoint
 

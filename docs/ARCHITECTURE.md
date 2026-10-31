@@ -15,7 +15,7 @@ minimal. Changes to a boundary require a decision and its checks.
 | `vesta-workspace` | Stable pane/tab/split model and its serialization | Typed workspace operations and stable IDs | UI elements, native windows or GPU resources |
 | `vesta-gpui-workspace` | Workspace UI projection, resolved geometry and gesture helpers | The existing workspace model, IDs, input ownership and host actions | A second workspace model, native window management or persistence policy |
 | `vesta-viewport` | Backend-neutral camera, scene and geometry snapshots | Explicit immutable preview data | OS/GPU lifetime or authoring runtime |
-| `vesta-gpui-webview` | Optional native browser carrier and explicit local-asset mounts | Native parent, bounds, navigation/content policy and mounted resources | Agent authority, approvals, application documents or a replacement renderer |
+| `vesta-gpui-webview` | Optional native browser carrier, read-only asset mounts and per-view I/O/profile retirement | Native parent, fixed event tag, bounds/content policy, mounted resources and Host retirement group | Agent authority, approvals, durable app profile lifecycle, application documents or a replacement renderer |
 
 ```mermaid
 flowchart BT
@@ -85,6 +85,13 @@ and target-specific paths; native support is still Windows-preview scope.
    Read-only polls share one condition deadline; its expiry preserves transport,
    while a disconnected ordinary reply retires it. This boundary and its tests
    are defined in [decision 0014](decisions/0014-Stdio-Wait-Budget-And-Process-Lifetime.md).
+7. The optional browser child captures its creation tag; the Host rejects stale
+   events and disposes children before parents. The existing per-view I/O worker
+   owns resources and SDK temporary-profile cleanup. The Host-created retirement
+   group owns only completion/error observations, never native state or a new
+   executor. Dispose on the event thread, then observe off the live loop before
+   process exit. Installed profiles stay Host-owned. See [WebView](WEBVIEW.md)
+   and [decision 0016](decisions/0016-Webview-Identity-And-Native-Sync-Ownership.md).
 
 ## Public API admission
 

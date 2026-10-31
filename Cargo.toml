@@ -35,6 +35,7 @@ vesta-gpui-vulkan = { version = "=0.1.0", path = "crates/vesta-gpui-vulkan" }
 vesta-gpui-widgets = { version = "=0.1.0", path = "crates/vesta-gpui-widgets" }
 vesta-gpui-winit = { version = "=0.1.0", path = "crates/vesta-gpui-winit" }
 vesta-gpui-workspace = { version = "=0.1.0", path = "crates/vesta-gpui-workspace" }
+vesta-gpui-webview = { version = "=0.1.0", path = "crates/vesta-gpui-webview" }
 vesta-viewport = { version = "=0.1.0", path = "crates/vesta-viewport" }
 vesta-workspace = { version = "=0.1.0", path = "crates/vesta-workspace" }
 winit = "=0.30.13"

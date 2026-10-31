@@ -1,15 +1,17 @@
 use super::*;
-use std::{borrow::Cow, sync::mpsc};
+use std::borrow::Cow;
 use wry::{NewWindowResponse, PageLoadEvent, PermissionResponse, WebViewBuilder};
+mod resources;
+use resources::{Resources, Source};
 
 pub(super) struct NativeView {
     view: wry::WebView,
-    _profile: Option<tempfile::TempDir>,
+    resources: Resources,
 }
-struct AssetJob {
-    path: String,
-    method: String,
-    reply: wry::RequestAsyncResponder,
+impl Drop for NativeView {
+    fn drop(&mut self) {
+        self.resources.close();
+    }
 }
 fn response(status: u16, mime: &str, bytes: Vec<u8>) -> wry::http::Response<Cow<'static, [u8]>> {
     let mut response = wry::http::Response::new(Cow::Owned(bytes));
@@ -70,6 +72,7 @@ impl NativeView {
         owner: ViewOwner,
         page: Page,
         events: EventSink,
+        retirement: &WebRetirement,
     ) -> Result<Self, WebError> {
         let has_assets = matches!(page, Page::Assets { .. } | Page::Html(_));
         let app = if let Page::Application { profile, .. } = &page {
@@ -139,7 +142,7 @@ impl NativeView {
                 });
             }
         });
-        builder = match page {
+        let (builder, resources) = match page {
             Page::Html(html) => {
                 if html.len() > MAX_RESOURCE_BYTES as usize {
                     return Err(WebError::new(
@@ -149,105 +152,59 @@ impl NativeView {
                 }
                 // A real local origin also gives the IPC callback a valid URI;
                 // WebView2's opaque NavigateToString page has no resource origin.
-                let html = Arc::new(html.into_bytes());
-                builder
-                    .with_asynchronous_custom_protocol(
-                        "vesta-preview".into(),
-                        move |_, request, reply| {
-                            let success = request.uri().path() == "/index.html"
-                                && matches!(request.method().as_str(), "GET" | "HEAD");
-                            reply.respond(if success {
-                                response(
-                                    200,
-                                    "text/html; charset=utf-8",
-                                    if request.method() == "HEAD" {
-                                        Vec::new()
-                                    } else {
-                                        html.as_ref().clone()
-                                    },
-                                )
-                            } else {
-                                response(404, "text/plain", Vec::new())
-                            });
-                        },
-                    )
-                    .with_url("vesta-preview://localhost/index.html")
+                let resources =
+                    Resources::start(Source::Html(html.into_bytes()), profile, false, retirement)?;
+                let requests = resources.clone();
+                (
+                    builder
+                        .with_asynchronous_custom_protocol(
+                            "vesta-preview".into(),
+                            move |_, request, reply| {
+                                requests.request(request, reply);
+                            },
+                        )
+                        .with_url("vesta-preview://localhost/index.html"),
+                    resources,
+                )
             }
-            Page::Url(url) => builder.with_url(validate_url(&url)?),
+            Page::Url(url) => {
+                let url = validate_url(&url)?;
+                let resources = Resources::start(Source::Empty, profile, false, retirement)?;
+                (builder.with_url(url), resources)
+            }
             Page::Assets { root, entry } | Page::Application { root, entry, .. } => {
-                // The resource worker alone performs file I/O; its bounded queue
-                // closes when the native callback is disposed with the view.
-                let (sender, receiver) = mpsc::sync_channel::<AssetJob>(32);
-                std::thread::Builder::new()
-                    .name("gpui-web-resources".into())
-                    .spawn(move || {
-                        while let Ok(job) = receiver.recv() {
-                            let reply = if job.method != "GET" && job.method != "HEAD" {
-                                response(405, "text/plain", Vec::new())
-                            } else {
-                                match root.read(&job.path) {
-                                    Ok(resource) => response(
-                                        200,
-                                        resource.content_type,
-                                        if job.method == "HEAD" {
-                                            Vec::new()
-                                        } else {
-                                            resource.bytes
-                                        },
-                                    ),
-                                    Err(_) => response(
-                                        404,
-                                        "text/plain",
-                                        b"Resource unavailable".to_vec(),
-                                    ),
-                                }
-                            };
-                            job.reply.respond(if application {
-                                app_response(reply)
-                            } else {
-                                reply
-                            });
-                        }
-                    })
-                    .map_err(|e| WebError::new("web_resource_worker_unavailable", e.to_string()))?;
+                let resources =
+                    Resources::start(Source::Assets(root), profile, application, retirement)?;
+                let requests = resources.clone();
                 let url = match &app {
                     Some(profile) => super::app_page_url(&profile.id, &entry)?,
                     None => super::project_page_url(&entry),
                 };
-                builder
-                    .with_asynchronous_custom_protocol(
-                        if application {
-                            "vesta-app".into()
-                        } else {
-                            "vesta-preview".into()
-                        },
-                        move |_, request, reply| {
-                            let job = AssetJob {
-                                path: request.uri().path().to_owned(),
-                                method: request.method().to_string(),
-                                reply,
-                            };
-                            if let Err(
-                                mpsc::TrySendError::Full(job)
-                                | mpsc::TrySendError::Disconnected(job),
-                            ) = sender.try_send(job)
-                            {
-                                job.reply.respond(response(
-                                    503,
-                                    "text/plain",
-                                    b"Resource queue unavailable".to_vec(),
-                                ));
-                            }
-                        },
-                    )
-                    .with_url(url.as_str())
+                (
+                    builder
+                        .with_asynchronous_custom_protocol(
+                            if application {
+                                "vesta-app".into()
+                            } else {
+                                "vesta-preview".into()
+                            },
+                            move |_, request, reply| {
+                                requests.request(request, reply);
+                            },
+                        )
+                        .with_url(url.as_str()),
+                    resources,
+                )
             }
         };
-        let view = builder.build_as_child(parent).map_err(browser_error)?;
-        Ok(Self {
-            view,
-            _profile: profile,
-        })
+        let view = match builder.build_as_child(parent) {
+            Ok(view) => view,
+            Err(error) => {
+                resources.close();
+                return Err(browser_error(error));
+            }
+        };
+        Ok(Self { view, resources })
     }
     pub(super) fn visible(&self, visible: bool) -> Result<(), WebError> {
         self.view.set_visible(visible).map_err(browser_error)
@@ -272,6 +229,36 @@ impl NativeView {
 #[cfg(test)]
 mod app_tests {
     use super::*;
+    #[test]
+    fn failed_native_creation_retires_its_resource_owner() {
+        struct Unavailable;
+        impl HasWindowHandle for Unavailable {
+            fn window_handle(
+                &self,
+            ) -> Result<raw_window_handle::WindowHandle<'_>, raw_window_handle::HandleError>
+            {
+                Err(raw_window_handle::HandleError::Unavailable)
+            }
+        }
+        let retirement = WebRetirement::default();
+        let result = WebView::create(
+            &Unavailable,
+            ViewOwner {
+                view: 1,
+                generation: 1,
+            },
+            Page::Html("<!doctype html>".into()),
+            Arc::new(|_| {}),
+            &retirement,
+        );
+        assert_eq!(
+            result.err().expect("parent is unavailable").code,
+            "web_native_unavailable"
+        );
+        retirement
+            .observe(std::time::Duration::from_secs(2))
+            .expect("failed create does not strand resource ownership");
+    }
     #[test]
     fn installed_app_origin_stays_private_and_blocks_foreign_navigation() {
         for allowed in [
