@@ -27,6 +27,12 @@ actually run successfully before it can be reported as passing.
 
 ## Refinement checkpoint — 2026-10-31
 
+The following entries retain each checkpoint's then-current scope and remaining
+work. They are historical evidence, not a second current backlog. Subsequent
+family, native, performance and product qualification is reconciled in
+[the current finite exit ledger](REFINEMENT.md), which alone tracks the remaining
+programme exits.
+
 The native-host recipe checkpoint adds one genuine Cargo example, not another
 library/runtime or an executable workaround. Frozen full01 passed 217 contracts /
 35 harnesses, CPU workload smoke, documentation, all/base strict checks, six Node

@@ -75,7 +75,9 @@ and target-specific paths; native support is still Windows-preview scope.
    between native and embedded paths on one App. It installs hit, CPU layout and
    text geometry together; semantic publication cannot replace input geometry.
    These are host policies, not a new SDK state machine or scheduler. Current
-   joint adoption and Builder budget/fault integration remain open in GF03.
+   Builder budget/fault and native Catalog integration are qualified at their
+   recorded inputs. Final same-revision delivery is tracked only in GF06 of
+   [the current exit ledger](REFINEMENT.md).
 5. The renderer retains only the resources needed by submitted work, then retires
    them through its existing owner. Submission, GPU completion and physical
    display are distinct facts. Recovery preserves caller-owned CPU state.

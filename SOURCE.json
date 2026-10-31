@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "17691dec8fbbd3c1e84df78a5e775afd9c3dfd4966d3f412c9988ac457aff0fd",
+  "tree_sha256": "1f30db9756f6d8998a500892729689f148d6aa5247326e9d73f823fa916fc140",
   "files": [
     {
       "path": ".gitattributes",
@@ -2125,8 +2125,8 @@
     },
     {
       "path": "docs/ARCHITECTURE.md",
-      "bytes": 13375,
-      "sha256": "5c54a4353c902d2d89579f0973e01bc8fa98fa01c6408b24e96833762c3c72f3"
+      "bytes": 13498,
+      "sha256": "f51a7bba8b304cab6b54cdc7399b6b0595a65fa5266e4afb620550d3fca41dca"
     },
     {
       "path": "docs/DOCK.md",
@@ -2190,8 +2190,8 @@
     },
     {
       "path": "docs/VALIDATION.md",
-      "bytes": 15780,
-      "sha256": "ca3c7c9e8cbc744e83338ccaa2cba4c448cdef5c64172cb8342be918e52ca951"
+      "bytes": 16108,
+      "sha256": "0bbcc072510fa055f48102fb3bf230570f1431f1a8fafc2fcf41874f1eaf2767"
     },
     {
       "path": "docs/VIEWPORT.md",
@@ -2200,8 +2200,8 @@
     },
     {
       "path": "docs/VULKAN.md",
-      "bytes": 14806,
-      "sha256": "c6d5b6ab916e52e3d2ddc6cab24b67948fe3367ddcb5e3fc7660ee0f085146e7"
+      "bytes": 14813,
+      "sha256": "f3451e593155c01ac51c56e82e62cbb1042fbd372c11a486445d34fb8196320a"
     },
     {
       "path": "docs/WEBVIEW.md",
@@ -2210,8 +2210,8 @@
     },
     {
       "path": "docs/WIDGETS.md",
-      "bytes": 10338,
-      "sha256": "3368173a819f482ea86aa23ec0c61e08f2a06de72e44110a6c1ad1d9d3df8c95"
+      "bytes": 10465,
+      "sha256": "49b43982d9ca4f7d470a41aa36db4410ea5c8f3c3e1c7c3b04d59dfc7e51c16b"
     },
     {
       "path": "docs/WORKSPACE.md",

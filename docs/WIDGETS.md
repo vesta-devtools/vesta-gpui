@@ -134,5 +134,7 @@ qualification must use current frozen runtime source and actual standard binary.
 Neither source review nor command-origin native preparation signs new physical
 input, reader, DPI or speed exits. The original `UI-DOC-TABLE-001` user report's
 exact Host/input remains unbound; generic Markdown table checks do not close it.
-Root's immutable common adoption and the remaining GF03–GF06 exits remain in
-[the programme](REFINEMENT.md).
+The source-bound Widget review is qualified. The sole current status for frame,
+interaction, performance and final immutable adoption is
+[the programme's exit ledger](REFINEMENT.md); this family page does not maintain
+a separate backlog.
