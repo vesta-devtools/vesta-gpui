@@ -14,7 +14,7 @@ minimal. Changes to a boundary require a decision and its checks.
 | [`vesta-gpui-vulkan`](VULKAN.md) | Paint preparation, GPU submission, surfaces, bounded resource retention and retirement | Window/device inputs, paint, caller text/image resources and optional scenes | Pane/session state, author data, input routing or model services |
 | `vesta-workspace` | Stable pane/tab/split model and its serialization | Typed workspace operations and stable IDs | UI elements, native windows or GPU resources |
 | `vesta-gpui-workspace` | Workspace UI projection, resolved geometry and gesture helpers | The existing workspace model, IDs, input ownership and host actions | A second workspace model, native window management or persistence policy |
-| `vesta-viewport` | Backend-neutral camera, scene and geometry snapshots | Explicit immutable preview data | OS/GPU lifetime or authoring runtime |
+| [`vesta-viewport`](VIEWPORT.md) | Backend-neutral camera, scene and geometry snapshots | Explicit immutable preview data | OS/GPU lifetime or authoring runtime |
 | `vesta-gpui-webview` | Optional native browser carrier, read-only asset mounts and per-view I/O/profile retirement | Native parent, fixed event tag, bounds/content policy, mounted resources and Host retirement group | Agent authority, approvals, durable app profile lifecycle, application documents or a replacement renderer |
 
 ```mermaid

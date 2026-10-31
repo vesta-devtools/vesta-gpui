@@ -178,7 +178,7 @@ pub fn display_lines(scene: &ViewportScene) -> Vec<LineVertex> {
             }
         }
     }
-    lines
+    crate::render::finite_primitives::<2>(lines)
 }
 
 /// Camera-facing, unlit triangles. The renderer must depth-test without writing depth.
@@ -260,5 +260,5 @@ pub fn normal_triangles(scene: &ViewportScene, camera: crate::Camera) -> Vec<Lin
             }
         }
     }
-    vertices
+    crate::render::finite_primitives::<9>(vertices)
 }

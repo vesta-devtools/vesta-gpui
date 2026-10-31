@@ -300,7 +300,7 @@ impl ScenePainter {
                 item,
                 scene.vertex_colors.get(&item.id).map(Vec::as_slice),
             )
-            .map_err(|e| RendererError::at("viewport_vertex_colors", e))?;
+            .map_err(|e| RendererError::at("viewport_vertices", e))?;
             let indices = Buffer::from_iter(
                 self.memory.clone(),
                 BufferCreateInfo {

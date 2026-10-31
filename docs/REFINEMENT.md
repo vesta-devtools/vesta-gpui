@@ -4,6 +4,37 @@ Requested: 2026-10-31. Status: Active.
 Authority: this repository. Products track adoption in their own integration records.
 Decision: [0006](decisions/0006-Explicit-Architecture-And-Refinement-Gates.md).
 
+Current qualification, 2026-10-31: all eight GF02 source families are locally
+closed at their recorded inputs. [Decision 0028](decisions/0028-Viewport-Projection-And-Geometry-Boundaries.md)
+and [the Viewport contract](VIEWPORT.md) close the final family. One private
+camera owner supplies projection, matrices and rays through existing re-exports.
+Picking clips individual triangles and uses scale-relative f64 intersection;
+packing rejects non-finite shader payloads and expansion omits whole invalid
+primitives. One Gizmo length serves drawing and interaction. The misleading
+FrameAll reset becomes ResetCamera; unused RenderStats scaffolding is removed.
+Migration notes identify these pre-release changes without compatibility aliases.
+
+Original red02 preserves four runtime failures; red01's fixture inference error
+and red03's missing Error trait remain separate. Actual native01 preserves the
+near/far label pixel defect in both projections. The shader now clips anchor
+depth before assigning overlay depth zero. On the final ordinary build,
+native03 retains 144 changed pixels for each visible control and zero for all
+four clipped controls, across eight actual PNG readbacks. Reflow02 separately
+passes Main64/Float64 submission and two public offscreen readbacks. Both native
+workloads are hidden/nonactive, use zero OS input and exit normally.
+
+Final full02 passes 236 contracts/39 harnesses, CPU workload smoke, two
+compile-fail docs, all/base strict, seven Node groups, format and both ordinary
+standard builds with unchanged inputs. Full01 preserves an existing trace test's
+incorrect exact-one global-event assertion; red04 deterministically demonstrates
+two legitimate frames. Its existing composite test now checks named frames in
+the frozen export and retains successor/racing-file guarantees. Recorder
+production code is unchanged. Evidence and final process retirement are under
+`target/research/viewport-family-20261031/`. GF03–GF06 remain active, including
+Builder budget/fault, native/consumer resource/performance review and common
+immutable product adoption. Earlier dated checkpoints below keep their original
+scope; none adds a physical/reader/DPI pass or closes UI-DOC-TABLE-001.
+
 Current Vulkan continuation, 2026-10-31: the full renderer source and current
 Host entry points are reviewed in [the renderer contract](VULKAN.md). Original
 native red01 proves Main and Float both return successful captured pixels for
@@ -83,7 +114,7 @@ exits, not estimated feature percentages or the number of tests.
 | Gate | Required result | Evidence and status |
 | --- | --- | --- |
 | GF01 — Architecture authority | Current eight-library graph, state/lifecycle ownership map, resolved dependency boundary gate and corruption checks | Completed 2026-10-31: actual all-feature Cargo metadata accepted; corruption contract rejects reverse/optional/target/build/transitive native and UI leaks; no new Rust/native qualification |
-| GF02 — API and module reduction | Audit actual public surfaces against current documentation and callers; remove unjustified wrappers/exports, untangle mixed responsibilities, provide migrations for changed public contracts | In progress; text/ownership/composition, private fixture and API-authority changes qualified; capability navigation and native recipe implemented; finite family reviews below remain open |
+| GF02 — API and module reduction | Audit actual public surfaces against current documentation and callers; remove unjustified wrappers/exports, untangle mixed responsibilities, provide migrations for changed public contracts | Completed locally 2026-10-31: all eight source-family reviews, demonstrated reductions and affected software/native contracts qualified; immutable product API migration remains GF06 |
 | GF03 — Frame and layout contract | Audit main/float/consumer preparation; reproduce continuous-width failures, define one clear reconciliation/invalidation/commit contract, verify text/scroll/hit/paint agreement and bounded retry | In progress; Main/Float and native Agent CPU/deferral/controlled-budget contracts qualified at recorded inputs; Builder ordinary bridge qualified; Builder budget/fault and current joint integration remain open |
 | GF04 — Interaction and lifecycle | Close concrete existing input/text/IME/focus/popup/selection/resource gaps; make transport, cancellation, error and ownership limits explicit; preserve existing accepted scenarios | In progress; click/shared-preview cancellation and stdio deadline/lifetime contracts qualified; remaining interaction/resource audit open |
 | GF05 — Performance and diagnostics | Reproducible static/resize/text/collection workloads, disabled/enabled trace cost, bounds/retention/idle checks; select and fix measured bottlenecks with comparable evidence | In progress; four bounded CPU workloads and strict evidence verifier implemented; repeated cost comparison removes duplicate recorder checks; native/consumer/resource review remains open |
@@ -108,11 +139,11 @@ its existing gate and evidence, rather than expanding a widget catalogue.
 | Core | Complete current 41-module/eight-group export/caller review; geometry/layout (0020), render/owner (0021), text/semantic resources (0022), precise cumulative finalization (0024); [contract](TEXT-AND-OBSERVATION.md) | Local source-family/software/native qualification recorded here and below; product adoption, remaining native/consumer/performance exits retain their own scope |
 | Widgets | Complete 73-module/seven-group source/export/caller review; [controlled projection and resource contract](WIDGETS.md), decisions 0023/0024 and original reds; final full02 and affected Main/Float qualification | Local family closed at recorded source/runtime; common product adoption and remaining cross-family native/consumer/performance exits retain their own scope |
 | Native adapter | Complete 17-module/seven-group source/export/caller review; [input/capture/platform-service contract](NATIVE.md), decision 0025, original reds, final full02 and actual public offscreen capture for Main/Float | Local family closed at recorded source/runtime; product adoption and remaining renderer/consumer/resource programme exits retain their own scope |
-| Vulkan renderer | Complete 24-module/nine-group source/export/caller review; [renderer contract](VULKAN.md), decisions 0026/0027, original capture/deadline reds, final full01 and actual Main/Float rejected/fresh readback plus later submissions | Local family closed at recorded source/runtime; physical/display guarantees, Viewport family and current common product adoption retain their own scope |
+| Vulkan renderer | Complete 24-module/nine-group source/export/caller review; [renderer contract](VULKAN.md), decisions 0026/0027, original capture/deadline reds, final full01 and actual Main/Float rejected/fresh readback plus later submissions | Local family closed at recorded source/runtime; physical/display guarantees and current common product adoption retain their own scope |
 | Workspace model | Complete public family/caller review; one private field representation and invariant validator; checked atomic operations, version-1 recovery and narrow window updates; [contract](WORKSPACE.md) | Local model/caller qualification recorded below; immutable product API migration remains GF06 |
 | Workspace projection | Complete view/header/geometry/drag/resize/reveal/overlay review and current caller map; six original failures retained; [contract](DOCK.md) | Local family/software/native qualification recorded below; immutable product API migration remains GF06 |
 | WebView | Complete public surface and existing Agent/Builder callers reviewed; redundant mutable identity removed, partial native sync and real temporary-profile leak fixed; [contract and migration](WEBVIEW.md) | Local API/resource qualification recorded below; immutable product migration remains GF06, not a second family audit |
-| Viewport | Neutral dependency boundary and private demo-fixture removal | Public display/render/lighting ownership and optional renderer-facing contract coverage |
+| Viewport | Complete seven-Rust/three-WGSL module and actual caller review; [projection/geometry contract](VIEWPORT.md), decision 0028, CPU/API reds and real near/far pixel red; final full02, native03 and reflow02 | Local family closed at recorded source/runtime; Host author framing, physical/display guarantees and immutable product API migration retain their own scope |
 
 [Decision 0015](decisions/0015-Minimal-Native-Host-And-Capability-Navigation.md)
 adds the complete [native host recipe](HOSTING.md) and current capability

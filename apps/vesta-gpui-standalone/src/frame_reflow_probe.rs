@@ -2,6 +2,7 @@
 use super::*;
 use std::path::PathBuf;
 mod cancellation;
+mod viewport_scene;
 
 const PREFIX: &str = "--probe-frame-reflow=";
 const STEPS: usize = 64;
@@ -44,6 +45,7 @@ enum Case {
     Budget,
     Cancellation,
     Capture,
+    Viewport,
 }
 
 impl Case {
@@ -63,6 +65,7 @@ impl Case {
             "budget" => Ok(Self::Budget),
             "cancellation" => Ok(Self::Cancellation),
             "capture" if cfg!(feature = "gpu-fault-injection") => Ok(Self::Capture),
+            "viewport" => Ok(Self::Viewport),
             _ => Err("frame_reflow_invalid_case"),
         }
     }
@@ -145,7 +148,7 @@ pub(super) fn recording() -> Result<Option<vesta_gpui_winit::UiTraceRecording>, 
         return Ok(None);
     }
     let case = Case::from_arguments(&args)?;
-    if case == Case::Capture
+    if matches!(case, Case::Capture | Case::Viewport)
         && !args
             .iter()
             .any(|arg| ui_query::stdio_argument(arg) == Some(true))
@@ -190,6 +193,17 @@ pub(super) fn recording() -> Result<Option<vesta_gpui_winit::UiTraceRecording>, 
 }
 
 pub(super) struct Probe {
+    workload: Workload,
+    started: Instant,
+    pub(super) completed: bool,
+}
+
+enum Workload {
+    Reflow(ReflowProbe),
+    Viewport(viewport_scene::Probe),
+}
+
+struct ReflowProbe {
     case: Case,
     floating: FloatingWindowId,
     step: usize,
@@ -199,8 +213,6 @@ pub(super) struct Probe {
     retry_injected: bool,
     #[cfg(feature = "gpu-fault-injection")]
     capture_requests: [u8; 2],
-    started: Instant,
-    pub(super) completed: bool,
 }
 
 impl App {
@@ -213,6 +225,15 @@ impl App {
         self.ui_query = ui_query::Store::new(true);
         self.ui_query.control_enabled = true;
         let case = Case::from_arguments(&std::env::args().collect::<Vec<_>>())?;
+        if case == Case::Viewport {
+            self.mode = AcceptanceMode::Viewport3d;
+            self.frame_reflow_probe = Some(Probe {
+                workload: Workload::Viewport(viewport_scene::Probe::new()),
+                started: Instant::now(),
+                completed: false,
+            });
+            return Ok(());
+        }
         let inputs = self
             .demo
             .workspace
@@ -276,15 +297,17 @@ impl App {
         self.area_state
             .reset(&mut self.text_context, &DRAFT.repeat(16))?;
         self.frame_reflow_probe = Some(Probe {
-            case,
-            floating,
-            step: 0,
-            warm: 8,
-            recover_after: None,
-            #[cfg(feature = "gpu-fault-injection")]
-            retry_injected: false,
-            #[cfg(feature = "gpu-fault-injection")]
-            capture_requests: [0; 2],
+            workload: Workload::Reflow(ReflowProbe {
+                case,
+                floating,
+                step: 0,
+                warm: 8,
+                recover_after: None,
+                #[cfg(feature = "gpu-fault-injection")]
+                retry_injected: false,
+                #[cfg(feature = "gpu-fault-injection")]
+                capture_requests: [0; 2],
+            }),
             started: Instant::now(),
             completed: false,
         });
@@ -314,7 +337,7 @@ impl App {
     }
 }
 
-impl Probe {
+impl ReflowProbe {
     #[cfg(feature = "gpu-fault-injection")]
     pub(super) fn capture_requested(&mut self, window: UiWindowId) -> bool {
         if self.case != Case::Capture {
@@ -332,12 +355,6 @@ impl Probe {
     }
 
     fn advance(&mut self, app: &mut App, event_loop: &ActiveEventLoop) -> Result<bool, String> {
-        if self.completed {
-            return Ok(true);
-        }
-        if self.started.elapsed() > Duration::from_secs(100) {
-            return Err("frame_reflow_probe_timeout".into());
-        }
         let Some((id, available)) = app
             .native_windows
             .iter()
@@ -839,6 +856,29 @@ impl Probe {
         self.step += 1;
         self.warm = 4;
         Ok(false)
+    }
+}
+
+impl Probe {
+    #[cfg(feature = "gpu-fault-injection")]
+    pub(super) fn capture_requested(&mut self, window: UiWindowId) -> bool {
+        match &mut self.workload {
+            Workload::Reflow(probe) => probe.capture_requested(window),
+            Workload::Viewport(_) => false,
+        }
+    }
+
+    fn advance(&mut self, app: &mut App, event_loop: &ActiveEventLoop) -> Result<bool, String> {
+        if self.completed {
+            return Ok(true);
+        }
+        if self.started.elapsed() > Duration::from_secs(100) {
+            return Err("frame_reflow_probe_timeout".into());
+        }
+        match &mut self.workload {
+            Workload::Reflow(probe) => probe.advance(app, event_loop),
+            Workload::Viewport(probe) => Ok(probe.advance(app)),
+        }
     }
 }
 

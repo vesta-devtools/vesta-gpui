@@ -7,7 +7,8 @@ mod lighting;
 pub mod render;
 pub use lighting::SurfaceLighting;
 
-use std::f32::consts::FRAC_PI_2;
+mod camera;
+pub use camera::{Camera, Projection, ViewportAction, apply_action, pick_ray, project_to_pixel};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Vec3 {
@@ -126,6 +127,8 @@ pub struct GizmoState {
     pub active: Option<GizmoPart>,
 }
 
+pub(crate) const GIZMO_AXIS_LENGTH: f32 = 1.3;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct HitProxyNamespace(u64);
 
@@ -233,6 +236,14 @@ impl HitProxyTable {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct HitProxyTableFull;
 
+impl std::fmt::Display for HitProxyTableFull {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("Hit proxy table capacity exhausted")
+    }
+}
+
+impl std::error::Error for HitProxyTableFull {}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct PickRequestId(pub u64);
 
@@ -264,98 +275,6 @@ pub enum TransformAction {
     },
     Commit,
     Cancel,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Camera {
-    pub target: Vec3,
-    pub yaw: f32,
-    pub pitch: f32,
-    /// Clockwise screen rotation in radians; not an author-data parameter.
-    pub roll: f32,
-    pub distance: f32,
-    pub vertical_fov_radians: f32,
-    pub near: f32,
-    pub far: f32,
-    pub projection: Projection,
-}
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub enum Projection {
-    #[default]
-    Perspective,
-    Orthographic {
-        vertical_size: f32,
-    },
-}
-
-impl Default for Camera {
-    fn default() -> Self {
-        Self {
-            target: Vec3::new(0.0, 0.4, 0.0),
-            yaw: -0.7,
-            pitch: -0.45,
-            roll: 0.0,
-            distance: 8.75,
-            vertical_fov_radians: 50.0_f32.to_radians(),
-            near: 0.05,
-            far: 500.0,
-            projection: Projection::Perspective,
-        }
-    }
-}
-
-impl Camera {
-    pub fn orbit(&mut self, delta_x: f32, delta_y: f32) {
-        self.yaw -= delta_x * 0.008;
-        self.pitch = (self.pitch - delta_y * 0.008).clamp(-FRAC_PI_2 + 0.02, FRAC_PI_2 - 0.02);
-    }
-
-    pub fn dolly(&mut self, delta: f32) {
-        let factor = (-delta * 0.12).exp();
-        self.distance = (self.distance * factor).clamp(0.25, 500.0);
-        if let Projection::Orthographic { vertical_size } = &mut self.projection {
-            *vertical_size = (*vertical_size * factor).clamp(0.1, 1000.0);
-        }
-    }
-
-    pub fn pan(&mut self, delta_x: f32, delta_y: f32) {
-        let (right, up) = self.screen_axes();
-        let scale = self.distance * 0.0015;
-        self.target = self
-            .target
-            .plus(right.scaled(-delta_x * scale))
-            .plus(up.scaled(delta_y * scale));
-    }
-
-    #[must_use]
-    pub fn eye(self) -> Vec3 {
-        self.target.plus(self.forward().scaled(-self.distance))
-    }
-
-    #[must_use]
-    pub fn forward(self) -> Vec3 {
-        let (yaw_sin, yaw_cos) = self.yaw.sin_cos();
-        let (pitch_sin, pitch_cos) = self.pitch.sin_cos();
-        Vec3::new(yaw_sin * pitch_cos, pitch_sin, yaw_cos * pitch_cos).normalized()
-    }
-    #[must_use]
-    pub fn screen_axes(self) -> (Vec3, Vec3) {
-        let forward = self.forward();
-        let horizontal = forward.cross(Vec3::new(0.0, 1.0, 0.0));
-        let right = if horizontal.dot(horizontal) > 1.0e-12 {
-            horizontal.normalized()
-        } else {
-            let (s, c) = self.yaw.sin_cos();
-            Vec3::new(-c, 0.0, s)
-        };
-        let up = right.cross(forward).normalized();
-        let (s, c) = self.roll.sin_cos();
-        (
-            right.scaled(c).plus(up.scaled(s)),
-            up.scaled(c).minus(right.scaled(s)),
-        )
-    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -443,8 +362,8 @@ impl ViewportScene {
 }
 
 /// Picks the nearest renderable using normalized device coordinates in `[-1, 1]`.
-/// The reference contract uses each renderable's unit-cube bounds; backends may add an
-/// accelerated implementation as long as it produces the same stable identity result.
+/// Uses two-sided triangle intersections within the current camera depth clip.
+/// Backends may accelerate this query while preserving stable identity results.
 #[must_use]
 pub fn pick(
     scene: &ViewportScene,
@@ -453,12 +372,12 @@ pub fn pick(
     ndc_x: f32,
     ndc_y: f32,
 ) -> Option<RenderableId> {
-    let (origin, direction) = pick_ray(camera, aspect, ndc_x, ndc_y);
+    let ray = PickRay::new(camera, aspect, ndc_x, ndc_y)?;
     scene
         .renderables
         .iter()
         .filter_map(|renderable| {
-            ray_mesh(origin, direction, &renderable.mesh, renderable.translation)
+            ray.hit(&renderable.mesh, renderable.translation)
                 .map(|distance| (distance, renderable.id))
         })
         .min_by(|left, right| left.0.total_cmp(&right.0))
@@ -475,7 +394,7 @@ pub fn pick_target(
     ndc_x: f32,
     ndc_y: f32,
 ) -> Option<HitProxyKey> {
-    let (origin, direction) = pick_ray(camera, aspect, ndc_x, ndc_y);
+    let ray = PickRay::new(camera, aspect, ndc_x, ndc_y)?;
     let scene_hits = scene.renderables.iter().map(|renderable| {
         (
             HitProxyKey::renderable(renderable.id),
@@ -493,7 +412,7 @@ pub fn pick_target(
         .iter()
         .filter(|shape| shape.depth == HitProxyDepth::Overlay)
         .filter_map(|shape| {
-            ray_mesh(origin, direction, &shape.mesh, shape.translation)
+            ray.hit(&shape.mesh, shape.translation)
                 .map(|distance| (distance, shape.key))
         })
         .min_by(|left, right| left.0.total_cmp(&right.0));
@@ -502,7 +421,7 @@ pub fn pick_target(
             scene_hits
                 .chain(custom_scene_hits)
                 .filter_map(|(key, mesh, translation)| {
-                    ray_mesh(origin, direction, mesh, translation).map(|distance| (distance, key))
+                    ray.hit(mesh, translation).map(|distance| (distance, key))
                 })
                 .min_by(|left, right| left.0.total_cmp(&right.0))
         })
@@ -536,7 +455,6 @@ impl TranslationDrag {
         if scene.gizmo.mode != TransformMode::Translate || width <= 0.0 || height <= 0.0 {
             return None;
         }
-        const AXIS_LENGTH: f32 = 1.3;
         const HIT_RADIUS_SQUARED: f32 = 10.0 * 10.0;
         let cursor = [cursor_x, cursor_y];
         scene
@@ -556,7 +474,7 @@ impl TranslationDrag {
                         camera,
                         width,
                         height,
-                        renderable.translation.plus(axis.scaled(AXIS_LENGTH)),
+                        renderable.translation.plus(axis.scaled(GIZMO_AXIS_LENGTH)),
                     )?;
                     let screen_axis = [end[0] - start[0], end[1] - start[1]];
                     let squared = screen_axis[0] * screen_axis[0] + screen_axis[1] * screen_axis[1];
@@ -614,36 +532,13 @@ impl TranslationDrag {
         ];
         let denominator =
             self.screen_axis[0] * self.screen_axis[0] + self.screen_axis[1] * self.screen_axis[1];
-        let units =
-            (motion[0] * self.screen_axis[0] + motion[1] * self.screen_axis[1]) / denominator * 1.3;
+        let units = (motion[0] * self.screen_axis[0] + motion[1] * self.screen_axis[1])
+            / denominator
+            * GIZMO_AXIS_LENGTH;
         TransformAction::Update {
             delta: self.axis.scaled(units),
         }
     }
-}
-
-/// Projects a world-space point to logical top-left-origin viewport pixels.
-#[must_use]
-pub fn project_to_pixel(camera: Camera, width: f32, height: f32, point: Vec3) -> Option<[f32; 2]> {
-    if !width.is_finite() || !height.is_finite() || width <= 0.0 || height <= 0.0 {
-        return None;
-    }
-    let forward = camera.forward();
-    let (right, up) = camera.screen_axes();
-    let relative = point.minus(camera.eye());
-    let depth = relative.dot(forward);
-    if depth <= camera.near || !depth.is_finite() {
-        return None;
-    }
-    let half_height = match camera.projection {
-        Projection::Perspective => depth * (camera.vertical_fov_radians * 0.5).tan(),
-        Projection::Orthographic { vertical_size } => vertical_size.max(0.01) * 0.5,
-    };
-    let half_width = half_height * (width / height);
-    let ndc_x = relative.dot(right) / half_width;
-    let ndc_y = -relative.dot(up) / half_height;
-    (ndc_x.is_finite() && ndc_y.is_finite())
-        .then_some([(ndc_x + 1.0) * 0.5 * width, (ndc_y + 1.0) * 0.5 * height])
 }
 
 fn distance_squared_to_segment(point: [f32; 2], start: [f32; 2], end: [f32; 2]) -> f32 {
@@ -656,100 +551,111 @@ fn distance_squared_to_segment(point: [f32; 2], start: [f32; 2], end: [f32; 2]) 
     dx * dx + dy * dy
 }
 
-/// Ray using the renderer's projection and rolled screen axes; NDC y grows down.
-pub fn pick_ray(camera: Camera, aspect: f32, ndc_x: f32, ndc_y: f32) -> (Vec3, Vec3) {
-    let forward = camera.forward();
-    let (right, up) = camera.screen_axes();
-    match camera.projection {
-        Projection::Perspective => {
-            let vertical = (camera.vertical_fov_radians * 0.5).tan();
-            let direction = forward
-                .plus(right.scaled(ndc_x * vertical * aspect.max(0.001)))
-                .plus(up.scaled(-ndc_y * vertical))
-                .normalized();
-            (camera.eye(), direction)
-        }
-        Projection::Orthographic { vertical_size } => {
-            let half_height = vertical_size.max(0.01) * 0.5;
-            let origin = camera
-                .eye()
-                .plus(right.scaled(ndc_x * half_height * aspect.max(0.001)))
-                .plus(up.scaled(-ndc_y * half_height));
-            (origin, forward)
-        }
-    }
+/// Prepared once per semantic query; no repeated camera work per triangle.
+struct PickRay {
+    origin: Vec3,
+    direction: Vec3,
+    clip: [[f32; 4]; 4],
 }
 
-fn ray_mesh(origin: Vec3, direction: Vec3, mesh: &Mesh, translation: Vec3) -> Option<f32> {
-    mesh.indices
-        .chunks_exact(3)
-        .filter_map(|triangle| {
-            let a = mesh.vertices.get(triangle[0] as usize)?;
-            let b = mesh.vertices.get(triangle[1] as usize)?;
-            let c = mesh.vertices.get(triangle[2] as usize)?;
-            ray_triangle(
-                origin,
-                direction,
-                Vec3::new(a.position[0], a.position[1], a.position[2]).plus(translation),
-                Vec3::new(b.position[0], b.position[1], b.position[2]).plus(translation),
-                Vec3::new(c.position[0], c.position[1], c.position[2]).plus(translation),
-            )
+impl PickRay {
+    fn new(camera: Camera, aspect: f32, ndc_x: f32, ndc_y: f32) -> Option<Self> {
+        if !aspect.is_finite()
+            || aspect <= 0.0
+            || !(-1.0..=1.0).contains(&ndc_x)
+            || !(-1.0..=1.0).contains(&ndc_y)
+        {
+            return None;
+        }
+        let clip = render::view_projection(camera, aspect);
+        let (origin, direction) = pick_ray(camera, aspect, ndc_x, ndc_y);
+        if !clip.iter().flatten().all(|v| v.is_finite())
+            || ![
+                origin.x,
+                origin.y,
+                origin.z,
+                direction.x,
+                direction.y,
+                direction.z,
+            ]
+            .into_iter()
+            .all(f32::is_finite)
+            || direction.dot(direction) == 0.0
+        {
+            return None;
+        }
+        Some(Self {
+            origin,
+            direction,
+            clip,
         })
-        .min_by(f32::total_cmp)
+    }
+
+    fn hit(&self, mesh: &Mesh, translation: Vec3) -> Option<f32> {
+        mesh.indices
+            .chunks_exact(3)
+            .filter_map(|triangle| {
+                let a = mesh.vertices.get(triangle[0] as usize)?;
+                let b = mesh.vertices.get(triangle[1] as usize)?;
+                let c = mesh.vertices.get(triangle[2] as usize)?;
+                ray_triangle(
+                    self.origin,
+                    self.direction,
+                    Vec3::new(a.position[0], a.position[1], a.position[2]).plus(translation),
+                    Vec3::new(b.position[0], b.position[1], b.position[2]).plus(translation),
+                    Vec3::new(c.position[0], c.position[1], c.position[2]).plus(translation),
+                )
+            })
+            .filter(|&distance| {
+                camera::clip_point(
+                    &self.clip,
+                    self.origin.plus(self.direction.scaled(distance)),
+                )
+                .is_some()
+            })
+            .min_by(f32::total_cmp)
+    }
 }
 
 fn ray_triangle(origin: Vec3, direction: Vec3, a: Vec3, b: Vec3, c: Vec3) -> Option<f32> {
-    let edge_ab = b.minus(a);
-    let edge_ac = c.minus(a);
-    let p = direction.cross(edge_ac);
-    let determinant = edge_ab.dot(p);
-    if determinant.abs() <= 1e-7 {
+    let vector = |v: Vec3| [f64::from(v.x), f64::from(v.y), f64::from(v.z)];
+    let minus = |a: [f64; 3], b: [f64; 3]| std::array::from_fn(|i| a[i] - b[i]);
+    let dot = |a: [f64; 3], b: [f64; 3]| (0..3).map(|i| a[i] * b[i]).sum::<f64>();
+    let cross = |a: [f64; 3], b: [f64; 3]| {
+        [
+            a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0],
+        ]
+    };
+    let edge_ab = minus(vector(b), vector(a));
+    let edge_ac = minus(vector(c), vector(a));
+    let direction = vector(direction);
+    let p = cross(direction, edge_ac);
+    let determinant = dot(edge_ab, p);
+    let scale = (dot(edge_ab, edge_ab) * dot(edge_ac, edge_ac) * dot(direction, direction)).sqrt();
+    if !determinant.is_finite() || determinant.abs() <= 8.0 * f64::EPSILON * scale {
         return None;
     }
     let inverse = 1.0 / determinant;
-    let offset = origin.minus(a);
-    let u = offset.dot(p) * inverse;
+    let offset = minus(vector(origin), vector(a));
+    let u = dot(offset, p) * inverse;
     if !(0.0..=1.0).contains(&u) {
         return None;
     }
-    let q = offset.cross(edge_ab);
-    let v = direction.dot(q) * inverse;
+    let q = cross(offset, edge_ab);
+    let v = dot(direction, q) * inverse;
     if v < 0.0 || u + v > 1.0 {
         return None;
     }
-    let distance = edge_ac.dot(q) * inverse;
+    let distance = (dot(edge_ac, q) * inverse) as f32;
     (distance.is_finite() && distance > 0.0).then_some(distance)
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum ViewportAction {
-    Orbit { delta_x: f32, delta_y: f32 },
-    Pan { delta_x: f32, delta_y: f32 },
-    Dolly { delta: f32 },
-    FrameAll,
-    ToggleProjection,
-}
-
-pub fn apply_action(camera: &mut Camera, action: ViewportAction) {
-    match action {
-        ViewportAction::Orbit { delta_x, delta_y } => camera.orbit(delta_x, delta_y),
-        ViewportAction::Pan { delta_x, delta_y } => camera.pan(delta_x, delta_y),
-        ViewportAction::Dolly { delta } => camera.dolly(delta),
-        ViewportAction::FrameAll => *camera = Camera::default(),
-        ViewportAction::ToggleProjection => {
-            camera.projection = match camera.projection {
-                Projection::Perspective => Projection::Orthographic {
-                    vertical_size: camera.distance.max(1.0),
-                },
-                Projection::Orthographic { .. } => Projection::Perspective,
-            }
-        }
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::f32::consts::FRAC_PI_2;
 
     impl ViewportScene {
         #[must_use]
@@ -874,6 +780,61 @@ mod tests {
                 assert!((delta.dot(right) + camera.distance * 0.015).abs() < 0.00001);
             }
         }
+        // CPU projection and semantic rays must retain the renderer's actual
+        // aspect/orthographic-width clamps, including a very narrow viewport.
+        let mut failures = Vec::new();
+        for projection in [
+            Projection::Perspective,
+            Projection::Orthographic {
+                vertical_size: 0.01,
+            },
+            Projection::Orthographic {
+                vertical_size: 1e-6,
+            },
+        ] {
+            let camera = Camera {
+                target: Vec3::default(),
+                distance: 2.0,
+                yaw: 0.0,
+                pitch: 0.0,
+                projection,
+                ..Camera::default()
+            };
+            let (width, height) = (1.0, 4000.0);
+            let point = Vec3::new(-0.00025, 0.0001, 0.0);
+            let matrix = render::view_projection(camera, width / height);
+            let world = [point.x, point.y, point.z, 1.0];
+            let clip: [f32; 4] = std::array::from_fn(|row| {
+                (0..4)
+                    .map(|column| matrix[column][row] * world[column])
+                    .sum()
+            });
+            let expected = [clip[0] / clip[3], -clip[1] / clip[3]];
+            let pixel =
+                project_to_pixel(camera, width, height, point).expect("finite visible depth");
+            let actual = [pixel[0] / width * 2.0 - 1.0, pixel[1] / height * 2.0 - 1.0];
+            if (actual[0] - expected[0]).abs() > 1e-5 || (actual[1] - expected[1]).abs() > 1e-5 {
+                failures.push(format!(
+                    "CPU/painter narrow projection mismatch: {projection:?}"
+                ));
+            }
+            let (origin, direction) = pick_ray(camera, width / height, expected[0], expected[1]);
+            let error = point.minus(origin).cross(direction);
+            if error.dot(error) > 1e-12 {
+                failures.push(format!("CPU/painter narrow ray mismatch: {projection:?}"));
+            }
+        }
+        let camera = Camera {
+            target: Vec3::new(0.0, 0.0, 1.0),
+            distance: 1.0,
+            yaw: 0.0,
+            pitch: 0.0,
+            ..Camera::default()
+        };
+        if project_to_pixel(camera, f32::MAX, f32::MAX, Vec3::new(10.0, 0.0, 4.0)).is_some() {
+            failures.push("unrepresentable projected pixels must be rejected".into());
+        }
+        assert!(failures.is_empty(), "{failures:?}");
     }
 
     #[test]
@@ -881,10 +842,93 @@ mod tests {
         let scene = ViewportScene::acceptance_scene();
         let picked = pick(&scene, Camera::default(), 16.0 / 9.0, 0.0, 0.0);
         assert!(picked.is_some());
+        let camera = Camera {
+            target: Vec3::new(0.0, 0.0, 1.0),
+            distance: 1.0,
+            yaw: 0.0,
+            pitch: 0.0,
+            near: 1.0,
+            far: 8.0,
+            ..Camera::default()
+        };
+        let triangle = |id: u64, depth: f32, size: f32| Renderable {
+            id: RenderableId::new(id),
+            mesh: Mesh {
+                vertices: [
+                    [-size, -size, depth],
+                    [size, -size, depth],
+                    [0.0, size, depth],
+                ]
+                .map(|position| Vertex {
+                    position,
+                    normal: [0.0, 0.0, -1.0],
+                })
+                .into(),
+                indices: vec![0, 1, 2],
+            },
+            translation: Vec3::default(),
+            color: [1.0; 4],
+            selected: false,
+        };
+        let mut scene = ViewportScene {
+            renderables: vec![
+                triangle(1, 0.5, 1.0),
+                triangle(2, 4.0, 1.0),
+                triangle(3, 20.0, 1.0),
+            ],
+            ..ViewportScene::default()
+        };
+        let mut failures = Vec::new();
+        if pick(&scene, camera, 1.0, 0.0, 0.0) != Some(RenderableId::new(2)) {
+            failures.push("near-clipped triangles must not hide visible hits");
+        }
+        let custom = HitProxyKey::new(HitProxyNamespace::new(42), 7, 0);
+        scene.hit_proxies.push(HitProxyShape {
+            key: custom,
+            mesh: triangle(0, 0.5, 1.0).mesh,
+            translation: Vec3::default(),
+            depth: HitProxyDepth::Overlay,
+        });
+        if pick_target(&scene, camera, 1.0, 0.0, 0.0)
+            != Some(HitProxyKey::renderable(RenderableId::new(2)))
+        {
+            failures.push("a near-clipped overlay must not replace a visible semantic target");
+        }
+        let mut layered = triangle(1, 0.5, 1.0);
+        layered
+            .mesh
+            .vertices
+            .extend(triangle(1, 4.0, 1.0).mesh.vertices);
+        layered.mesh.indices.extend([3, 4, 5]);
+        scene.hit_proxies.clear();
+        scene.renderables = vec![layered, triangle(2, 6.0, 1.0)];
+        if pick(&scene, camera, 1.0, 0.0, 0.0) != Some(RenderableId::new(1)) {
+            failures.push("clip each triangle before choosing a mesh's nearest admitted hit");
+        }
+        scene.renderables = vec![triangle(3, 20.0, 1.0)];
+        if pick(&scene, camera, 1.0, 0.0, 0.0).is_some() {
+            failures.push("far-clipped triangles must not create hits");
+        }
+        scene.renderables = vec![triangle(4, 4.0, 0.0001)];
+        if pick(&scene, camera, 1.0, 0.0, 0.0) != Some(RenderableId::new(4)) {
+            failures.push("valid small triangles must remain pickable");
+        }
+        scene.renderables = vec![triangle(2, 4.0, 1.0)];
+        if pick(&scene, camera, f32::NAN, 0.0, 0.0).is_some() {
+            failures.push("invalid projection input cannot create a semantic hit");
+        }
+        for depth in [0.5, 20.0] {
+            if project_to_pixel(camera, 800.0, 600.0, Vec3::new(0.0, 0.0, depth)).is_some() {
+                failures.push("CPU point projection must enforce visible camera depth");
+            }
+        }
+        assert!(failures.is_empty(), "{failures:?}");
     }
 
     #[test]
     fn custom_hit_proxy_keys_round_trip_and_reject_stale_frames() {
+        let error: &dyn std::error::Error = &HitProxyTableFull;
+        assert_eq!(error.to_string(), "Hit proxy table capacity exhausted");
         let custom = HitProxyKey::new(HitProxyNamespace::new(0x0056_4553_5441), 42, 7);
         let mut table = HitProxyTable::default();
         table.begin_frame(10);
@@ -930,13 +974,32 @@ mod tests {
         let scene = ViewportScene::acceptance_scene();
         let camera = Camera::default();
         let selected = &scene.renderables[0];
+        let drawn = render::overlay_vertices(&scene);
+        let axis = drawn
+            .chunks_exact(2)
+            .find(|line| {
+                line[0].position
+                    == [
+                        selected.translation.x,
+                        selected.translation.y,
+                        selected.translation.z,
+                    ]
+                    && line[1].position[0] > line[0].position[0]
+                    && line[1].position[1] == line[0].position[1]
+                    && line[1].position[2] == line[0].position[2]
+            })
+            .expect("renderer projects the visible X axis");
         let start = project_to_pixel(camera, 1280.0, 800.0, selected.translation)
             .expect("selected center projects");
         let end = project_to_pixel(
             camera,
             1280.0,
             800.0,
-            selected.translation.plus(Vec3::new(1.3, 0.0, 0.0)),
+            Vec3::new(
+                axis[1].position[0],
+                axis[1].position[1],
+                axis[1].position[2],
+            ),
         )
         .expect("x axis projects");
         let cursor = [start[0] * 0.4 + end[0] * 0.6, start[1] * 0.4 + end[1] * 0.6];

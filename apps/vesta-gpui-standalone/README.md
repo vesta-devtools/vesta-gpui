@@ -72,6 +72,22 @@ as well as all 128 later successful submissions. Restore the ordinary standard
 build afterward. This controlled notification does not simulate a physical
 device loss or certify compositor pixels.
 
+The private `--probe-frame-case=viewport` value uses the same hidden/nonactive
+standard program and requires explicit `--ui-control-stdio`. It creates only
+Main in 3D mode. An owned controller requests eight offscreen captures in order,
+each at 1280x800@1 with the center crop (624,384,32,32), using the existing public
+snapshot/capture protocol. The fixture supplies Perspective and Orthographic
+phases: no-atlas baseline, visible depth4, near-clipped depth0.5 and far-clipped
+depth9, with camera near1/far8. Its synthetic white ten-cell atlas tests visibility
+without a font/legibility claim. Source/sensitivity admission still runs normally.
+
+After eight admitted requests, two later successful Main frames and 500 ms of
+drain grace precede normal exit; the existing 100-second limit remains. No Float,
+native input, new worker or author persistence is involved. This scene workload
+is verified separately by `tools/verify/viewport_scene.mjs` with decoded PNG pixels
+and external source/executable/PID identity. It does not satisfy or weaken the
+original 128-step reflow verifier, physical input, reader or DPI scenarios.
+
 ## Gallery interactions
 
 Collections uses the shared controlled tree module. Its existing thousand-item

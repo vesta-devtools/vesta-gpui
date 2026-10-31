@@ -38,7 +38,8 @@ fn label_vertex(@builtin(vertex_index) index: u32) -> Output {
     var output: Output;
     output.clip_position = vec4<f32>(0.0, 0.0, 2.0, 1.0);
     output.uv = vec2<f32>(0.0); output.digit = 0.0; output.anchor = vec3<f32>(0.0);
-    if clip.w <= 0.0 { return output; }
+    // Overlay glyphs keep their anchor's camera clip, independently of depth tolerance.
+    if clip.w <= 0.0 || clip.z < 0.0 || clip.z > clip.w { return output; }
     var count = 1u; var value = source.number;
     while value >= 10u { value = value / 10u; count = count + 1u; }
     if quad >= count { return output; }

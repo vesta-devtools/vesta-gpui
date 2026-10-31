@@ -477,7 +477,7 @@ const COPY: &[CopyEntry] = &[
         "网格 → 选择/操纵器 → 界面叠加层"
     ),
     copy!("viewport.move", "Move", "移动"),
-    copy!("viewport.frame", "Frame", "适配"),
+    copy!("viewport.reset_camera", "Reset camera", "重置相机"),
     copy!("viewport.projection", "Proj", "投影"),
     copy!("viewport.topFront", "TOP\nFRONT", "顶视\n前视"),
     copy!("gallery.richIntro", "Explore ", "探索 "),

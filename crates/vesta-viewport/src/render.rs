@@ -1,7 +1,6 @@
 //! Shared display geometry and camera projection for viewport backends. ADR-0312.
 use crate::{
-    Camera, GizmoPart, Projection, Renderable, SurfaceLighting, SurfaceMaterial, TransformMode,
-    Vec3, ViewportScene,
+    GizmoPart, Renderable, SurfaceLighting, SurfaceMaterial, TransformMode, Vec3, ViewportScene,
 };
 
 pub const SURFACE_LIGHTING_SHADER: &str = include_str!("surface_lighting.wgsl");
@@ -12,6 +11,8 @@ pub const VIEWPORT_SHADER: &str = concat!(
 );
 pub const NUMERIC_LABEL_SHADER: &str = include_str!("numeric_labels.wgsl");
 
+pub use crate::camera::{camera_uniform, view_projection};
+
 pub const MESH_VERTEX_STRIDE: u32 = 9 * std::mem::size_of::<f32>() as u32;
 
 /// Position, normal and optional RGB multiplier, shared with the shader layout.
@@ -19,6 +20,15 @@ pub fn mesh_vertices(
     item: &Renderable,
     colors: Option<&[[f32; 3]]>,
 ) -> Result<Vec<[f32; 9]>, &'static str> {
+    if item.mesh.vertices.iter().any(|vertex| {
+        vertex
+            .position
+            .into_iter()
+            .chain(vertex.normal)
+            .any(|v| !v.is_finite())
+    }) {
+        return Err("Mesh vertices require finite positions and normals");
+    }
     if colors.is_some_and(|colors| {
         colors.len() != item.mesh.vertices.len() || colors.iter().flatten().any(|v| !v.is_finite())
     }) {
@@ -73,6 +83,18 @@ pub fn object_uniform(
     if !lighting.is_valid() {
         return Err("Surface lighting requires finite terms and nonzero finite directions");
     }
+    if ![
+        object.translation.x,
+        object.translation.y,
+        object.translation.z,
+    ]
+    .into_iter()
+    .chain(object.color)
+    .chain(range)
+    .all(f32::is_finite)
+    {
+        return Err("Object translation, color and terrain range require finite values");
+    }
     let mut uniform = [[0.0; 4]; 7];
     uniform[0] = [
         object.translation.x,
@@ -95,32 +117,6 @@ pub fn object_uniform(
     Ok(uniform)
 }
 
-/// Shader camera block: view/projection columns, eye + perspective flag, forward.
-/// Orthographic lighting uses parallel sight lines rather than a finite eye.
-#[must_use]
-pub fn camera_uniform(camera: Camera, aspect: f32) -> [[f32; 4]; 6] {
-    let matrix = view_projection(camera, aspect);
-    let eye = camera.eye();
-    let forward = camera.forward();
-    [
-        matrix[0],
-        matrix[1],
-        matrix[2],
-        matrix[3],
-        [
-            eye.x,
-            eye.y,
-            eye.z,
-            if matches!(camera.projection, Projection::Perspective) {
-                1.0
-            } else {
-                0.0
-            },
-        ],
-        [forward.x, forward.y, forward.z, 0.0],
-    ]
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ViewportRect {
     pub x: u32,
@@ -141,17 +137,35 @@ impl ViewportRect {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct RenderStats {
-    pub meshes: usize,
-    pub grid_lines: usize,
-    pub overlay_lines: usize,
-}
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct LineVertex {
     pub position: [f32; 3],
     pub color: [f32; 4],
+}
+
+impl LineVertex {
+    fn is_finite(self) -> bool {
+        self.position
+            .into_iter()
+            .chain(self.color)
+            .all(f32::is_finite)
+    }
+}
+
+/// Compact an existing derived buffer; invalid whole primitives never shift
+/// vertex grouping and valid buffers require no allocation or copies.
+pub(crate) fn finite_primitives<const N: usize>(mut vertices: Vec<LineVertex>) -> Vec<LineVertex> {
+    let mut written = 0;
+    for start in (0..vertices.len() / N * N).step_by(N) {
+        if vertices[start..start + N].iter().all(|v| v.is_finite()) {
+            if written != start {
+                vertices.copy_within(start..start + N, written);
+            }
+            written += N;
+        }
+    }
+    vertices.truncate(written);
+    vertices
 }
 
 /// Resolve a host-supplied grid without changing the generic default recipe.
@@ -159,14 +173,7 @@ pub fn scene_grid_vertices(scene: &ViewportScene) -> Result<Vec<LineVertex>, &'s
     let Some(lines) = &scene.grid_lines else {
         return Ok(grid_vertices());
     };
-    if lines.len() % 2 != 0
-        || lines.iter().any(|v| {
-            v.position
-                .iter()
-                .chain(v.color.iter())
-                .any(|v| !v.is_finite())
-        })
-    {
+    if lines.len() % 2 != 0 || lines.iter().any(|v| !v.is_finite()) {
         return Err("Grid requires complete finite world-space line pairs");
     }
     Ok(lines.clone())
@@ -214,17 +221,17 @@ pub fn overlay_vertices(scene: &ViewportScene) -> Vec<LineVertex> {
                 let axes = [
                     (
                         GizmoPart::AxisX,
-                        Vec3::new(1.3, 0.0, 0.0),
+                        Vec3::new(crate::GIZMO_AXIS_LENGTH, 0.0, 0.0),
                         [1.0, 0.18, 0.12, 1.0],
                     ),
                     (
                         GizmoPart::AxisY,
-                        Vec3::new(0.0, 1.3, 0.0),
+                        Vec3::new(0.0, crate::GIZMO_AXIS_LENGTH, 0.0),
                         [0.18, 1.0, 0.32, 1.0],
                     ),
                     (
                         GizmoPart::AxisZ,
-                        Vec3::new(0.0, 0.0, 1.3),
+                        Vec3::new(0.0, 0.0, crate::GIZMO_AXIS_LENGTH),
                         [0.20, 0.48, 1.0, 1.0],
                     ),
                 ];
@@ -253,7 +260,7 @@ pub fn overlay_vertices(scene: &ViewportScene) -> Vec<LineVertex> {
             }
         }
     }
-    vertices
+    finite_primitives::<2>(vertices)
 }
 
 fn append_circle(
@@ -324,67 +331,162 @@ fn append_box(output: &mut Vec<LineVertex>, center: Vec3, half: f32, color: [f32
     }
 }
 
-pub fn view_projection(camera: Camera, aspect: f32) -> [[f32; 4]; 4] {
-    let projection = match camera.projection {
-        Projection::Perspective => {
-            perspective(camera.vertical_fov_radians, aspect, camera.near, camera.far)
-        }
-        Projection::Orthographic { vertical_size } => {
-            orthographic(vertical_size, aspect, camera.near, camera.far)
-        }
-    };
-    multiply(projection, look_at(camera))
-}
-
-fn look_at(camera: Camera) -> [[f32; 4]; 4] {
-    let eye = camera.eye();
-    let forward = camera.forward();
-    let (right, up) = camera.screen_axes();
-    [
-        [right.x, up.x, -forward.x, 0.0],
-        [right.y, up.y, -forward.y, 0.0],
-        [right.z, up.z, -forward.z, 0.0],
-        [-right.dot(eye), -up.dot(eye), forward.dot(eye), 1.0],
-    ]
-}
-
-fn perspective(fov: f32, aspect: f32, near: f32, far: f32) -> [[f32; 4]; 4] {
-    let factor = 1.0 / (fov * 0.5).tan();
-    [
-        [factor / aspect.max(0.001), 0.0, 0.0, 0.0],
-        [0.0, factor, 0.0, 0.0],
-        [0.0, 0.0, far / (near - far), -1.0],
-        [0.0, 0.0, near * far / (near - far), 0.0],
-    ]
-}
-
-fn orthographic(vertical_size: f32, aspect: f32, near: f32, far: f32) -> [[f32; 4]; 4] {
-    let height = vertical_size.max(0.01);
-    let width = (height * aspect.max(0.001)).max(0.001);
-    let depth = (far - near).max(0.001);
-    [
-        [2.0 / width, 0.0, 0.0, 0.0],
-        [0.0, 2.0 / height, 0.0, 0.0],
-        [0.0, 0.0, -1.0 / depth, 0.0],
-        [0.0, 0.0, -near / depth, 1.0],
-    ]
-}
-
-fn multiply(left: [[f32; 4]; 4], right: [[f32; 4]; 4]) -> [[f32; 4]; 4] {
-    let mut output = [[0.0; 4]; 4];
-    for column in 0..4 {
-        for row in 0..4 {
-            output[column][row] = (0..4)
-                .map(|index| left[index][row] * right[column][index])
-                .sum();
-        }
-    }
-    output
-}
-
 #[cfg(test)]
 mod grid_tests {
     use super::*;
+    use crate::Camera;
+
+    #[test]
+    fn shader_payloads_reject_nonfinite_values_without_restricting_finite_materials() {
+        use crate::{LightingNormals, Mesh, RenderableId, Vertex};
+        let object = Renderable {
+            id: RenderableId::new(1),
+            mesh: Mesh {
+                vertices: vec![Vertex {
+                    position: [0.0; 3],
+                    normal: [0.0; 3],
+                }],
+                indices: Vec::new(),
+            },
+            translation: Vec3::default(),
+            color: [-1.0, 2.0, 0.0, 1.0],
+            selected: false,
+        };
+        assert!(mesh_vertices(&object, None).is_ok());
+        assert!(object_uniform(&object, None, true).is_ok());
+        let mut failures = Vec::new();
+        for value in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
+            for normal in [false, true] {
+                let mut changed = object.clone();
+                if normal {
+                    changed.mesh.vertices[0].normal[1] = value;
+                } else {
+                    changed.mesh.vertices[0].position[1] = value;
+                }
+                if mesh_vertices(&changed, None).is_ok() {
+                    failures.push("nonfinite mesh shader data accepted");
+                }
+            }
+            for color in [false, true] {
+                let mut changed = object.clone();
+                if color {
+                    changed.color[1] = value;
+                } else {
+                    changed.translation.y = value;
+                }
+                if object_uniform(&changed, None, false).is_ok() {
+                    failures.push("nonfinite object shader data accepted");
+                }
+            }
+            let material = SurfaceMaterial::Terrain {
+                height_range: [0.0, value],
+                lighting: SurfaceLighting::default(),
+                normals: LightingNormals::Source,
+            };
+            if object_uniform(&object, Some(material), true).is_ok() {
+                failures.push("nonfinite terrain shader data accepted");
+            }
+        }
+        for height_range in [[1.0, 1.0], [2.0, -1.0]] {
+            assert!(
+                object_uniform(
+                    &object,
+                    Some(SurfaceMaterial::Terrain {
+                        height_range,
+                        lighting: SurfaceLighting::default(),
+                        normals: LightingNormals::FaceViewer,
+                    }),
+                    false
+                )
+                .is_ok(),
+                "finite flat/inverted ranges retain their existing semantics"
+            );
+        }
+        assert!(failures.is_empty(), "{failures:?}");
+    }
+
+    #[test]
+    fn expanded_display_geometry_omits_invalid_complete_primitives_in_stable_order() {
+        use crate::display::{
+            DisplaySources, MarkerStyle, NormalSource, NormalStyle, display_lines,
+            marker_triangles, normal_triangles,
+        };
+        let mut scene = ViewportScene::default();
+        scene.display.wireframe = true;
+        let valid_edge = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]];
+        scene.sources = Some(DisplaySources {
+            wire_edges: Some(vec![valid_edge, [[0.0; 3], [f32::NAN; 3]]]),
+            ..DisplaySources::default()
+        });
+        let lines = display_lines(&scene);
+        let mut failures = Vec::new();
+        if lines.len() != 2
+            || lines
+                .iter()
+                .flat_map(|v| v.position)
+                .any(|v| !v.is_finite())
+        {
+            failures.push("invalid wire pair must be omitted without shifting valid endpoints");
+        }
+        assert_eq!(lines[0].position, valid_edge[0]);
+        assert_eq!(lines[1].position, valid_edge[1]);
+        let camera = Camera {
+            target: Vec3::new(0.0, 0.0, 1.0),
+            distance: 1.0,
+            yaw: 0.0,
+            pitch: 0.0,
+            ..Camera::default()
+        };
+        scene.display.normals = true;
+        scene.sources = Some(DisplaySources {
+            normals: vec![
+                NormalSource {
+                    position: [0.0; 3],
+                    direction: [0.0, 1.0, 0.0],
+                },
+                NormalSource {
+                    position: [0.0, 0.0, 10000.0],
+                    direction: [0.0, 1.0, 0.0],
+                },
+            ],
+            normal_style: Some(NormalStyle {
+                length: f32::MAX,
+                half_width: 0.01,
+                tip_length: 0.1,
+                reference_distance: 1.0,
+            }),
+            ..DisplaySources::default()
+        });
+        let normals = normal_triangles(&scene, camera);
+        if normals.len() != 9
+            || normals
+                .iter()
+                .flat_map(|v| v.position)
+                .any(|v| !v.is_finite())
+        {
+            failures.push("overflowing normal arrow must be omitted as a complete primitive");
+        }
+        scene.display.points = true;
+        scene.sources = Some(DisplaySources {
+            points: vec![[0.0, 0.0, 0.25], [0.0, 0.0, 2.0]],
+            marker_style: Some(MarkerStyle {
+                diameter: f32::MAX,
+                edge_width: 1.0,
+                color: [1.0; 4],
+            }),
+            ..DisplaySources::default()
+        });
+        let markers = marker_triangles(&scene, camera, ViewportRect::full(1, 1));
+        if markers.len() != 6
+            || markers
+                .iter()
+                .flat_map(|v| v.clip_position)
+                .any(|v| !v.is_finite())
+        {
+            failures.push("overflowing marker must be omitted as a complete billboard");
+        }
+        assert!(failures.is_empty(), "{failures:?}");
+    }
 
     #[test]
     fn scene_grid_override_preserves_fallback_and_rejects_invalid_line_pairs() {

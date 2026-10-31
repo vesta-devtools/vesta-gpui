@@ -154,6 +154,7 @@ impl App {
             return self.capture_presented(query, source, viewport);
         };
         let geometry = query.geometry(&observed, viewport)?;
+        self.prepare_viewport_capture(query)?;
         let paint = PaintList::build_with_focus(
             &root,
             &offscreen_layout,
@@ -206,6 +207,7 @@ impl App {
                     )),
             )
             .map_err(|e| e.stage)?;
+        self.viewport_capture_admitted();
         self.request_all_redraw();
         Ok(Reply {
             ticket,

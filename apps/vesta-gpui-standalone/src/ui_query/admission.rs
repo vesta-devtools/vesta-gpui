@@ -147,7 +147,7 @@ pub(crate) fn action_kind(action: DemoAction) -> (&'static str, Option<&'static 
         | DemoAction::RestoreFloating(..)
         | DemoAction::WorkspaceReset
         | DemoAction::ViewportTool(..)
-        | DemoAction::ViewportFrame
+        | DemoAction::ViewportResetCamera
         | DemoAction::ViewportProjection
         | DemoAction::Workspace(_) => ("semantic", None),
     }

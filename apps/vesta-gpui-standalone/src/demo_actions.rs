@@ -96,7 +96,7 @@ pub(super) enum DemoAction {
     RestoreFloating(FloatingWindowId),
     WorkspaceReset,
     ViewportTool(TransformMode),
-    ViewportFrame,
+    ViewportResetCamera,
     ViewportProjection,
 }
 
@@ -581,7 +581,9 @@ impl App {
             }
             DemoAction::WorkspaceReset => self.reset_workspace(),
             DemoAction::ViewportTool(mode) => self.scene.gizmo.mode = mode,
-            DemoAction::ViewportFrame => apply_action(&mut self.camera, ViewportAction::FrameAll),
+            DemoAction::ViewportResetCamera => {
+                apply_action(&mut self.camera, ViewportAction::ResetCamera)
+            }
             DemoAction::ViewportProjection => {
                 apply_action(&mut self.camera, ViewportAction::ToggleProjection)
             }

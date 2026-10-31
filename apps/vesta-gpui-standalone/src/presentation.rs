@@ -648,7 +648,7 @@ pub(super) fn build_viewport_overlays(
             DemoAction::ViewportTool(TransformMode::Scale),
             gizmo_mode == TransformMode::Scale,
         ),
-        ("Frame", DemoAction::ViewportFrame, false),
+        ("Reset camera", DemoAction::ViewportResetCamera, false),
         ("Proj", DemoAction::ViewportProjection, false),
     ];
     for (index, (name, action, selected)) in specifications.into_iter().enumerate() {

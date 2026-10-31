@@ -184,7 +184,10 @@ mod tests {
     use super::*;
     #[test]
     fn explicit_capture_exports_after_run_and_never_overwrites_a_racing_file() {
-        let path = std::env::temp_dir().join(format!(
+        let directory =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/research/ui-trace-unit");
+        std::fs::create_dir_all(&directory).expect("owned test artifact directory");
+        let path = directory.join(format!(
             "gpui-frame-trace-{}-{}.json",
             std::process::id(),
             std::time::SystemTime::now()
@@ -209,7 +212,15 @@ mod tests {
             .expect("post-loop export");
         let original = std::fs::read(&path).expect("exported capture");
         let json: serde_json::Value = serde_json::from_slice(&original).expect("frame JSON");
-        assert_eq!(json["gpui_frames"][0]["name"], "Host.Main");
+        assert_eq!(
+            json["gpui_frames"]
+                .as_array()
+                .expect("frames")
+                .iter()
+                .filter(|frame| frame["name"] == "Host.Main")
+                .count(),
+            1
+        );
         assert!(UiTraceRecording::from_arguments([&argument]).is_err());
         std::fs::remove_file(&path).expect("own export cleanup");
         let recording = UiTraceRecording::from_arguments([&argument]).expect("second launch");
@@ -227,7 +238,17 @@ mod tests {
         {
             let _frame = vesta_gpui::trace::frame("OnDemand.Main");
         }
-        assert!(recording.stats().is_some_and(|stats| stats.events == 1));
+        std::thread::spawn(|| {
+            let _frame = vesta_gpui::trace::frame("Concurrent.Host");
+        })
+        .join()
+        .expect("instrumented worker joined");
+        let observed = recording.stats();
+        // A capture intentionally includes other instrumented process threads.
+        assert!(
+            observed.is_some_and(|stats| stats.events >= 2),
+            "captured stats: {observed:?}"
+        );
         let export = recording.stop().expect("frozen handoff");
         assert!(!path.exists());
         let successor =
@@ -243,6 +264,26 @@ mod tests {
         drop(successor);
         let html = std::fs::read_to_string(&written).expect("HTML output");
         assert!(html.contains("OnDemand.Main"));
+        let payload = html
+            .split("<script id=\"gpui-data\" type=\"application/json\">")
+            .nth(1)
+            .expect("report payload")
+            .split("</script>")
+            .next()
+            .expect("closed payload");
+        let report: serde_json::Value = serde_json::from_str(payload).expect("report JSON");
+        for name in ["OnDemand.Main", "Concurrent.Host"] {
+            assert_eq!(
+                report["gpui_frames"]
+                    .as_array()
+                    .expect("frames")
+                    .iter()
+                    .filter(|frame| frame["name"] == name)
+                    .count(),
+                1,
+                "owned frame in frozen export"
+            );
+        }
         std::fs::remove_file(written).expect("own deferred export cleanup");
     }
 }

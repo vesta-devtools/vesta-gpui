@@ -58,6 +58,7 @@ pub fn marker_triangles(
         if !clip.into_iter().all(f32::is_finite) || clip[3] <= 0.0 {
             continue;
         }
+        let start = result.len();
         for uv in [
             [-1.0, -1.0],
             [1.0, -1.0],
@@ -77,6 +78,12 @@ pub fn marker_triangles(
                 color: style.color,
                 softness,
             });
+        }
+        if result[start..]
+            .iter()
+            .any(|v| !v.clip_position.into_iter().all(f32::is_finite))
+        {
+            result.truncate(start);
         }
     }
     result

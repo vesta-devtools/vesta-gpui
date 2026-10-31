@@ -120,8 +120,13 @@ actual scene content on a UI-only target is rejected.
 
 Scene data is borrowed from `vesta-viewport`, never a second scene model. Mesh
 indices/counts, vertex-color cardinality/finite values and material policy are
-checked before draw; the Host supplies valid position/normal geometry. Opaque depth
-precedes sorted translucent surfaces. Numeric labels require the Host's immutable
+checked before draw; the Host supplies geometry appropriate for the current
+display/lighting policy.
+The next Viewport input additionally checks finite position/normal values in the
+same mesh packer and translation/color/range in the object packer; its corrected
+failure stage is `viewport_vertices`. This branch's affected native scene
+qualification remains open in the [Viewport review](VIEWPORT.md).
+Opaque depth precedes sorted translucent surfaces. Numeric labels require the Host's immutable
 ten-cell RGBA digit atlas and explicit valid style/capacity. Missing atlas means
 no labels. One cached atlas is retained, each edge at most 8192; this separate
 scene resource can be larger than the 2D image-cache budget. Uploads precede

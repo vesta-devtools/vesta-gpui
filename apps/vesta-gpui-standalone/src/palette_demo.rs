@@ -9,7 +9,7 @@ pub(super) const SHORTCUT_COMMANDS: [(char, DemoAction); 5] = [
     ('1', DemoAction::SelectMode(AcceptanceMode::Gallery2d)),
     ('2', DemoAction::SelectMode(AcceptanceMode::Viewport3d)),
     ('t', DemoAction::ToggleTheme),
-    ('f', DemoAction::ViewportFrame),
+    ('f', DemoAction::ViewportResetCamera),
     ('o', DemoAction::ViewportProjection),
 ];
 
@@ -195,10 +195,10 @@ pub(super) fn filtered_palette_commands(query: &str, demo: &DemoState) -> Vec<Pa
     );
     add(
         22,
-        "Frame 3D Selection",
+        "Reset 3D Camera",
         "view camera 相机",
         demo.viewport3d_available,
-        DemoAction::ViewportFrame,
+        DemoAction::ViewportResetCamera,
     );
     add(
         23,
