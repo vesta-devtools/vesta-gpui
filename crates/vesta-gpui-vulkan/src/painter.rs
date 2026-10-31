@@ -16,6 +16,8 @@ use vesta_gpui::{
     Color, PaintCommand, PaintList, Point, RasterGlyph, Rect, TextInputContext, TextInputSnapshot,
     TextInputViewport, TextRasterizer, Viewport,
 };
+#[cfg(feature = "viewport")]
+use vulkano::device::Device;
 use vulkano::{
     buffer::{
         Buffer, BufferContents, BufferCreateInfo, BufferUsage, Subbuffer,
@@ -25,7 +27,6 @@ use vulkano::{
     descriptor_set::{
         DescriptorSet, WriteDescriptorSet, allocator::StandardDescriptorSetAllocator,
     },
-    device::Device,
     format::Format,
     image::{
         Image, ImageCreateInfo, ImageType, ImageUsage,
@@ -477,7 +478,8 @@ impl Painter {
         self.cache.clear();
         self.bytes = 0;
     }
-    pub fn new(device: Arc<Device>, pass: Arc<RenderPass>) -> Result<Self, RendererError> {
+    pub fn new(gpu: &crate::GpuContext, pass: Arc<RenderPass>) -> Result<Self, RendererError> {
+        let device = gpu.device.clone();
         let shape = checked_pipeline::create(device.clone(), pass.clone(), false)?;
         let texture = checked_pipeline::create(device.clone(), pass, true)?;
         let sampler = Sampler::new(
@@ -490,7 +492,7 @@ impl Painter {
             },
         )
         .map_err(|e| RendererError::caused_by("sampler", e))?;
-        let memory = Arc::new(StandardMemoryAllocator::new_default(device.clone()));
+        let memory = gpu.memory.clone();
         let vertices = SubbufferAllocator::new(
             memory.clone(),
             SubbufferAllocatorCreateInfo {

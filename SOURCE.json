@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "64c03681d1221e69170b11a59683d6f39dcf6a9ec1ea36412bf6fc1ad6f988dc",
+  "tree_sha256": "d3f160c4d2938ce73fce901116454310c3c9c4389bb5076e579411efe9156ebc",
   "files": [
     {
       "path": ".gitattributes",
@@ -135,13 +135,18 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/frame_reflow_probe.rs",
-      "bytes": 35100,
-      "sha256": "53f941e836b30698a5444fc70d76af5f5e0850afe319782bb3270d8099df0541"
+      "bytes": 38746,
+      "sha256": "4628077ba0bb6545406db8a660cc48a5f0116841f40a90781e6644a72cb0e1ee"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/frame_reflow_probe/cancellation.rs",
       "bytes": 6479,
       "sha256": "f2f03e4df88a3a096daa1e482aa95e784ed444d8614673e6c20f09a45cbed596"
+    },
+    {
+      "path": "apps/vesta-gpui-standalone/src/frame_reflow_probe/collections.rs",
+      "bytes": 11489,
+      "sha256": "85f7cd7e9add9e57aaf2bcb87a14f65c8ed4fe26199dd66de52b8da301eb1fd8"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/frame_reflow_probe/viewport_scene.rs",
@@ -215,8 +220,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/gpu_recovery.rs",
-      "bytes": 21173,
-      "sha256": "294b13781d2e6d5af45a207f4aba66ab8bbe188bb00d0f6c308d884032224d4d"
+      "bytes": 22048,
+      "sha256": "94d3a7e35e4d2d6f4bd33ec0f3477f60513c9ac590aa01f6c7310fb624bb9855"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/host_fonts.rs",
@@ -645,8 +650,8 @@
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_idle.rs",
-      "bytes": 14623,
-      "sha256": "45b11de9e9e72daf5fa15f9024417b5da3dbb742c7b86bfb8510eebbbf65416f"
+      "bytes": 14679,
+      "sha256": "6179b6c1ab02de61708f8fd797dc8cb2dd452e19ebbf2774ca2c1cc7acea1961"
     },
     {
       "path": "apps/vesta-gpui-standalone/src/window_keyboard.rs",
@@ -815,13 +820,13 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/capture.rs",
-      "bytes": 8488,
-      "sha256": "c2634324a7cefcb56acba4468771956cdb290c6d124294fa0278d1187aa1c69e"
+      "bytes": 8392,
+      "sha256": "bac357dc1df699585553a6a6c3ebbac0531cc53c5eb2828472f456e48fcea151"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/capture/offscreen.rs",
-      "bytes": 8518,
-      "sha256": "28ee96df34d0b63edb0c34b62c82646cb04b7f03f3484e2b8cd960d62828f34a"
+      "bytes": 8470,
+      "sha256": "c56b6592a1608fdcca39aea565cb824bdb9d872f7f2c7b51d4927d8789449026"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/checked_pipeline.rs",
@@ -855,8 +860,8 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/gpu_context.rs",
-      "bytes": 11789,
-      "sha256": "ba900f13c8b7d89ecf0ad01d03467030fb438dfff66c0959711e52496b950cbe"
+      "bytes": 11995,
+      "sha256": "146aeac901ef930ecd0eb697106ff98e15d1aead2632f3353ac6a9d8f77e51af"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/gpu_failure.rs",
@@ -875,13 +880,13 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/lib.rs",
-      "bytes": 38637,
-      "sha256": "dd254eebbca9a76fd9551808ab93ceb442ee964116125e36b1ac2d96f24ed031"
+      "bytes": 38667,
+      "sha256": "cbb47a4415fa8c7d22162c3235d627906016bf1aed12214c56f9e2fafbd018d6"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/painter.rs",
-      "bytes": 28147,
-      "sha256": "ec33c6db66f190b940c1af770d8baa9f79d258e0a6aea170062c627ad064b3d5"
+      "bytes": 28186,
+      "sha256": "b6dec38e0d37cd99914416f0eee695312097443b22b7f42fb4eee29c703c4e50"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/painter/tests.rs",
@@ -910,8 +915,8 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/retirement.rs",
-      "bytes": 12791,
-      "sha256": "dba10ea7a2a75f61df63778e065c322cf5aebb62a73c366a2a2d2152c7e5cda1"
+      "bytes": 12927,
+      "sha256": "0f68713f99eeceafc8ff893461b91d73c9cad83eae92d48c0ccb5cd2fc92ebf5"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/scene_views.rs",
@@ -925,13 +930,13 @@
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/targets.rs",
-      "bytes": 9316,
-      "sha256": "acd515a479d59b59ad4be9e3ced6d9b2cb8fa3a1c12c9297957309b95469bec2"
+      "bytes": 9251,
+      "sha256": "de72bcbfc23c3ca0281ca5b3c1bc7735fa7f1463ad1dea63052c83da75e57200"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/viewport.rs",
-      "bytes": 20185,
-      "sha256": "47bc2c3fabe210802208c7bac8ef69e900137b972efd997ef1e517e012816e74"
+      "bytes": 20186,
+      "sha256": "ce9fefc240d8bf374cf6284e6224d5365d8b8b707757620b7a307061f8ae989f"
     },
     {
       "path": "crates/vesta-gpui-vulkan/src/viewport/labels.rs",
@@ -2150,8 +2155,8 @@
     },
     {
       "path": "docs/REFINEMENT.md",
-      "bytes": 51425,
-      "sha256": "063b19c7d532a76fce269825ddb6bb9be706847b42b648d2fc9fe204ba95a39b"
+      "bytes": 53984,
+      "sha256": "65e8b7e2ae3743ed3d1251fa7b9d11f867cf4e0cce20eae6c470c4ea22fed9a4"
     },
     {
       "path": "docs/RELEASING.md",
@@ -2190,8 +2195,8 @@
     },
     {
       "path": "docs/VULKAN.md",
-      "bytes": 13410,
-      "sha256": "d4b302c7e78dc88a246454a1aeefa4cef24b297f3cc7eda3928cadd7b3726c2e"
+      "bytes": 14209,
+      "sha256": "be6c3361b61a0d996ebb0cdf7f3b323e38a9248abba4f1ae3b90d26f1f7d62ff"
     },
     {
       "path": "docs/WEBVIEW.md",
@@ -2347,6 +2352,21 @@
       "path": "docs/decisions/0028-Viewport-Projection-And-Geometry-Boundaries.md",
       "bytes": 7675,
       "sha256": "70487d49e958f7e2e478033b9b63dbf51882ed6c0d5d6d3ad7c299029871056b"
+    },
+    {
+      "path": "docs/decisions/0029-Native-Collection-Capture-And-Idle-Measurement.md",
+      "bytes": 1876,
+      "sha256": "cfc57117ea58b21f7b492524cf8563bcfe5d8620c9f181a0b52bb5bbd8279dd1"
+    },
+    {
+      "path": "docs/decisions/0030-Device-Scoped-Vulkan-Memory-Ownership.md",
+      "bytes": 2728,
+      "sha256": "2848f8661ebb3ef448b50964f1a2c6a03c560c73637a80b102b76e5d1ed7eb8c"
+    },
+    {
+      "path": "docs/decisions/0031-Recovery-Retry-Observation-States.md",
+      "bytes": 1690,
+      "sha256": "5ba763a0a7fca0744178afb51891a521ad093f4063becc3b52266deee80ea323"
     },
     {
       "path": "release/0.1.0-rc.1.md",

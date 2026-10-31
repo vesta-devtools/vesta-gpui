@@ -310,6 +310,7 @@ impl App {
             .chain(document_deadline)
             .chain(caret_deadline)
             .chain(native_capture_deadline)
+            .chain(self.frame_probe_passive_deadline())
             .min();
         self.lifecycle_profile.waiting(deadline);
         event_loop.set_control_flow(deadline.map_or(ControlFlow::Wait, ControlFlow::WaitUntil));

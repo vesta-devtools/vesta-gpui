@@ -10,6 +10,7 @@ use vulkano::{
         physical::PhysicalDeviceType,
     },
     instance::{Instance, InstanceCreateInfo},
+    memory::allocator::StandardMemoryAllocator,
     swapchain::Surface,
 };
 use winit::{event_loop::ActiveEventLoop, window::Window};
@@ -44,6 +45,7 @@ pub struct GpuContext {
     pub(crate) device: Arc<Device>,
     pub(crate) queue: Arc<Queue>,
     pub(crate) commands: Arc<StandardCommandBufferAllocator>,
+    pub(crate) memory: Arc<StandardMemoryAllocator>,
     pub(crate) failure: crate::gpu_failure::GpuFailure,
     pub(crate) worker: Arc<crate::recovery::RecoveryWorker>,
     retirement: Arc<crate::retirement::Slot<crate::retirement::Owner>>,
@@ -107,6 +109,7 @@ impl GpuContext {
             device.clone(),
             Default::default(),
         ));
+        let memory = Arc::new(StandardMemoryAllocator::new_default(device.clone()));
         Ok(Arc::new(Self {
             retirement: seed.worker.register_retirement(),
             release: Default::default(),
@@ -114,6 +117,7 @@ impl GpuContext {
             device,
             queue,
             commands,
+            memory,
             failure: Default::default(),
             worker: seed.worker.clone(),
         }))

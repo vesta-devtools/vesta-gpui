@@ -2,6 +2,7 @@
 use super::*;
 use std::path::PathBuf;
 mod cancellation;
+mod collections;
 mod viewport_scene;
 
 const PREFIX: &str = "--probe-frame-reflow=";
@@ -46,9 +47,24 @@ enum Case {
     Cancellation,
     Capture,
     Viewport,
+    Collections(Option<vesta_gpui::trace::TraceDetail>),
 }
 
 impl Case {
+    // Existing report identities remain stable when a case carries options.
+    fn report_code(self) -> u8 {
+        match self {
+            Self::Inputs => 0,
+            Self::Documents => 1,
+            Self::Focus => 2,
+            Self::Deferred => 3,
+            Self::Budget => 4,
+            Self::Cancellation => 5,
+            Self::Capture => 6,
+            Self::Viewport => 7,
+            Self::Collections(_) => 8,
+        }
+    }
     fn from_arguments(args: &[String]) -> Result<Self, &'static str> {
         let cases = args
             .iter()
@@ -66,12 +82,21 @@ impl Case {
             "cancellation" => Ok(Self::Cancellation),
             "capture" if cfg!(feature = "gpu-fault-injection") => Ok(Self::Capture),
             "viewport" => Ok(Self::Viewport),
+            "collections-off" => Ok(Self::Collections(None)),
+            "collections-stages" => Ok(Self::Collections(Some(
+                vesta_gpui::trace::TraceDetail::Stages,
+            ))),
+            "collections-detailed" => Ok(Self::Collections(Some(
+                vesta_gpui::trace::TraceDetail::Detailed,
+            ))),
             _ => Err("frame_reflow_invalid_case"),
         }
     }
 
     fn panel_type(self) -> &'static str {
-        if self == Self::Documents {
+        if matches!(self, Self::Collections(_)) {
+            "gallery.collections"
+        } else if self == Self::Documents {
             "gallery.documents"
         } else {
             "gallery.inputs"
@@ -182,14 +207,32 @@ pub(super) fn recording() -> Result<Option<vesta_gpui_winit::UiTraceRecording>, 
     {
         return Err("frame_reflow_probe_requires_isolated_default_host".into());
     }
-    Ok(Some(vesta_gpui_winit::UiTraceRecording::start(
-        paths[0],
-        vesta_gpui::trace::TraceConfig {
-            max_events: 200_000,
-            max_duration: Duration::from_secs(120),
-        },
-        vesta_gpui::trace::TraceDetail::Stages,
-    )?))
+    let detail = if let Case::Collections(detail) = case {
+        if !args.iter().any(|arg| arg == "--profile-ui")
+            || !args
+                .iter()
+                .any(|arg| ui_query::stdio_argument(arg) == Some(true))
+        {
+            return Err("frame_collection_profile_requires_control_stdio_and_profile_ui".into());
+        }
+        if PathBuf::from(paths[0]).try_exists()? {
+            return Err("frame_collection_profile_destination_exists".into());
+        }
+        detail
+    } else {
+        Some(vesta_gpui::trace::TraceDetail::Stages)
+    };
+    Ok(Some(match detail {
+        Some(detail) => vesta_gpui_winit::UiTraceRecording::start(
+            paths[0],
+            vesta_gpui::trace::TraceConfig {
+                max_events: 200_000,
+                max_duration: Duration::from_secs(120),
+            },
+            detail,
+        )?,
+        None => vesta_gpui_winit::UiTraceRecording::from_arguments(std::iter::empty::<String>())?,
+    }))
 }
 
 pub(super) struct Probe {
@@ -201,6 +244,7 @@ pub(super) struct Probe {
 enum Workload {
     Reflow(ReflowProbe),
     Viewport(viewport_scene::Probe),
+    Collections(collections::Probe),
 }
 
 struct ReflowProbe {
@@ -244,23 +288,41 @@ impl App {
             .ok_or("frame_reflow_main_inputs_missing")?
             .id;
         self.demo.workspace.activate(inputs)?;
-        let right = *self
+        let mut blank_pane = *self
             .demo
             .workspace
             .root()
             .panes()
             .last()
             .ok_or("frame_reflow_main_pane_missing")?;
+        if matches!(case, Case::Collections(_)) {
+            blank_pane = self
+                .demo
+                .workspace
+                .root()
+                .panes()
+                .into_iter()
+                .rev()
+                .find(|pane| {
+                    self.demo
+                        .workspace
+                        .pane(*pane)
+                        .is_some_and(|pane| !pane.items.iter().any(|item| item.id == inputs))
+                })
+                .ok_or("frame_collection_profile_other_pane_missing")?;
+        }
         let blank =
             self.demo
                 .workspace
-                .add_item(right, "Blank", PanelTypeId::new("gallery.blank"))?;
+                .add_item(blank_pane, "Blank", PanelTypeId::new("gallery.blank"))?;
         self.demo.workspace.activate(blank)?;
         let floating = self.demo.workspace.spawn_floating_window(
             "Reflow".into(),
             WindowPlacement::new(100.0, 100.0, 1120.0, 800.0),
             if case == Case::Documents {
                 "Documents"
+            } else if matches!(case, Case::Collections(_)) {
+                "Collections"
             } else {
                 "Inputs"
             }
@@ -294,6 +356,19 @@ impl App {
         )?;
         self.demo.workspace.activate(input)?;
         self.demo.sync_workspace_ui();
+        if let Case::Collections(detail) = case {
+            self.demo.virtual_ids = (0..100_000).collect();
+            self.frame_reflow_probe = Some(Probe {
+                workload: Workload::Collections(collections::Probe::new(
+                    floating,
+                    [inputs, input],
+                    detail,
+                )),
+                started: Instant::now(),
+                completed: false,
+            });
+            return Ok(());
+        }
         self.area_state
             .reset(&mut self.text_context, &DRAFT.repeat(16))?;
         self.frame_reflow_probe = Some(Probe {
@@ -324,16 +399,27 @@ impl App {
                 probe.completed = true;
                 event_loop.exit();
             }
-            Ok(false) => event_loop.set_control_flow(ControlFlow::WaitUntil(
-                Instant::now() + Duration::from_millis(2),
-            )),
+            Ok(false) if probe.active_driver() => event_loop.set_control_flow(
+                ControlFlow::WaitUntil(Instant::now() + Duration::from_millis(2)),
+            ),
+            Ok(false) => (),
             Err(error) => {
                 self.fatal_error = Some(error);
                 event_loop.exit();
             }
         }
+        let driving = probe.completed || probe.active_driver();
         self.frame_reflow_probe = Some(probe);
-        true
+        driving
+    }
+
+    pub(super) fn frame_probe_passive_deadline(&self) -> Option<Instant> {
+        self.frame_reflow_probe
+            .as_ref()
+            .and_then(|probe| match &probe.workload {
+                Workload::Collections(probe) => probe.passive_deadline(),
+                _ => None,
+            })
     }
 }
 
@@ -598,7 +684,11 @@ impl ReflowProbe {
             vesta_gpui::trace::counter("fixture", "reflow.source", source as f64);
             vesta_gpui::trace::counter("fixture", "reflow.index", step as f64);
             vesta_gpui::trace::counter("fixture", "reflow.ratio", f64::from(ratio));
-            vesta_gpui::trace::counter("fixture", "reflow.case", self.case as u8 as f64);
+            vesta_gpui::trace::counter(
+                "fixture",
+                "reflow.case",
+                f64::from(self.case.report_code()),
+            );
             let cancellation = if self.case == Case::Cancellation {
                 Some(cancellation::Armed::new(
                     app,
@@ -865,6 +955,7 @@ impl Probe {
         match &mut self.workload {
             Workload::Reflow(probe) => probe.capture_requested(window),
             Workload::Viewport(_) => false,
+            Workload::Collections(_) => false,
         }
     }
 
@@ -878,6 +969,14 @@ impl Probe {
         match &mut self.workload {
             Workload::Reflow(probe) => probe.advance(app, event_loop),
             Workload::Viewport(probe) => Ok(probe.advance(app)),
+            Workload::Collections(probe) => probe.advance(app, event_loop),
+        }
+    }
+
+    fn active_driver(&self) -> bool {
+        match &self.workload {
+            Workload::Collections(probe) => probe.active_driver(),
+            _ => true,
         }
     }
 }

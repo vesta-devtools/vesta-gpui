@@ -419,11 +419,11 @@ impl WindowRenderer {
         .map_err(|e| RendererError::caused_by("swapchain", e))?;
         let samples = SampleCount::Sample1;
         let render_pass = targets::render_pass(device.clone(), format, samples, false)?;
-        let frames = targets::framebuffers(&images, render_pass.clone(), samples, false)?;
+        let frames = targets::framebuffers(&gpu, &images, render_pass.clone(), samples, false)?;
         eprintln!(
             "Vesta native Vulkan renderer: {format:?}, {present_mode:?}, {count} swapchain images"
         );
-        let painter = painter::Painter::new(device.clone(), render_pass.clone())?;
+        let painter = painter::Painter::new(&gpu, render_pass.clone())?;
         Ok(Self {
             retirement: gpu.worker.register_retirement(),
             window,
@@ -479,7 +479,8 @@ impl WindowRenderer {
             samples,
             enabled,
         )?;
-        let frames = targets::framebuffers(&self.images, pass.clone(), samples, enabled)?;
+        let frames =
+            targets::framebuffers(&self.gpu, &self.images, pass.clone(), samples, enabled)?;
         let overlay = enabled
             .then(|| {
                 targets::overlay_pass(
@@ -491,7 +492,7 @@ impl WindowRenderer {
             .transpose()?;
         let scene = if enabled {
             Some(viewport::ScenePainter::new(
-                self.gpu.device.clone(),
+                &self.gpu,
                 pass.clone(),
                 overlay.as_ref().expect("enabled overlay pass").clone(),
                 samples,
@@ -540,6 +541,7 @@ impl WindowRenderer {
             })
             .map_err(|e| RendererError::caused_by("resize_swapchain", e))?;
         self.frames = targets::framebuffers(
+            &self.gpu,
             &images,
             self.render_pass.clone(),
             self.samples,

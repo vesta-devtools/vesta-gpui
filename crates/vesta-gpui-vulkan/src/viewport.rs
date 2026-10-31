@@ -92,12 +92,13 @@ pub(super) struct ScenePainter {
 }
 impl ScenePainter {
     pub fn new(
-        device: Arc<Device>,
+        gpu: &crate::GpuContext,
         pass: Arc<RenderPass>,
         overlay_pass: Arc<RenderPass>,
         samples: SampleCount,
     ) -> Result<Self, RendererError> {
-        let memory = Arc::new(StandardMemoryAllocator::new_default(device.clone()));
+        let device = gpu.device.clone();
+        let memory = gpu.memory.clone();
         let descriptors = Arc::new(StandardDescriptorSetAllocator::new(
             device.clone(),
             Default::default(),

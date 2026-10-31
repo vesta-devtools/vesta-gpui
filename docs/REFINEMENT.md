@@ -4,6 +4,43 @@ Requested: 2026-10-31. Status: Active.
 Authority: this repository. Products track adoption in their own integration records.
 Decision: [0006](decisions/0006-Explicit-Architecture-And-Refinement-Gates.md).
 
+Current cross-host cursor, 2026-10-31: Vesta's external Builder budget and
+Main/Float device/surface-loss records now qualify their scoped paths; its
+ordinary trace capture is connected. Those records do not qualify all current
+shared Core/Agent inputs. Builder also removes its second Dock projection:
+one candidate owns its widget and regions through layout. The external same-
+Model ABBA profile retains 560 samples with 140 equivalent steps, and the
+unchanged production contract has 32 tests plus all-target strict qualification.
+Direct extra-projector medians are about 0.18/3.74/0.14/0.13 ms for creation,
+development, about and todo; noisy aggregate totals are not native speed claims.
+Root's catalog popup still constructs its renderer synchronously; moving that
+existing factory to the GPU worker remains a concrete Host integration task.
+Root standard updates belong to its current Agent owner; exact immutable
+adoption and current-source native qualification remain GF06.
+
+[Decision 0031](decisions/0031-Recovery-Retry-Observation-States.md) corrects the
+existing smoke report's conflation of unobserved busy rejection with a worker
+that already finished. Original cancel01 retains the false failure and normal
+GPU retirement. Directed cancellation and timeout observations retain separate
+claims; the timeout still has to exercise actual busy rejection. Production
+retry admission, worker retirement and the fixture delay are unchanged.
+
+Native collection/resource checkpoint, 2026-10-31: decisions
+[0029](decisions/0029-Native-Collection-Capture-And-Idle-Measurement.md) and
+[0030](decisions/0030-Device-Scoped-Vulkan-Memory-Ownership.md) define the existing
+private Main/Float collection fixture and one allocator per device generation.
+The two six-run recorder matrices preserve 1,536 equivalent measured frames;
+the allocator-only ABBA follow-up preserves another 1,024 with registered-font
+identities. The real 100,000-item virtual subtree stays bounded and matches
+across off/stages/detailed capture. Ordinary four-second idle reports no
+redraw, present, polling or periodic timer churn. Process CPU, private commit,
+working set and handles are sampled by exact PID; raw data and interpretation
+are under `target/research/native-collection-cost-20261031/`. Timing is shared-
+machine evidence, not a physical-input/display latency or speed guarantee.
+Native frame call time excludes snapshot validation; request wall time includes
+that validation. Consumer projection work and final shared adoption retain
+separate GF05/GF06 qualification.
+
 Current qualification, 2026-10-31: all eight GF02 source families are locally
 closed at their recorded inputs. [Decision 0028](decisions/0028-Viewport-Projection-And-Geometry-Boundaries.md)
 and [the Viewport contract](VIEWPORT.md) close the final family. One private

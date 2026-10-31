@@ -189,9 +189,7 @@ impl WindowRenderer {
             scene.prepare(extent)?
         };
         let ticket = self.begin_capture(region)?;
-        let memory = Arc::new(StandardMemoryAllocator::new_default(
-            self.gpu.device.clone(),
-        ));
+        let memory = self.gpu.memory.clone();
         let image = Image::new(
             memory,
             ImageCreateInfo {
@@ -205,6 +203,7 @@ impl WindowRenderer {
         )
         .map_err(|e| RendererError::caused_by("capture_target", e))?;
         let frames = targets::framebuffers(
+            &self.gpu,
             std::slice::from_ref(&image),
             self.render_pass.clone(),
             self.samples,

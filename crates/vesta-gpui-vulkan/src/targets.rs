@@ -2,12 +2,12 @@
 use crate::RendererError;
 use std::sync::Arc;
 use vulkano::{
-    device::{Device, DeviceOwned},
+    device::Device,
     format::Format,
     image::{
         Image, ImageCreateInfo, ImageLayout, ImageType, ImageUsage, SampleCount, view::ImageView,
     },
-    memory::allocator::{AllocationCreateInfo, StandardMemoryAllocator},
+    memory::allocator::AllocationCreateInfo,
     render_pass::{
         AttachmentDescription, AttachmentLoadOp, AttachmentReference, AttachmentStoreOp,
         Framebuffer, FramebufferCreateInfo, RenderPass, RenderPassCreateInfo, SubpassDescription,
@@ -192,6 +192,7 @@ pub(super) fn sample_count(device: &Device, color: Format) -> Result<SampleCount
 }
 
 pub(super) fn framebuffers(
+    gpu: &crate::GpuContext,
     images: &[Arc<Image>],
     pass: Arc<RenderPass>,
     samples: SampleCount,
@@ -217,7 +218,7 @@ pub(super) fn framebuffers(
     let image = images
         .first()
         .ok_or_else(|| RendererError::at("framebuffers", "empty swapchain"))?;
-    let memory = Arc::new(StandardMemoryAllocator::new_default(image.device().clone()));
+    let memory = gpu.memory.clone();
     let attachment = |format, usage| -> Result<Arc<ImageView>, RendererError> {
         let image = Image::new(
             memory.clone(),

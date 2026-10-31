@@ -6,6 +6,14 @@ use vesta_gpui_vulkan::{
     RendererError, RendererFault,
 };
 
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+enum RetryObservation {
+    #[default]
+    Unobserved,
+    BusyRejected,
+    WorkerFinished,
+}
+
 #[derive(Default)]
 pub(super) struct State {
     pending: HashMap<WindowId, RendererError>,
@@ -21,7 +29,7 @@ pub(super) struct State {
     fixture_started: bool,
     cancel_sent: bool,
     pause_observed: bool,
-    retry_rejected_busy: bool,
+    retry_observation: RetryObservation,
     retries: u32,
     closed_fixture: bool,
     closed_results: u32,
@@ -50,13 +58,17 @@ impl State {
             }
             if render_backend::recovery_retry_enabled() {
                 eprintln!(
-                    "UI-R05 retry: paused={} busy_retry_rejected={} explicit_retries={}",
-                    self.pause_observed, self.retry_rejected_busy, self.retries
+                    "UI-R05 retry: paused={} busy_retry_rejected={} explicit_retries={} worker_finished_before_retry={}",
+                    self.pause_observed,
+                    self.retry_observation == RetryObservation::BusyRejected,
+                    self.retries,
+                    self.retry_observation == RetryObservation::WorkerFinished
                 );
                 if !self.pause_observed
                     || self.retries != 1
-                    || (!std::env::args().any(|a| a == "--smoke-recovery-create-failure")
-                        && !self.retry_rejected_busy)
+                    || self.retry_observation == RetryObservation::Unobserved
+                    || (std::env::args().any(|a| a == "--smoke-recovery-timeout")
+                        && self.retry_observation != RetryObservation::BusyRejected)
                 {
                     return Err(
                         "recovery retry fixture did not preserve its pause/retirement gate".into(),
@@ -355,18 +367,25 @@ impl App {
                     if self.smoke && !render_backend::recovery_retry_enabled() {
                         self.fatal_error = Some("GPU recovery smoke failed or timed out".into());
                     }
-                    if render_backend::recovery_retry_enabled()
-                        && self
+                    if render_backend::recovery_retry_enabled() {
+                        let busy = self
                             .gpu_recovery
                             .job
                             .as_ref()
-                            .is_some_and(|job| !job.worker_finished())
-                    {
-                        self.retry_gpu();
-                        self.gpu_recovery.retry_rejected_busy = self.gpu_recovery.retries == 0;
+                            .is_some_and(|job| !job.worker_finished());
+                        self.gpu_recovery.retry_observation = RetryObservation::WorkerFinished;
+                        if busy {
+                            let before = self.gpu_recovery.retries;
+                            self.retry_gpu();
+                            if self.gpu_recovery.retries == before {
+                                self.gpu_recovery.retry_observation =
+                                    RetryObservation::BusyRejected;
+                            }
+                        }
                         eprintln!(
-                            "UI-R05 paused=true worker_finished=false retry_rejected_busy={}",
-                            self.gpu_recovery.retry_rejected_busy
+                            "UI-R05 paused=true worker_finished_at_observation={} retry_rejected_busy={}",
+                            !busy,
+                            self.gpu_recovery.retry_observation == RetryObservation::BusyRejected
                         );
                     }
                 }

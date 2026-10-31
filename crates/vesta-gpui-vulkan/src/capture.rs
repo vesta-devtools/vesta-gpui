@@ -14,7 +14,7 @@ use vulkano::{
     },
     format::Format,
     image::Image,
-    memory::allocator::{AllocationCreateInfo, MemoryTypeFilter, StandardMemoryAllocator},
+    memory::allocator::{AllocationCreateInfo, MemoryTypeFilter},
 };
 mod offscreen;
 
@@ -217,9 +217,7 @@ impl WindowRenderer {
         // Keep the sender installed even when allocation or recording fails.
         self.capture.queued = Some((region, sender));
         region.validate([image.extent()[0], image.extent()[1]])?;
-        let memory = Arc::new(StandardMemoryAllocator::new_default(
-            self.gpu.device.clone(),
-        ));
+        let memory = self.gpu.memory.clone();
         let buffer = Buffer::new_slice::<u8>(
             memory,
             BufferCreateInfo {

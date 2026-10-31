@@ -12,6 +12,7 @@ use vulkano::{
     command_buffer::allocator::StandardCommandBufferAllocator,
     device::{Device, Queue},
     instance::Instance,
+    memory::allocator::StandardMemoryAllocator,
     swapchain::SwapchainAcquireFuture,
 };
 
@@ -28,6 +29,7 @@ pub(crate) enum Owner {
         _device: Arc<Device>,
         _queue: Arc<Queue>,
         _commands: Arc<StandardCommandBufferAllocator>,
+        _memory: Arc<StandardMemoryAllocator>,
         released: Arc<AtomicBool>,
     },
 }
@@ -38,6 +40,7 @@ impl Owner {
             _device: gpu.device.clone(),
             _queue: gpu.queue.clone(),
             _commands: gpu.commands.clone(),
+            _memory: gpu.memory.clone(),
             released: gpu.release.0.clone(),
         }
     }

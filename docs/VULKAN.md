@@ -26,6 +26,19 @@ checked recording function is the only recording authority. The private
 single-scene tuple alias lives with single/batch scene admission. No public
 facade, event loop, task runtime, application state or author model is added.
 
+## Device memory ownership
+
+One private `StandardMemoryAllocator` belongs to each `GpuContext` device
+generation. Painters, scene rendering, framebuffer attachments, readback and
+offscreen targets borrow that Arc and own their actual allocations. Surface
+recovery retains the device allocator; Device recovery constructs a fresh one.
+The existing worker retirement owner retains the allocator until the context
+producer releases its fields. There is no separate pool service, per-window
+allocator or public allocator configuration. Vulkano 0.35.2 default block/type
+policy is preserved. [Decision 0030](decisions/0030-Device-Scoped-Vulkan-Memory-Ownership.md)
+records the measured ownership change. Private process commitment is distinct
+from GPU VRAM and allocator retention is not itself a leak.
+
 ## Construction, updates and recovery
 
 `RendererCreation::start` prepares instance/surface capabilities on the native
