@@ -12,6 +12,10 @@ Use **1–6** to switch between Orbit Study, Wave Field, Orbital Sphere, Double 
 
 The workspace, buttons, sliders, lists, focus/input and custom timeline graphics use public Vesta GPUI APIs. Geometry and animation are host-owned display previews. Keyframes and curves are read-only; author save/undo, object manipulation and export are outside this example. Read the local [source guide](GPUI-GUIDE.md), [view](src/view.rs), [state](src/model.rs) and [native host](src/app.rs).
 
+The retained [interface concept](design/interface-concept.png) is a design reference.
+It is not a native screenshot or evidence that the illustrated authoring features
+are implemented.
+
 ## Verification
 
 ```powershell

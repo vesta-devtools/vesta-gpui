@@ -1,8 +1,9 @@
 # Architecture and ownership
 
-This is the current implementation map. The [refinement programme](REFINEMENT.md)
-tracks remaining audits; this document does not assert that every API is already
-minimal. Changes to a boundary require a decision and its checks.
+This is the current implementation map. The [completed refinement programme](REFINEMENT.md)
+records the source and delivery evidence for its finite scope. The
+[repository review](REPOSITORY.md) records cleanup and retention decisions.
+Changes to a boundary require a decision and its checks.
 
 ## Libraries
 
@@ -76,8 +77,8 @@ and target-specific paths; native support is still Windows-preview scope.
    text geometry together; semantic publication cannot replace input geometry.
    These are host policies, not a new SDK state machine or scheduler. Current
    Builder budget/fault and native Catalog integration are qualified at their
-   recorded inputs. Final same-revision delivery is tracked only in GF06 of
-   [the current exit ledger](REFINEMENT.md).
+   recorded inputs. Completed same-revision delivery is recorded in GF06 of
+   [the programme ledger](REFINEMENT.md).
 5. The renderer retains only the resources needed by submitted work, then retires
    them through its existing owner. Submission, GPU completion and physical
    display are distinct facts. Recovery preserves caller-owned CPU state.
@@ -191,4 +192,5 @@ their migrations. Historical inventories retain their recorded scope; current
 support follows the capability contracts and actual exports. Reuse the existing
 text/layout/render engines and stable identities. Review evidence before merging
 packages or introducing a trait, runtime, task pool or additional authoritative
-state. Remaining programme and product-adoption exits stay in REFINEMENT.md.
+state. Programme completion and its exact product-adoption inputs stay in
+REFINEMENT.md; later source edits require their own affected checks.

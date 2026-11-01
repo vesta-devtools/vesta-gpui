@@ -1,6 +1,6 @@
 # Explicit architecture and refinement gates
 
-Status: Accepted; the refinement programme remains in progress.
+Status: Accepted; programme completion is recorded in [REFINEMENT.md](../REFINEMENT.md).
 Date: 2026-10-31.
 Base: 9e31f07d8dc4fa351418bc7321b4afff45783d0d.
 

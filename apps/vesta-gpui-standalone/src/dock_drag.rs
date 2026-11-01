@@ -9,13 +9,14 @@ use super::*;
 mod focus;
 pub(crate) use focus::DockFocusTransfer;
 
-// Geometry types the host reads by name; several are referenced only from the
-// host's test module, which `cargo check` does not compile.
-#[cfg_attr(not(test), allow(unused_imports))]
+// Keep the host's production surface separate from its regression fixtures.
 pub(crate) use vesta_gpui_workspace::{
-    DockDragVisual, DockDropTarget, DockFrame, DockPaneFrame, DockSplitFrame, DockTabFrame,
-    DockWindowGeometry, FloatingMoveDrag, WorkspaceTabDrag, dock_edge_preview, dock_split_ratio,
-    dock_tab_split_regions, route_dock_pointer,
+    DockDragVisual, DockDropTarget, DockFrame, DockSplitFrame, DockWindowGeometry,
+    FloatingMoveDrag, WorkspaceTabDrag, dock_split_ratio,
+};
+#[cfg(test)]
+pub(crate) use vesta_gpui_workspace::{
+    DockPaneFrame, DockTabFrame, dock_edge_preview, dock_tab_split_regions, route_dock_pointer,
 };
 use vesta_gpui_workspace::{
     finish_tab_drag_from, leave_tab_drag, tab_drag_visual, update_tab_drag,

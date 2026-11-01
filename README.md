@@ -80,9 +80,11 @@ Start with [structured UI access](docs/AGENT-ACCESS.md) and the API inventories:
 ## Maintain and release
 
 The [architecture map](docs/ARCHITECTURE.md) states dependency direction, state
-ownership and host responsibilities. The [refinement programme](docs/REFINEMENT.md)
-tracks the remaining API, lifecycle, frame and performance gates; its completion
-is separate from release or universal platform support.
+ownership and host responsibilities. The [repository review](docs/REPOSITORY.md)
+explains the retained libraries, examples and validation tools. The
+[completed refinement programme](docs/REFINEMENT.md) records its API, lifecycle,
+frame, performance and delivery evidence. Programme completion is separate from
+release or universal platform support.
 
 The repository is maintained directly as one versioned family. Use its normal
 default Cargo target and pinned lockfile; no other product checkout or compiled

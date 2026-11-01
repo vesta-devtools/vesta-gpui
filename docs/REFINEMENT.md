@@ -1,14 +1,19 @@
 # Concise and reliable framework programme
 
-Requested: 2026-10-31. Current reconciliation: 2026-11-01. Status: Active.
+Requested: 2026-10-31. Completed: 2026-11-01. Status: Complete at the recorded inputs.
 Authority: this repository. Decision: [0006](decisions/0006-Explicit-Architecture-And-Refinement-Gates.md).
 Qualified runtime revision: ac13b9068a51ba47060c3f1d4a1e83224d582926.
+Final programme delivery: 40b8be17aef619547d13dfcbed45e64bef161162.
 
-This is the current finite exit ledger. [The historical checkpoints](REFINEMENT-HISTORY.md)
-preserve the preceding document byte for byte, including its original failures,
-input identities and then-open work. A historical remaining item is not a second
-current backlog. Final source identity and product adoption are still open below;
-this reconciliation does not declare the programme complete.
+All six finite gates closed in the final delivery audit. The
+[historical checkpoints](REFINEMENT-HISTORY.md) preserve the preceding document
+byte for byte, including original failures, input identities and then-open work.
+The completion audit and final checkpoint are retained locally under
+`target/research/framework-final-docs-20261101/`; the consuming product retains
+matching receipts under `D:/Vesta/target/research/gpui-final-adoption-20261101/`.
+The source and exact CI below identify the completed programme. Later maintenance
+edits, including this status reconciliation, require their own source seal and
+affected checks; they do not inherit a CI result for changed bytes.
 
 ## Completion standard
 
@@ -25,14 +30,14 @@ Core algorithm, physical interaction, Reader behavior or a whole product release
 
 ## Current exits
 
-| Gate | Required result | Current evidence and remaining work |
+| Gate | Required result | Completion evidence |
 | --- | --- | --- |
 | GF01 — Architecture authority | Current eight-library graph; unique state/lifecycle ownership; resolved normal/build dependency policy including optional, target and transitive paths | Qualified locally. Architecture map, full-feature metadata and maintained corruption checks enforce the boundaries. No new package boundary or dependency was needed. |
 | GF02 — API and module reduction | Review every existing public family and caller; remove demonstrated forwarding/duplicate authorities; preserve necessary interfaces and migrations | Qualified locally for all eight families in the ledger below. One App still owns each example; public error interoperability, capability support and migrations have one authority. |
-| GF03 — Frame and layout contract | One coherent reconciliation/invalidation/publication contract across Main, Float and real consumers; bounded budget; text/scroll/hit/paint agreement; deferral and loss | Qualified at recorded inputs. Standalone and Agent budget/deferral cases, Builder budget/device/surface recovery, one widget-plus-Dock candidate and actual native Catalog creation/cancellation/reconfiguration pass. Final same-revision product delivery remains GF06. |
+| GF03 — Frame and layout contract | One coherent reconciliation/invalidation/publication contract across Main, Float and real consumers; bounded budget; text/scroll/hit/paint agreement; deferral and loss | Qualified at recorded inputs. Standalone and Agent budget/deferral cases, Builder budget/device/surface recovery, one widget-plus-Dock candidate and actual native Catalog creation/cancellation/reconfiguration pass. Final same-revision product delivery is recorded in GF06. |
 | GF04 — Interaction and lifecycle | Resolve concrete input/text/IME/focus/popup/selection/resource findings; explicit cancellation, transport and release limits; retain accepted scenarios | Qualified at recorded inputs. Click/shared-preview retirement, bounded stdio waits, window/text ownership, WebView disposal, rejected/fresh capture outcomes and terminal allocator/context leases have actual regression evidence. Catalog pending Escape is reproduced and repaired through the existing dismissal owner. |
 | GF05 — Performance and diagnostics | Reproducible static/resize/edit/collection work; capture modes and cost; bounded retention/idle; repair measured bottlenecks using equivalent work | Qualified at recorded inputs. Four CPU workloads, six balanced cost runs, bounded native Main/Float collection/idle matrices, allocator-only ABBA and same-Model consumer projection comparison retain raw samples and limitations. Shared capture is actually collected by both consumers. |
-| GF06 — Usability and delivery | Minimal reusable host; capability-oriented matching contracts; clean feature checks/CI; final source seal; Vesta consumes that same immutable revision | Runtime ac13 has the recipe, current 236-contract qualification and exact green CI. Root's eight selectors/lock and its one Git checkout match ac13; 16 consumers compile all targets, ordinary Builder/Agent produce actual PNG/trace and retire. This final documentation reconciliation still needs its own source seal/tool/link qualification, publication/exact CI and same-final-revision consumer coordination. The programme remains active until those exits are proved. |
+| GF06 — Usability and delivery | Minimal reusable host; capability-oriented matching contracts; clean feature checks/CI; final source seal; Vesta consumes that same immutable revision | Complete at 40b8be17. The unchanged ac13 runtime retains its 236-contract qualification. The final 494-file source seal, documentation/tool qualification and exact successful CI41223179970 are recorded. Root's eight selectors/lock and one byte-equal checkout use 40b8; all 16 consumers compile at frozen inputs, ordinary Builder/Agent produce actual PNG/trace and retire, and final process/lock cleanup is verified. |
 
 Qualified means the stated scope and recorded environment, not a claim that future
 edits or every native interaction are covered. An actual relevant implementation,
@@ -68,7 +73,7 @@ failed observations. Never rewrite an original receipt into a successor pass.
 | Requirement | Authoritative evidence inspected for this reconciliation |
 | --- | --- |
 | Current runtime/software identity | target/research/gpu-allocation-lease-20261031/full01/qualification.json and checkpoint-final.json: 236 contracts / 39 harnesses, two compile-fail docs, all/base strict, tool groups, format and ordinary Standalone/Motion; frozen runtime inputs match ac13. |
-| Exact remote CI and process cleanup | The same directory's delivery01, ci08 and post01: ac13 main/origin, exact CI41216612630 success, 493-file source tree dcf9bb7b, 56 registered identities/direct families retired and both SDK standard locks free. |
+| Exact final source and remote CI | target/research/framework-final-docs-20261101/: final revision 40b8be17, 494 sealed files with tree 1f30db9756f6d8998a500892729689f148d6aa5247326e9d73f823fa916fc140, documentation/tool checks and [CI41223179970](https://github.com/vesta-devtools/vesta-gpui/actions/runs/41223179970) success at that exact revision. The earlier ac13 CI and cleanup retain their historical identities. |
 | Main/Float bounded frame preparation | target/research/frame-settlement-20261031 and the historical GF03 section: original geometry/budget/capture failures, source-bound successors and actual successful later submissions. |
 | Real Agent and Builder integration | D:/Vesta/Docs/Research/Evidence/agent-input-projection-20261031/qualification.json and D:/Vesta/target/research/builder-renderer-loss-20261031/checkpoint01.json: controlled budget/deferral, typed device/surface recovery and ordinary restore. |
 | One consumer candidate | D:/Vesta/target/research/builder-projection-20261031/checkpoint01.json and paired03/analysis.json: 32 existing contracts, strict, 560 samples / 140 equivalent steps with actual stable identities and both locales/themes. |
@@ -77,14 +82,16 @@ failed observations. Never rewrite an original receipt into a successor pass.
 | CPU capture costs and limits | target/research/ui-workloads-20261031 and [the performance procedure](PERFORMANCE.md): 6,912 pipeline frames / 288 traces, same work signatures, disabled idle and overflow/deadline ownership; slow/noisy observations retained. |
 | Native collection/idle/resources | target/research/native-collection-cost-20261031/checkpoint-final.json: 1,536 equivalent collection-matrix frames plus 1,024 allocator-only ABBA frames, fixed registered-font identities, actual ordinary idle and exact-process sampling. |
 | Minimal reusable native host | target/research/native-host-recipe-20261031/checkpoint-final.json and [HOSTING](HOSTING.md): five real native width steps, logical edit/Undo, geometry agreement, normal GPU retirement and reusable public API composition. |
-| Current consumer resolution | D:/Vesta/target/research/builder-catalog-factory-20261031/adopt02 and consumers04: eight immutable ac13 package sources in one byte-equal Git checkout; all 15 production plus one direct-test consumer compile all targets with unchanged captured inputs. |
-| Ordinary actual consumers | The product checkpoint records Builder321f6bfc / PID50828 with two PNGs and 403 native frames, Agent1b179eb1 / PID28824 with 11 trace frames / 10 submissions, normal exits/GPU retirement, five rejected private flags, and 107 retired identities/direct families. |
+| Final consumer resolution | D:/Vesta/target/research/gpui-final-adoption-20261101/adopt01, cache02.json and consumers02: eight immutable 40b8 package sources in one byte-equal Git checkout; all 15 production plus one direct-test consumer compile all targets with unchanged captured inputs. |
+| Ordinary actual consumers and cleanup | The same final delivery's normal03, buildernative01, agentstandard01 and cleanup-final.json record source-stable standard builds, Builder5c2ff926 / PID29488 with two PNGs and 420 native frames, Agent654bd5e6 / PID67940 with 11 trace frames / 10 submissions, normal exits/GPU retirement, five rejected private flags, 103 retired registration records/direct families and both executable locks free. |
 
-The last ordinary product build exits0 but has one concurrent foreign SOP
-edge-selection source change. Its UI slice and recorded PEs are qualified;
-full_current_product_source_qualified remains false. The 16-consumer compile is
-separate, current captured-source evidence. Neither statement overwrites the
-other or certifies unfinished domain/Agent capabilities.
+The two earlier final-delivery builds exited0 with source drift and remain
+failed qualification inputs in the final checkpoint. The normal03 successor
+qualified its unchanged captured sources: 32 compiled local packages / 2,861
+inputs. The separate 16-consumer compile captured 40 dependency packages / 3,526
+inputs. These are the programme's recorded integration inputs; subsequent product
+changes require their own validation and do not rewrite these receipts or certify
+unfinished domain/Agent capabilities.
 
 ## Performance interpretation
 
@@ -102,21 +109,18 @@ The change removes demonstrated duplicate work; it does not establish a fixed
 native improvement percentage. Use the existing recorder as the sole call-tree
 and self-time analyzer.
 
-## Final remaining delivery actions
+## Completed final delivery
 
-1. Qualify and seal this documentation-only reconciliation against the unchanged
-   ac13 runtime. Verify links, inventory, current graph and matching published API
-   documentation. Preserve the old plan byte for byte and prove the source delta.
-2. Publish the exact final source revision and observe its own completed CI;
-   ac13's green cannot qualify changed documentation/source identity by itself.
-3. Coordinate Vesta's eight selectors/lock and one Git checkout to that final
-   immutable revision. Respect the current Root UI/source update owner and live
-   handles. Verify consumer/build identities, actual standard-program adoption
-   and cleanup. Retain already-qualified native scenes when runtime bytes and
-   relevant environment are unchanged; document directed successor requirements.
-4. Audit every row and requirement from evidence before completing the goal.
-   Any uncertain or insufficient proof remains open; no source seal, status text
-   or narrow fixture can substitute for the stated gate.
+1. Final documentation, source inventory, graph and matching API links were
+   qualified. The historical plan remains unchanged; runtime equivalence is
+   recorded separately from the changed source identity.
+2. Revision 40b8be17 was published and its own completed CI succeeded. The ac13
+   runtime qualification and superseded cancelled CI remain separate records.
+3. Vesta's eight selectors/lock and one checkout adopted that exact revision.
+   Frozen consumer/build inputs, actual standard-program collection and normal
+   process retirement were qualified, then source/update ownership was released.
+4. The final completion audit proved all six gates and preserved all 22 prior
+   requirements without shrinking the original programme scope.
 
 ## Preserved acceptance and scope limits
 

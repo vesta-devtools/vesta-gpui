@@ -1,6 +1,6 @@
 # Vesta Motion：GPUI 应用示例导读
 
-从[示例入口](../../README.md#vesta-motion)或[运行说明](README.md)进入。本文解释现有实现怎样组合公共 GPUI 能力，应用代码的唯一入口是本目录的 Cargo package `vesta-motion`。
+从[示例入口](../../README.md#run-the-examples)或[运行说明](README.md)进入。本文解释现有实现怎样组合公共 GPUI 能力，应用代码的唯一入口是本目录的 Cargo package `vesta-motion`。
 
 ## 从可见界面找到实现
 

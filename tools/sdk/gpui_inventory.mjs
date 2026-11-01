@@ -1,4 +1,4 @@
-// Shared source enumeration for the public verifier and the trusted worker.
+// Maintained source enumeration for the independent source seal and verifier.
 import { lstatSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 

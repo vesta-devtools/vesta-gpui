@@ -9,7 +9,7 @@ qualification reserves about 25 GiB of disk as an estimate and uses four Cargo
 jobs. Actual usage and command exits belong in the qualification record.
 
 ```powershell
-node --test tools/sdk/gpui_source.test.mjs tools/verify/gpui_profile.test.mjs
+node --test tools/sdk/gpui_source.test.mjs tools/verify/gpui_profile.test.mjs tools/verify/architecture.test.mjs tools/verify/ui_workloads.test.mjs tools/verify/viewport_scene.test.mjs
 node tools/sdk/gpui_source.mjs --verify .
 cargo build --locked --workspace --all-targets --all-features -j 4
 cargo test --locked --workspace --all-targets --all-features -j 4

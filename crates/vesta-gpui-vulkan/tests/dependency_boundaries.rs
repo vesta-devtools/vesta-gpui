@@ -19,9 +19,9 @@ fn renderer_does_not_depend_on_other_backends_or_author_models() {
     }
     assert!(manifest.contains("viewport = [\"dep:vesta-viewport\"]"));
     assert!(manifest.contains("vesta-viewport = { workspace = true, optional = true }"));
-    // ADR-0544's opt-in transfer measurement uses compute/author crates only
-    // in dev-dependencies. Check the actual production graph, including the
-    // optional viewport, so that transitive renderer leaks still fail.
+    // Check the resolved production graph, including the optional viewport,
+    // separately from the host-only dependencies used by native examples.
+    // Transitive renderer leaks must fail even when absent from this manifest.
     let output = Command::new(env!("CARGO"))
         .args([
             "tree",
