@@ -1,6 +1,6 @@
 # Vesta Trace delivery plan
 
-Requested and started: 2026-11-01. Status: Active.
+Requested and started: 2026-11-01. Status: Finite VT01–VT06 delivery qualified, 2026-11-03.
 Decision: [0034](decisions/0034-Native-Trace-Analysis-Application.md).
 Agent evidence contract: [0035](decisions/0035-Agent-First-Trace-Evidence-Queries.md).
 GPU capture ownership: [0036](decisions/0036-Capture-Owned-Gpu-Submission-Evidence.md).
@@ -19,11 +19,11 @@ the same analysis as the native viewer. A GUI-only analyzer does not pass.
 | Gate | Required exit | Current state |
 | --- | --- | --- |
 | VT01 — Session and ownership | Standalone application boundary; versioned JSON/HTML data import; strict identity/clock/numeric admission; visible loss/nesting/unframed diagnostics; unchanged original input | CPU-v2 JSON/HTML plus optional capture-schema-1 GPU admission qualified. Corrupt clock/identity/frame joins and invalid timestamp/wrap arithmetic reject; original byte provenance is retained. |
-| VT02 — Native timeline | Real GPUI window with frame overview, ruler, multiple thread tracks, nested slices and counters; zoom/pan/fit; accurate event/range selection; filtering/search and keyboard access | Navigation04 covers committed/preview range, zoom/pan/fit/resize. Focus05 adds table/track keyboard reachability, search ownership, busy logical-focus retention, paging-preserving view scroll, and source-bound platform-node/pointer retirement. GPU keyboard and shared assistive text/actions retain scoped evidence; final release audit remains. |
-| VT03 — Analysis | Deterministic range clipping; calls/inclusive/self totals; caller/callee hierarchy; frame distribution and slow-frame navigation; cancelled/stale work never publishes; versioned Agent queries with stable evidence drill-down | Seventeen contracts remain current. navigation04 adds 38 schema-validated queries comparing actual presented native ranges/totals/whole-frame percentiles against independent original-file arithmetic. Preview and committed reports stay distinct. Caller/callee, source-key and stale-job evidence retains its recorded scope; final requirement audit remains. |
-| VT04 — Scale and lifecycle | Bounded off-UI import/analysis and cancellation; visible-row/event rendering; large-session correctness/cost evidence; stable selection and focus across resize/reload; normal renderer and worker cleanup; bounded machine requests and source/query-bound paging | Indexed projection and the unchanged 808,000-event fixture retain cost evidence. Lifecycle03 covers missing/malformed input, observed cancellation/stale replies, source-bound rollback and pending close. Panel-import01 additionally repairs and verifies pending-panel intent across reload with fifty focused images. Final-software02 and final-native01 close local checks and current executable cleanup; the final requirements audit remains. |
-| VT05 — Capture correlation | Named frame/window/thread tracks; explicit cross-thread relationships when recorded; genuine device/submission samples and clock-domain handling; unsupported capabilities remain explicit | Automatic capture-owned timestamps and CPU frame/window/thread joins qualified. Original 25-sample evidence is retained; gpu-multi-recovery02 adds 80 actual samples across two windows and controlled Surface/Device restoration, 160 exact high ticks and 45 machine queries. Window identity stays stable as renderer timestamp generations change. CPU/device clocks remain uncalibrated and unavailable relationships explicit. Final release requirement audit remains. |
-| VT06 — Consumer delivery | Agent/Builder capture-save-open integration using the independent analyzer; discoverable generated machine schemas and real-capture Agent diagnosis workflow; current source and standard executable identities; actual native acceptance and all affected software/feature checks; documentation and cleanup | Root CPU capture/export and explicit machine capability have actual admission and diagnosis evidence. Path/external-recorder hardening is now SourceReady with focused contracts and strict checks, but its final host runtime is pending. Current SDK local software/native and forty-five GPU machine-query checks pass. Immutable source/public CI, SDK adoption and final host capture-save-query/Open delivery remain. |
+| VT02 — Native timeline | Real GPUI window with frame overview, ruler, multiple thread tracks, nested slices and counters; zoom/pan/fit; accurate event/range selection; filtering/search and keyboard access | Qualified. Navigation04 covers committed/preview range, zoom/pan/fit/resize. Focus05 adds table/track keyboard reachability, search ownership, busy logical-focus retention, paging-preserving view scroll, and source-bound platform-node/pointer retirement. GPU keyboard and shared assistive text/actions retain scoped evidence; final audit below preserves those identities. |
+| VT03 — Analysis | Deterministic range clipping; calls/inclusive/self totals; caller/callee hierarchy; frame distribution and slow-frame navigation; cancelled/stale work never publishes; versioned Agent queries with stable evidence drill-down | Qualified. Seventeen contracts remain current. navigation04 adds 38 schema-validated queries comparing actual presented native ranges/totals/whole-frame percentiles against independent original-file arithmetic. Preview and committed reports stay distinct. Caller/callee, source-key and stale-job evidence retains its recorded scope; final audit below also joins actual consumer diagnosis. |
+| VT04 — Scale and lifecycle | Bounded off-UI import/analysis and cancellation; visible-row/event rendering; large-session correctness/cost evidence; stable selection and focus across resize/reload; normal renderer and worker cleanup; bounded machine requests and source/query-bound paging | Qualified. Indexed projection and the unchanged 808,000-event fixture retain cost evidence. Lifecycle03 covers missing/malformed input, observed cancellation/stale replies, source-bound rollback and pending close. Panel-import01 repairs and verifies pending-panel intent across reload with fifty focused images. Final-software02 and final-native01 close local checks and current executable cleanup; final audit below preserves synthetic cost limits. |
+| VT05 — Capture correlation | Named frame/window/thread tracks; explicit cross-thread relationships when recorded; genuine device/submission samples and clock-domain handling; unsupported capabilities remain explicit | Qualified. Automatic capture-owned timestamps and CPU frame/window/thread joins retain original 25-sample evidence; gpu-multi-recovery02 adds 80 actual samples across two windows and controlled Surface/Device restoration, 160 exact high ticks and 45 machine queries. Window identity stays stable as renderer timestamp generations change. CPU/device clocks remain uncalibrated and unavailable relationships explicit; final audit below retains this scope. |
+| VT06 — Consumer delivery | Agent/Builder capture-save-open integration using the independent analyzer; discoverable generated machine schemas and real-capture Agent diagnosis workflow; current source and standard executable identities; actual native acceptance and all affected software/feature checks; documentation and cleanup | Qualified at immutable SDK 3bd9798 with exact successful CI, eight-pin adoption, guarded standard two-host builds, six actual admission/ownership cases, four real-capture Agent diagnosis workflows / sixty query pairs, and actual native capture-save-Open from both hosts. Final audit below closes the finite delivery; preserved failures remain failures. |
 
 These gates are independently reported. Completing a parser, a mock timeline or
 an automated scene does not complete the application or GPU/host integration.
@@ -49,13 +49,44 @@ workflow must succeed without screenshots, UI clicks or dumping the whole captur
 into a model context. Native viewing uses the same analysis; it does not replace
 this machine contract. No new model provider or separate analysis engine is needed.
 
-Import/cancellation, multi-window GPU recovery, focused scale acceptance and the
-local full software checklist now have evidence below. The next release cursor is
-final consuming-host runtime qualification, current source seal and immutable
-delivery/adoption, followed by the six-gate requirements audit. Root's narrow
-path/recorder ownership hardening is SourceReady, not runtime qualified. Retain
-prior evidence at its original source identity; use final-native01 for the current
-standard analyzer identity rather than historical focus05 or GPU executables.
+All six finite gates now have qualified evidence. The final audit joins the
+unchanged VT01–VT05 source/native evidence to actual immutable delivery and
+consumer runtime qualification; it does not rerun previously passed scenes.
+The current runtime authority is published SDK
+`3bd9798ca7a1e8ee981728613ee14c48f364ee26`, exact successful Windows CI
+41481525315, standard analyzer `794d379c`, and the consuming workspace's
+`target/research/vesta-trace-consumers-20261103/completion01/qualification.json`.
+The earlier remaining-work paragraphs below retain their original chronology.
+This final documentation update does not change runtime bytes or the consumer
+pin, and does not overwrite the original sealed rc.2 archive or its receipts.
+Retain earlier evidence at its original source identity; use final-native01 for
+the current standard analyzer rather than historical focus05 or GPU executables.
+
+Final consumer evidence, 2026-11-03: software06 passes the related three-package
+contracts (128 passed / four pre-existing ignored) and strict all-feature checks,
+with 4,755 guarded inputs unchanged. build02 produces current standard Agent
+`9624bb8f` and Builder `702a4568`. runtime-combined01 retains five completed
+runtime02 cases and supplements only Builder external ownership from runtime03;
+the controller's original host-envelope assertion failure remains preserved.
+The earlier Agent launch-argument rejection exposed a missing SDK launch adapter
+and was fixed before these builds and cases. No capture semantics were copied.
+
+diagnosis-root01 performs sixty bounded, schema-validated query pairs on four
+actual captures, independently checking clipped inclusive/self arithmetic,
+whole-frame statistics, original events/relationships/counters, and 82 GPU
+samples / 164 exact high ticks and CPU frame associations. native01 actually
+opens the standard analyzer from each host and records ten genuine images in
+total. Its 10 and 9 GPU samples plus one explicit Builder pending record retain
+the raw outcomes. Workers, GPU owners and registered test processes retire;
+the three standard executables pass exclusive-open/hash checks without writes.
+
+The finite scope remains recorded-stage UI diagnosis with shared native/Agent
+analysis. Full-function sampling, calibrated CPU/device clocks, physical GPU
+failure, complete Unreal Insights suite parity, product-wide Agent/Builder
+acceptance, Reader and cross-monitor DPI are not newly signed. Formal 0.1.0
+tag/registry publication is separate from this completed implementation goal.
+
+Earlier qualification history:
 Evidence:
 `target/research/vesta-trace-20261101/check02/qualification.json` and
 `cleanup02.json`; four contract tests, strict app Clippy, three historical inputs

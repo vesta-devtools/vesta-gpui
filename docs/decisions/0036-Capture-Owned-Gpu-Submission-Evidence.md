@@ -1,6 +1,6 @@
 # Capture-owned GPU submission evidence
 
-Status: Accepted; scoped capture/native qualification complete; full delivery active.
+Status: Accepted; scoped capture/native and finite consumer delivery qualified, 2026-11-03.
 Date: 2026-11-02.
 Extends: [0034](0034-Native-Trace-Analysis-Application.md),
 [0035](0035-Agent-First-Trace-Evidence-Queries.md).

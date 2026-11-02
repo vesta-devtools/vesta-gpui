@@ -1,6 +1,6 @@
 # Native trace analysis application
 
-Status: Accepted; implementation and acceptance remain in progress.
+Status: Accepted; finite implementation and acceptance qualified, 2026-11-03.
 Date: 2026-11-01.
 Base: 5260c71452c51cc9d2b8d3b6edbb8fff905a2f33.
 

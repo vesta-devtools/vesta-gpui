@@ -1,6 +1,6 @@
 # Agent-first trace evidence queries
 
-Status: Accepted; implementation and acceptance in progress.
+Status: Accepted; finite implementation and real-capture Agent workflow qualified, 2026-11-03.
 Date: 2026-11-01.
 Extends: [0034](0034-Native-Trace-Analysis-Application.md).
 

@@ -1,6 +1,6 @@
 # Transactional native trace work and cancellation
 
-Status: Accepted; scoped implementation and finite acceptance complete; full delivery active.
+Status: Accepted; scoped implementation and finite consumer delivery qualified, 2026-11-03.
 Date: 2026-11-02.
 
 The native host currently conflates import, analysis and finite image export in

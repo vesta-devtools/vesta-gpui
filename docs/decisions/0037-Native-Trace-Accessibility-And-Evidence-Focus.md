@@ -1,6 +1,6 @@
 # Native trace accessibility and evidence focus
 
-Status: Accepted; implementation and acceptance in progress.
+Status: Accepted; finite implementation and acceptance qualified, 2026-11-03.
 Date: 2026-11-02.
 
 The Trace application already uses shared controls and text editing, but has no

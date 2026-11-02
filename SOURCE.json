@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "962f89a336b4ac63d6a746cc570c37f31e281501783abeffe651fd1a0b6575cd",
+  "tree_sha256": "5dcf38a671956505627a3954645298025115f651820a92b27dc6e64d0b0298a8",
   "files": [
     {
       "path": ".gitattributes",
@@ -2400,8 +2400,8 @@
     },
     {
       "path": "docs/TRACE-PLAN.md",
-      "bytes": 39860,
-      "sha256": "04206a56e59b5a7bce3918490ae1216d27485f9f00af9a131d914076f1e85053"
+      "bytes": 41918,
+      "sha256": "062064c646e9fc72f4e562b6ecb861736b7506ed6a7a28821e07278bee1e20a2"
     },
     {
       "path": "docs/TRACING.md",
@@ -2605,28 +2605,28 @@
     },
     {
       "path": "docs/decisions/0034-Native-Trace-Analysis-Application.md",
-      "bytes": 3191,
-      "sha256": "82be118b1c167754712680561f02a248815164c684760cc506ad5c1bc00fb7d7"
+      "bytes": 3201,
+      "sha256": "6eafbeda62cbc4107edaa522ed9159627926c24675af3c258e1314fb51dc384f"
     },
     {
       "path": "docs/decisions/0035-Agent-First-Trace-Evidence-Queries.md",
-      "bytes": 2771,
-      "sha256": "64f90219b16bf66cc1594f8bea80e00e66ad6fddb8f654ad317cbabaf6d7ee3e"
+      "bytes": 2805,
+      "sha256": "759108320cb3ae6220379b82baade741f895eb28fa94fca206ffe589742d49d5"
     },
     {
       "path": "docs/decisions/0036-Capture-Owned-Gpu-Submission-Evidence.md",
-      "bytes": 3355,
-      "sha256": "4fe483c961c5d321bbcffda6d41b9f62ed612847aeb682890786417c6643f1d1"
+      "bytes": 3361,
+      "sha256": "b148df80cdafa7bc64ab163b12f3de42d41ab8b758aea0e26abeba3ec704e10e"
     },
     {
       "path": "docs/decisions/0037-Native-Trace-Accessibility-And-Evidence-Focus.md",
-      "bytes": 4286,
-      "sha256": "a163845c3d12845fdac67ead9377123f92808fde3e0fd567681736df5a2de47d"
+      "bytes": 4303,
+      "sha256": "465d76b5e7eed76eb8506478f7064fcf433d423f703f099dd4f6f695973b2f5a"
     },
     {
       "path": "docs/decisions/0038-Transactional-Native-Trace-Work-And-Cancellation.md",
-      "bytes": 2861,
-      "sha256": "4077abbf1752878b06ac13a97d6f7fdafb3753db97609682673131f3d0666be3"
+      "bytes": 2859,
+      "sha256": "5e08c7200c1a90127f4d9049397131febdc0aecd18a8186ca46f6dfd9131475a"
     },
     {
       "path": "release/0.1.0-rc.1.md",
