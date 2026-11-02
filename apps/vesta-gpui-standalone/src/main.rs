@@ -499,6 +499,7 @@ struct App {
     workspace_resize: Option<vesta_gpui_workspace::SplitResizeSession>,
     demo: DemoState,
     smoke: bool,
+    hidden_smoke_started: Option<Instant>,
     document_smoke: window_documents::Smoke,
     rendered_frames: u64,
     frame_meter: FrameMeter,

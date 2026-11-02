@@ -10,6 +10,18 @@ or manual input and keep normal application entry points unchanged.
 
 ## Frame settlement probe
 
+The separate private `--smoke --smoke-hidden --smoke-floating --smoke-frames=12`
+scenario keeps both windows hidden/nonactive. A finite 30-second driver delivers
+redraw through the ordinary host event path, preserving frame limits, recovery
+and shutdown checks. It saves no workspace/preferences and requires no OS input.
+It may use `--trace-ui=<new-file.json>` for actual CPU/GPU evidence. Existing
+`--smoke-surface-loss` / `--smoke-device-loss` require a build with
+`--features gpu-fault-injection`; restore the ordinary standard build afterward.
+These inject recovery notifications after real submissions on a healthy GPU,
+not physical device loss. [Trace delivery evidence](../../docs/TRACE-PLAN.md)
+records the native/machine association checks. This is separate from the original
+128-step frame-settlement probe below and does not qualify Reader/DPI/input.
+
 From the SDK root, build the standard program, then select a new report path:
 
 ```powershell

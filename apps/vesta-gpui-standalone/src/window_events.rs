@@ -478,6 +478,12 @@ impl App {
                             if let Err(error) = self.gpu_recovery.report() {
                                 self.fatal_error = Some(error);
                             }
+                            if render_backend::hidden_smoke() {
+                                eprintln!(
+                                    "Standalone hidden smoke: windows={} visible=false focused=false command_origin=true",
+                                    1 + self.native_windows.len()
+                                );
+                            }
                             event_loop.exit();
                         }
                     } else if std::env::args().any(|a| a == "--smoke-floating") {

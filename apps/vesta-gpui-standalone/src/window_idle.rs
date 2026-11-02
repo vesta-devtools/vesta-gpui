@@ -80,6 +80,46 @@ impl App {
         self.request_redraw();
     }
 
+    fn drive_hidden_smoke(&mut self, event_loop: &ActiveEventLoop) {
+        let now = Instant::now();
+        let started = *self.hidden_smoke_started.get_or_insert(now);
+        if now.duration_since(started) >= Duration::from_secs(30) {
+            self.fatal_error = Some("standalone_hidden_smoke_timeout".into());
+            event_loop.exit();
+            return;
+        }
+        let windows = self
+            .window
+            .iter()
+            .map(|w| w.as_ref())
+            .chain(self.native_windows.values().map(|h| h.window.as_ref()));
+        if windows
+            .into_iter()
+            .any(|w| w.is_visible() != Some(false) || w.has_focus())
+        {
+            self.fatal_error = Some("standalone_hidden_smoke_became_visible_or_focused".into());
+            event_loop.exit();
+            return;
+        }
+        // Windows does not promise paint events for invisible HWNDs. Deliver
+        // redraw through the existing host event path, preserving its frame
+        // limits, recovery transitions and ordinary exit/retirement checks.
+        let main = self.window.as_ref().map(|w| w.id());
+        if let Some(id) = main {
+            self.dispatch_window_event(event_loop, id, WindowEvent::RedrawRequested);
+        }
+        let floating: Vec<_> = self.native_windows.keys().copied().collect();
+        for id in floating {
+            if event_loop.exiting() {
+                break;
+            }
+            self.dispatch_window_event(event_loop, id, WindowEvent::RedrawRequested);
+        }
+        if !event_loop.exiting() {
+            event_loop.set_control_flow(ControlFlow::WaitUntil(now + Duration::from_millis(16)));
+        }
+    }
+
     pub(super) fn wait_for_windows(&mut self, event_loop: &ActiveEventLoop) {
         let native_capture_deadline = self.native_capture_deadline(event_loop);
         if self.fatal_error.is_some() {
@@ -173,6 +213,10 @@ impl App {
             return;
         }
         self.sync_native_windows(event_loop);
+        if render_backend::hidden_smoke() {
+            self.drive_hidden_smoke(event_loop);
+            return;
+        }
         if self.drive_frame_reflow_probe(event_loop) {
             return;
         }

@@ -814,7 +814,7 @@ fn reconfigure_targets(
         let surface = renderer.swapchain.surface().clone();
         let recreations = renderer.recreations;
         let cpu_profiling = renderer.cpu_profiling;
-        let gpu_profiling = renderer.gpu_profile.is_some();
+        let gpu_profiling = renderer.gpu_profiling_requested;
         #[cfg(feature = "viewport")]
         let scene_frames = renderer.scene_frames;
         #[cfg(feature = "fault-injection")]

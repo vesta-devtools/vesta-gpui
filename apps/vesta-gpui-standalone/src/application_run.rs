@@ -221,7 +221,7 @@ impl ApplicationHandler<UserEvent> for App {
             .with_title(self.demo.locale.window_title())
             .with_decorations(!cfg!(target_os = "windows"))
             .with_visible(false)
-            .with_active(!frame_reflow_probe::requested())
+            .with_active(!frame_reflow_probe::requested() && !render_backend::hidden_smoke())
             .with_inner_size(LogicalSize::new(initial_width, 800.0))
             .with_min_inner_size(LogicalSize::new(400.0, 600.0));
         #[cfg(target_os = "windows")]
@@ -249,7 +249,9 @@ impl ApplicationHandler<UserEvent> for App {
         ) {
             Ok(gpu) => {
                 self.demo.viewport3d_available = true;
-                window.set_visible(!frame_reflow_probe::requested());
+                window.set_visible(
+                    !frame_reflow_probe::requested() && !render_backend::hidden_smoke(),
+                );
                 self.frame_profile.report_native_geometry(
                     STANDALONE_WINDOW,
                     NativeGeometryEvent::Created,

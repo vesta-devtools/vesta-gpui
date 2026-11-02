@@ -3,7 +3,8 @@
 A Rust UI foundation for native desktop tools, with shared layout, text/input,
 widgets, winit/Vulkan integration and opt-in structured UI access for authorized
 Agent integrations. The maintained family contains eight libraries and two
-application examples. No Vesta product, Graph runtime or model account is needed.
+application examples, plus an independent [native trace analyzer](apps/vesta-trace/README.md)
+under active development. No Vesta product, Graph runtime or model account is needed.
 
 The published source baseline is **0.1.0-rc.1**, targeting Windows x86-64 with
 Rust 1.89.0 / Edition 2024. The next source candidate is described in the

@@ -125,6 +125,9 @@ impl Submission {
         self.command
             .flush()
             .map_err(|e| RendererError::caused_by("submit", e))?;
+        if let Some(timestamp) = &mut self.gpu_timestamp {
+            timestamp.submitted();
+        }
         self.presentation = Some(self.command.clone().then_swapchain_present(queue, info));
         let presentation = self
             .presentation

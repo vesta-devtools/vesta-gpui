@@ -30,16 +30,21 @@ pub(crate) fn record(
         CommandBufferUsage::OneTimeSubmit,
     )
     .map_err(|error| RendererError::caused_by("command_buffer", error))?;
-    let ticket = if presented {
-        renderer
-            .gpu_profile
-            .as_mut()
-            .map(gpu_profile::GpuTimestampState::next)
-            .transpose()?
-            .flatten()
-    } else {
-        None
-    };
+    let ticket =
+        if presented && (renderer.gpu_profiling_requested || vesta_gpui::trace::is_recording()) {
+            if renderer.gpu_profile.is_none() {
+                renderer.gpu_profile = Some(gpu_profile::GpuTimestampState::new(&renderer.gpu)?);
+            }
+            let native_window = u64::from(renderer.window.id());
+            renderer
+                .gpu_profile
+                .as_mut()
+                .map(|state| state.next(native_window))
+                .transpose()?
+                .flatten()
+        } else {
+            None
+        };
     let timing = ticket
         .map(|ticket| {
             QueryPool::new(

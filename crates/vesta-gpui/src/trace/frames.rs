@@ -200,6 +200,7 @@ mod tests {
             is_frame,
         };
         let snapshot = TraceSnapshot {
+            gpu: Default::default(),
             process_id: 1,
             config: TraceConfig::default(),
             detail: TraceDetail::Detailed,

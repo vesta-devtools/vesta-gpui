@@ -27,6 +27,12 @@ actually run successfully before it can be reported as passing.
 
 ## Refinement checkpoint — 2026-10-31
 
+For the subsequent Vesta Trace application and capture-owned GPU extension, use
+the separate current [VT01–VT06 ledger](TRACE-PLAN.md). Its local software/native
+qualifications do not rewrite the rc.1 baseline, close Root consumer adoption,
+or claim physical/Reader/DPI acceptance. The completed refinement programme below
+retains its original finite scope and source identities.
+
 The following entries retain each checkpoint's then-current scope and remaining
 work. They are historical evidence, not a second current backlog. Subsequent
 family, native, performance and product qualification is reconciled in

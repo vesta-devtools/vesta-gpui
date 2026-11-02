@@ -144,6 +144,31 @@ in the examples. Optional renderer/preview/browser capabilities remain explicit.
 
 ## Standalone composition
 
+The independent [Vesta Trace application](../apps/vesta-trace/README.md) consumes
+this same family. Its imported capture facts and interval analysis live in private
+UI-independent application modules; its worker and native timeline belong to the
+application host. It introduces no ninth library or framework-owned analysis UI.
+Generated machine schemas and native inspection use the same session/query
+engine. App-owned text/IME, focus, current layout and worker generations adapt
+existing SDK contracts. An opt-in self capture records the host frame and one
+application projection phase; it is not a second recorder or function sampler.
+The native AccessKit adapter shares the app's event loop and current GPUI
+semantics/text/action policy. It requests projection only while active; machine
+analysis continues through the independent source-addressed query contract.
+The maintainer navigation verifier independently checks original interval facts
+against native receipts and those queries; it never supplies product results.
+The app's projected row/page limits serve both paint and keyboard scrolling.
+Successful source replacement retires old pointer intent and, when original
+byte identity changes, its platform-node namespace; global search intent remains
+host state. A loading projection does not decide whether completed-data logical
+focus is live. These rules stay in the application host and shared SDK policies.
+Core's portable capture-schema-1 GPU extension owns only bounded facts and
+timestamp arithmetic. Vulkan owns real queries and the existing completion
+path; capture tokens bind their original recorder through freeze/expiry.
+GPU device ticks remain uncalibrated to CPU time. Native and machine GPU views
+share source-addressed submission facts rather than inferring execution starts.
+The active delivery boundary and acceptance cursor are in [TRACE-PLAN](TRACE-PLAN.md).
+
 The package's [native host recipe](HOSTING.md) is a small external-style consumer
 of the same public APIs. Its private window/editor state does not enter a library
 or replace the official applications. Its fixed single-field CPU projection and

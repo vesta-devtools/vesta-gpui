@@ -20,6 +20,7 @@ use std::{
 };
 
 mod frames;
+pub mod gpu;
 pub use frames::{FrameCall, FrameMarker, FrameProfile, FrameTimer};
 
 const MAX_EVENTS: usize = 200_000;
@@ -117,6 +118,7 @@ impl TraceCapture {
             config,
             detail,
             state: Mutex::new(State {
+                gpu: gpu::State::default(),
                 events: Vec::with_capacity(config.max_events.min(4096)),
                 threads: HashMap::new(),
                 open: HashMap::new(),
@@ -150,6 +152,7 @@ impl TraceCapture {
         let end = self.session.now().min(self.session.config.max_duration);
         state.close(end);
         TraceSnapshot {
+            gpu: std::mem::take(&mut state.gpu.capture),
             process_id: std::process::id(),
             config: self.session.config,
             detail: self.session.detail,
@@ -182,6 +185,7 @@ impl Drop for TraceCapture {
         state.events = Vec::new();
         state.threads = HashMap::new();
         state.open = HashMap::new();
+        state.gpu = gpu::State::default();
     }
 }
 
@@ -192,6 +196,7 @@ struct Session {
     state: Mutex<State>,
 }
 struct State {
+    gpu: gpu::State,
     events: Vec<Event>,
     threads: HashMap<ThreadId, u32>,
     open: HashMap<u32, Vec<usize>>,
@@ -505,6 +510,7 @@ pub fn counter(category: &'static str, name: &'static str, value: f64) {
 }
 
 pub struct TraceSnapshot {
+    gpu: gpu::GpuCapture,
     process_id: u32,
     config: TraceConfig,
     detail: TraceDetail,
@@ -559,7 +565,7 @@ impl TraceSnapshot {
                 "calls":timer.calls,"inclusive_us":micros(timer.inclusive),"self_us":micros(timer.self_time)})).collect::<Vec<_>>(),
             "markers":frame.markers.into_iter().map(|marker| json!({"name":marker.name,"at_us":micros(marker.at),"value":marker.value})).collect::<Vec<_>>()
         })).collect();
-        serde_json::to_string(&json!({ "traceEvents":events,"displayTimeUnit":"ms",
+        let mut document = json!({ "traceEvents":events,"displayTimeUnit":"ms",
             "gpui_frames":frames,
             "gpui_trace": { "schema_version":2,"clock":"monotonic_elapsed_wall_time",
                 "detail":match self.detail {TraceDetail::Stages=>"stages",TraceDetail::Detailed=>"detailed"},
@@ -569,7 +575,15 @@ impl TraceSnapshot {
                 "dropped_events":self.stats.dropped_events,"unfinished_spans":self.stats.unfinished_spans,
                 "invalid_nesting":self.stats.invalid_nesting,
                 "unframed_events":self.events.iter().filter(|event| event.frame.is_none()).count(),
-                "expired":self.stats.expired } }))
+                "expired":self.stats.expired } });
+        if !self.gpu.submissions.is_empty() || self.gpu.dropped_records != 0 {
+            let mut gpu = self.gpu.clone();
+            gpu.schema_version = 1;
+            gpu.process_id = self.process_id;
+            gpu.elapsed_ns = self.stats.elapsed.as_nanos() as u64;
+            document["gpui_capture"] = serde_json::to_value(gpu)?;
+        }
+        serde_json::to_string(&document)
     }
 
     /// Self-contained offline frame picker and recorded-call report. Export
@@ -595,6 +609,7 @@ mod tests {
             detail: TraceDetail::Detailed,
             state: Mutex::new(State {
                 events: Vec::with_capacity(4096),
+                gpu: gpu::State::default(),
                 threads: HashMap::new(),
                 open: HashMap::new(),
                 invalid_nesting: 0,

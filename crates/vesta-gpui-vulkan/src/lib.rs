@@ -92,6 +92,7 @@ pub struct WindowRenderer {
     cpu_profiling: bool,
     cpu_profile: Option<FrameCpuProfile>,
     gpu_profile: Option<gpu_profile::GpuTimestampState>,
+    gpu_profiling_requested: bool,
     retry: frame_retry::AcquireRetry,
     #[cfg(feature = "fault-injection")]
     acquire_faults: std::collections::VecDeque<VulkanError>,
@@ -189,6 +190,7 @@ impl WindowRenderer {
         &mut self,
         enabled: bool,
     ) -> Result<Option<GpuProfileStream>, RendererError> {
+        self.gpu_profiling_requested = enabled;
         if !enabled {
             self.gpu_profile = None;
         } else if self.gpu_profile.is_none() {
@@ -450,6 +452,7 @@ impl WindowRenderer {
             cpu_profiling: false,
             cpu_profile: None,
             gpu_profile: None,
+            gpu_profiling_requested: false,
             retry: Default::default(),
             #[cfg(feature = "fault-injection")]
             acquire_faults: Default::default(),

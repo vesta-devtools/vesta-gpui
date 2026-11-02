@@ -51,12 +51,16 @@ prove a particular retry cause. A CPU attempt is not necessarily a displayed fra
 
 ## Native example launch
 
-Both SDK applications use the same native-adapter `UiTraceRecording` launcher:
+Standalone and Motion use the same native-adapter `UiTraceRecording` launcher:
 
 ```powershell
 cargo run --locked -p vesta-gpui-standalone -- --trace-ui=target/standalone-frames.html
 cargo run --locked -p vesta-motion -- --trace-ui=target/motion-frames.json
 ```
+
+The independent Trace analyzer also uses this launcher for opt-in self capture;
+see [its application guide](../apps/vesta-trace/README.md). Its headless query mode
+opens an explicit capture read-only and rejects self-recording flags.
 
 Use a new `.html` or `.json` path. Collection starts on launch with the default
 30-second / 100,000-event budget. Close the example normally to export after its
@@ -139,14 +143,36 @@ it is not exclusive CPU utilization. Inclusive parent/child totals overlap, so
 adding them double-counts work. No frame-rate or presentation latency is inferred.
 
 The existing Vulkan `enable_cpu_profiling`/`cpu_profile` API remains independent.
-Its opt-in and return behavior are unchanged. Actual GPU timestamp profiling uses
-the existing separately enabled, capability-checked `enable_gpu_profiling` stream
-with its generation/submission identities; enabling this trace does not enable
-GPU queries, add waits/readbacks or relabel CPU submission time as GPU time.
+Its opt-in and return behavior are unchanged. An active capture now also opts
+presented renderer recordings into the existing capability-checked timestamp
+path. The renderer owns query pools and observes completion through its existing
+submission fence; capture does not add a UI-thread wait, worker or redraw timer.
+This adds timestamp/recording overhead while capture is enabled. Ordinary launch
+does not allocate queries. The explicitly enabled `enable_gpu_profiling` stream
+remains available independently and shares the same observations.
+
+The optional `gpui_capture` extension, schema 1, preserves actual GPU profiling
+generation/submission, capture-local window/thread and optional CPU frame keys.
+Hardware/queue descriptions, valid bits, period, raw ticks, measured elapsed time
+and observed completion upper bound remain evidence. A generation identifies a
+renderer timestamp stream, not a persistent physical device. Native window
+handles are not serialized. The GPU budget is independently bounded to the CPU
+event budget and reports `dropped_records`. Pending, unavailable and measured-zero
+observations remain distinct. A completion token binds its original capture;
+stop/expiry freezes pending state and later results cannot enter a successor.
+
+GPU elapsed time brackets upload/scene/UI commands and device scheduling stalls.
+The CPU recording timestamp is context association, **not GPU execution start**.
+There is no calibrated CPU/device clock mapping or presentation latency. The
+existing CPU schema-2 header therefore retains `gpu_execution_timing: false` for
+its CPU event domain; GPU facts belong to the separately versioned extension.
+The optional standard CPU timeline/HTML overview remains compatible. Use the
+independent native analyzer or its generated machine queries for GPU evidence.
 
 Trace hooks collect static category/name labels, capture-local thread IDs,
-elapsed timestamps and finite numeric counters. They do not collect document
-text, input values, titles, screenshots, author data or file paths. Host-provided
+elapsed timestamps and finite numeric counters, plus the hardware descriptions
+above when GPU submissions occur. They do not collect document text, input
+values, titles, screenshots, author data or file paths. Host-provided
 labels/counters are the host's responsibility. There is no upload. Export requires
 an explicit host destination and action. Timestamps are capture-relative, not UTC.
 

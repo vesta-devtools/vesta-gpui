@@ -187,6 +187,29 @@ fn capacity_stop_and_late_guards_preserve_capture_ownership() {
     let _serial = CAPTURE.lock().expect("capture contract serialization");
     let capture = TraceCapture::start(config(2)).expect("first capture");
     let late = trace::frame("old.open");
+    let clock = trace::gpu::GpuClock {
+        generation: 7,
+        device_name: "synthetic device".into(),
+        vendor_id: 0,
+        device_id: 0,
+        driver_version: 0,
+        queue_family: 0,
+        valid_bits: Some(8),
+        period_ns: Some(2.0),
+        unavailable: None,
+    };
+    let mut late_gpu = trace::gpu::begin_submission(0xabc, &clock, 1).expect("GPU context");
+    late_gpu.submitted();
+    let measured_zero = trace::gpu::begin_submission(0xabc, &clock, 2).expect("zero sample");
+    measured_zero.complete(trace::gpu::GpuOutcome::Sample {
+        raw_ticks: [250, 250],
+        elapsed_ns: 0,
+        completion_upper_bound_ns: 100,
+    });
+    assert!(
+        trace::gpu::begin_submission(0xdef, &clock, 3).is_none(),
+        "independent GPU budget"
+    );
     trace::counter("host", "finite", 1.0);
     trace::counter("host", "overflow", 2.0);
     trace::counter("host", "invalid", f64::NAN);
@@ -196,11 +219,39 @@ fn capacity_stop_and_late_guards_preserve_capture_ownership() {
     assert_eq!(first.stats().unfinished_spans, 1);
     assert!(first.frames()[0].unfinished);
     let frozen = first.to_chrome_json().expect("first export");
+    let gpu: serde_json::Value = serde_json::from_str(&frozen).expect("frozen capture");
+    assert_eq!(
+        gpu["gpui_capture"]["windows"],
+        serde_json::json!([1]),
+        "native window handle stays private"
+    );
+    assert_eq!(gpu["gpui_capture"]["dropped_records"], 1);
+    assert_eq!(gpu["gpui_capture"]["submissions"][0]["frame_id"], 1);
+    assert_eq!(
+        gpu["gpui_capture"]["submissions"][0]["outcome"]["state"],
+        "pending_completion"
+    );
+    assert_eq!(
+        gpu["gpui_capture"]["submissions"][1]["outcome"]["elapsed_ns"],
+        0
+    );
     let successor = TraceCapture::start(config(10)).expect("successor capture");
+    late_gpu.complete(trace::gpu::GpuOutcome::Sample {
+        raw_ticks: [250, 3],
+        elapsed_ns: 18,
+        completion_upper_bound_ns: 100,
+    });
     late.finish_with_name("late.must_not_enter_successor");
     trace::instant("host", "successor.only");
     let second = successor.stop();
     assert_eq!(second.stats().events, 1);
+    assert!(
+        !second
+            .to_chrome_json()
+            .expect("successor")
+            .contains("gpui_capture"),
+        "old completion cannot enter successor"
+    );
     assert_eq!(first.to_chrome_json().expect("frozen export"), frozen);
     assert!(
         !second

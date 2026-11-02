@@ -22,6 +22,9 @@ pub(super) fn recovery_fault() -> Option<bool> {
         None
     }
 }
+pub(super) fn hidden_smoke() -> bool {
+    std::env::args().any(|a| a == "--smoke-hidden")
+}
 pub(super) fn recovery_retry_enabled() -> bool {
     std::env::args().any(|a| {
         matches!(
@@ -95,6 +98,11 @@ pub(super) fn creation_fixture_enabled() -> bool {
 }
 
 pub(super) fn validate_args() -> Result<(), String> {
+    if hidden_smoke()
+        && (!std::env::args().any(|a| a == "--smoke") || super::frame_reflow_probe::requested())
+    {
+        return Err("standalone_hidden_smoke_invalid: requires isolated --smoke".into());
+    }
     let target_flags = std::env::args()
         .filter(|arg| arg.starts_with("--smoke-target-"))
         .collect::<Vec<_>>();

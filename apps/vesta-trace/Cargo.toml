@@ -1,0 +1,25 @@
+[package]
+name = "vesta-trace"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Independent native GPUI trace timeline and interval analyzer"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+schemars = "=0.8.22"
+sha2 = "=0.10.9"
+arboard = { version = "=3.6.1", default-features = false }
+accesskit = "=0.21.1"
+image = { version = "=0.25.10", default-features = false, features = ["png"] }
+vesta-gpui.workspace = true
+vesta-gpui-widgets.workspace = true
+vesta-gpui-winit.workspace = true
+vesta-gpui-vulkan.workspace = true
+winit.workspace = true
+
+[lints]
+workspace = true

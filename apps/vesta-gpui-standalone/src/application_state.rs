@@ -144,6 +144,7 @@ impl App {
             workspace_resize: None,
             demo: DemoState::default(),
             smoke: std::env::args().any(|argument| argument == "--smoke"),
+            hidden_smoke_started: None,
             document_smoke: window_documents::Smoke::from_args(),
             rendered_frames: 0,
             frame_meter: FrameMeter::default(),

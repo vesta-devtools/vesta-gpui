@@ -136,7 +136,7 @@ impl NativeFloatingHost {
             .with_title(format!("{} — Vesta", logical.title))
             .with_decorations(!cfg!(target_os = "windows"))
             .with_visible(false)
-            .with_active(!frame_reflow_probe::requested())
+            .with_active(!frame_reflow_probe::requested() && !render_backend::hidden_smoke())
             .with_position(LogicalPosition::new(placement.x, placement.y))
             .with_inner_size(LogicalSize::new(
                 placement.width.max(320.0),
@@ -220,7 +220,8 @@ impl NativeFloatingHost {
             area_follow_caret: true,
             area_layout: AreaWrapLayout::default(),
         };
-        host.window.set_visible(!frame_reflow_probe::requested());
+        host.window
+            .set_visible(!frame_reflow_probe::requested() && !render_backend::hidden_smoke());
         host.window.request_redraw();
         Ok(host)
     }

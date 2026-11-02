@@ -8,6 +8,9 @@ use std::{
     },
     time::Duration,
 };
+use vesta_gpui::trace::gpu::{
+    self as capture, GpuClock, GpuOutcome, GpuSubmissionToken, GpuUnavailable,
+};
 use vulkano::query::{QueryPool, QueryResultFlags};
 
 const CAPACITY: usize = 256;
@@ -27,6 +30,17 @@ pub enum GpuTimingUnavailable {
     ResultsUnavailable,
     InvalidTimestampRange,
     AmbiguousCounterWrap,
+}
+impl GpuTimingUnavailable {
+    fn portable(self) -> GpuUnavailable {
+        match self {
+            Self::UnsupportedQueue => GpuUnavailable::UnsupportedQueue,
+            Self::InvalidMetadata => GpuUnavailable::InvalidMetadata,
+            Self::ResultsUnavailable => GpuUnavailable::ResultsUnavailable,
+            Self::InvalidTimestampRange => GpuUnavailable::InvalidTimestampRange,
+            Self::AmbiguousCounterWrap => GpuUnavailable::AmbiguousCounterWrap,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -102,6 +116,7 @@ impl GpuProfileStream {
 pub(super) struct GpuTimestampState {
     pub stream: GpuProfileStream,
     submission: u64,
+    clock: GpuClock,
 }
 
 impl GpuTimestampState {
@@ -130,6 +145,20 @@ impl GpuTimestampState {
             Some(_) => None,
         };
         Ok(Self {
+            clock: {
+                let properties = gpu.device.physical_device().properties();
+                GpuClock {
+                    generation,
+                    device_name: properties.device_name.clone(),
+                    vendor_id: properties.vendor_id,
+                    device_id: properties.device_id,
+                    driver_version: properties.driver_version,
+                    queue_family: gpu.queue.queue_family_index(),
+                    valid_bits,
+                    period_ns: (period_ns.is_finite() && period_ns > 0.0).then_some(period_ns),
+                    unavailable: unavailable.map(GpuTimingUnavailable::portable),
+                }
+            },
             stream: GpuProfileStream {
                 capabilities: GpuTimestampCapabilities {
                     generation,
@@ -151,14 +180,25 @@ impl GpuTimestampState {
         })
     }
 
-    pub fn next(&mut self) -> Result<Option<GpuTimestampTicket>, RendererError> {
-        if self.stream.capabilities.unavailable.is_some() {
-            return Ok(None);
-        }
+    pub fn next(
+        &mut self,
+        native_window: u64,
+    ) -> Result<Option<GpuTimestampTicket>, RendererError> {
         self.submission = self.submission.checked_add(1).ok_or_else(|| {
             RendererError::at("gpu_profile_identity", "profiling submissions exhausted")
         })?;
+        let trace = capture::begin_submission(native_window, &self.clock, self.submission);
+        if let Some(reason) = self.stream.capabilities.unavailable {
+            if let Some(trace) = trace {
+                trace.complete(GpuOutcome::Unavailable {
+                    reason: reason.portable(),
+                    raw_ticks: None,
+                });
+            }
+            return Ok(None);
+        }
         Ok(Some(GpuTimestampTicket {
+            trace,
             key: GpuProfileKey {
                 generation: self.stream.capabilities.generation,
                 submission: self.submission,
@@ -169,6 +209,7 @@ impl GpuTimestampState {
 }
 
 pub(super) struct GpuTimestampTicket {
+    trace: Option<GpuSubmissionToken>,
     key: GpuProfileKey,
     stream: GpuProfileStream,
 }
@@ -186,12 +227,29 @@ pub(super) struct PendingGpuTimestamp {
 }
 
 impl PendingGpuTimestamp {
-    pub fn complete(self, maximum_elapsed: Duration) -> Result<(), RendererError> {
+    pub fn submitted(&mut self) {
+        if let Some(trace) = &mut self.ticket.trace {
+            trace.submitted();
+        }
+    }
+    pub fn complete(mut self, maximum_elapsed: Duration) -> Result<(), RendererError> {
         let mut values = [0_u64; 4];
         let available = self
             .pool
             .get_results(0..2, &mut values, QueryResultFlags::WITH_AVAILABILITY)
-            .map_err(|error| RendererError::caused_by("gpu_profile_results", error))?;
+            .map_err(|error| RendererError::caused_by("gpu_profile_results", error));
+        let available = match available {
+            Ok(value) => value,
+            Err(error) => {
+                if let Some(trace) = self.ticket.trace.take() {
+                    trace.complete(GpuOutcome::Unavailable {
+                        reason: GpuUnavailable::ResultsError,
+                        raw_ticks: None,
+                    });
+                }
+                return Err(error);
+            }
+        };
         let caps = self.ticket.stream.capabilities;
         let observation = decode(
             self.ticket.key,
@@ -201,6 +259,32 @@ impl PendingGpuTimestamp {
             caps.period_ns,
             maximum_elapsed,
         );
+        if let Some(trace) = self.ticket.trace.take() {
+            trace.complete(match observation {
+                GpuProfileObservation::Sample(sample) => {
+                    match (
+                        u64::try_from(sample.elapsed.as_nanos()),
+                        u64::try_from(sample.completion_upper_bound.as_nanos()),
+                    ) {
+                        (Ok(elapsed_ns), Ok(completion_upper_bound_ns)) => GpuOutcome::Sample {
+                            raw_ticks: sample.raw_ticks,
+                            elapsed_ns,
+                            completion_upper_bound_ns,
+                        },
+                        _ => GpuOutcome::Unavailable {
+                            reason: GpuUnavailable::InvalidTimestampRange,
+                            raw_ticks: Some(sample.raw_ticks),
+                        },
+                    }
+                }
+                GpuProfileObservation::Unavailable {
+                    reason, raw_ticks, ..
+                } => GpuOutcome::Unavailable {
+                    reason: reason.portable(),
+                    raw_ticks,
+                },
+            });
+        }
         self.ticket.stream.publish(observation);
         Ok(())
     }
@@ -235,34 +319,23 @@ fn decode(
             raw_ticks: Some([values[0], values[2]]),
         };
     }
-    let wrap_seconds = 2_f64.powi(bits as i32) * period / 1_000_000_000.0;
-    if maximum_elapsed.as_secs_f64() >= wrap_seconds {
-        return GpuProfileObservation::Unavailable {
-            key,
-            reason: GpuTimingUnavailable::AmbiguousCounterWrap,
-            raw_ticks: Some([values[0], values[2]]),
+    let elapsed =
+        match capture::timestamp_elapsed([values[0], values[2]], bits, period, maximum_elapsed) {
+            Ok(elapsed) => elapsed,
+            Err(reason) => {
+                return GpuProfileObservation::Unavailable {
+                    key,
+                    reason: match reason {
+                        GpuUnavailable::AmbiguousCounterWrap => {
+                            GpuTimingUnavailable::AmbiguousCounterWrap
+                        }
+                        GpuUnavailable::InvalidMetadata => GpuTimingUnavailable::InvalidMetadata,
+                        _ => GpuTimingUnavailable::InvalidTimestampRange,
+                    },
+                    raw_ticks: Some([values[0], values[2]]),
+                };
+            }
         };
-    }
-    let mask = if bits == 64 {
-        u64::MAX
-    } else {
-        (1_u64 << bits) - 1
-    };
-    let ticks = values[2].wrapping_sub(values[0]) & mask;
-    let Ok(elapsed) = Duration::try_from_secs_f64(ticks as f64 * period / 1_000_000_000.0) else {
-        return GpuProfileObservation::Unavailable {
-            key,
-            reason: GpuTimingUnavailable::InvalidTimestampRange,
-            raw_ticks: Some([values[0], values[2]]),
-        };
-    };
-    if elapsed > maximum_elapsed {
-        return GpuProfileObservation::Unavailable {
-            key,
-            reason: GpuTimingUnavailable::InvalidTimestampRange,
-            raw_ticks: Some([values[0], values[2]]),
-        };
-    }
     GpuProfileObservation::Sample(FrameGpuProfile {
         key,
         raw_ticks: [values[0], values[2]],
