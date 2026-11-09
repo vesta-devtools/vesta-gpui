@@ -41,7 +41,7 @@ presentation. This is a presentation/privacy contract, not zeroized memory.
 
 Font registration and changed role stacks invalidate all static shape caches and
 measurement tokens. Failed registration and unchanged stacks preserve the token.
-The three static caches each admit at most 512 entries and 128 KiB of accounted
+The three static caches each admit at most 1024 entries and 128 KiB of accounted
 source bytes; ellipsis includes its derived display source. Keys/order/layout
 metadata and font resources are additional allocations. Context and caller-held
 snapshots can retain fonts/layouts until their last owner drops them. A context
@@ -89,7 +89,7 @@ it does not publish partial glyphs or a composed bitmap.
 | Cache | Retention limit | Identity / eviction |
 | --- | --- | --- |
 | Glyph images | 4096 entries / eight MiB image bytes | Font blob/index, size, variation, glyph and subpixel identity; FIFO, shared images |
-| Positioned runs | 256 entries / 8192 glyphs / eight MiB accounted bytes | Exact snapshot plus bounds-relative placement/clip/scale; LRU |
+| Positioned runs | 1024 entries / 32768 aggregate glyphs / eight MiB accounted bytes | Exact snapshot plus bounds-relative placement/clip/scale; LRU |
 | Composed bitmaps | 64 entries / sixteen MiB pixel bytes | Exact snapshot, placement, selection, focus/caret and quantized colors; LRU |
 
 Run/bitmap entries retain the snapshot behind pointer keys, preventing address
@@ -100,6 +100,10 @@ placement/dimension fields describe its immutable backing image; preserve those
 dimensions when passing it to an atlas or asking for RGBA. The backing image and
 key are not publicly constructible. These are trusted prepared payloads, not a
 binary image decoder or arbitrary mutable image buffer.
+
+[Decision 0042](decisions/0042-Dense-Table-Text-Preparation-And-Clip-Batching.md)
+increases short-text retention to avoid dense-table sequential cache churn. The
+8192-glyph limit for one returned run remains independent and unchanged.
 
 Cache limits count specified resources, not every key/allocator overhead, live
 caller-held output or third-party scratch allocation. Font bytes are supplied by

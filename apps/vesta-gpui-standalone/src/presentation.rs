@@ -74,6 +74,7 @@ pub(super) struct ViewportUi {
 
 pub(super) struct UiBuildState<'a> {
     pub(super) documents: &'a GalleryDocuments,
+    pub(super) collection_samples: &'a collection_samples::View,
     pub(super) selected_feedback: bool,
     pub(super) ui_window: UiWindowId,
     pub(super) menu_open: bool,

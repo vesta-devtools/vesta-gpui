@@ -21,6 +21,15 @@ struct Input {
     events: Vec<RawEvent>,
     gpui_trace: Header,
     gpui_capture: Option<crate::gpu::GpuCapture>,
+    gpui_memory: Option<vesta_gpui::trace::memory::MemoryCapture>,
+    gpui_threads: Option<ThreadMetadata>,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ThreadMetadata {
+    schema_version: u32,
+    process_id: u32,
+    threads: Vec<vesta_gpui::trace::TraceThread>,
 }
 #[derive(Deserialize)]
 struct Header {
@@ -115,6 +124,88 @@ pub fn parse(bytes: &[u8], cancel: &AtomicBool) -> Result<Session, TraceError> {
         .map_err(|e| TraceError::caused("trace_utf8", e))?
         .trim_start_matches('\u{feff}')
         .trim_start();
+    let json = json_text(text)?;
+    let input: Input =
+        serde_json::from_str(json).map_err(|e| TraceError::caused("trace_json", e))?;
+    cancelled(cancel)?;
+    let source = Source {
+        capture_extension_version: None,
+        sha256: format!("{:x}", Sha256::digest(bytes)),
+        bytes: bytes.len(),
+        format: if text.starts_with('<') {
+            SourceFormat::GpuiHtmlData
+        } else {
+            SourceFormat::GpuiJson
+        },
+        producer_schema_version: input.gpui_trace.schema_version,
+        clock: input.gpui_trace.clock.clone(),
+        thread_ids: input.gpui_trace.thread_ids.clone(),
+        source_time_unit: "microseconds".into(),
+        analysis_time_unit: "nanoseconds".into(),
+    };
+    let mut input = input;
+    let gpu = input.gpui_capture.take();
+    let memory = input.gpui_memory.take();
+    let threads = input.gpui_threads.take();
+    let mut session = admit(input, source, cancel)?;
+    if let Some(threads) = threads {
+        if threads.schema_version != 1 || threads.threads.len() > 1_000_000 {
+            return Err(TraceError::new(
+                "trace_thread_metadata",
+                "Invalid thread metadata schema/budget",
+            ));
+        }
+        let processes: std::collections::BTreeSet<_> = session
+            .events
+            .iter()
+            .map(|e| e.key.process)
+            .chain(gpu.as_ref().map(|g| u64::from(g.process_id)))
+            .chain(memory.as_ref().map(|m| u64::from(m.process_id)))
+            .collect();
+        if threads.process_id == 0
+            || processes
+                .iter()
+                .any(|p| *p != u64::from(threads.process_id))
+        {
+            return Err(TraceError::new(
+                "trace_thread_metadata",
+                "Thread metadata process differs from capture",
+            ));
+        }
+        let process = u64::from(threads.process_id);
+        for thread in threads.threads {
+            if thread.thread == 0
+                || thread.name.as_ref().is_some_and(|n| n.len() > 512)
+                || session
+                    .thread_names
+                    .insert(
+                        LaneKey {
+                            process,
+                            thread: u64::from(thread.thread),
+                        },
+                        thread.name,
+                    )
+                    .is_some()
+            {
+                return Err(TraceError::new(
+                    "trace_thread_metadata",
+                    "Invalid/duplicate named thread",
+                ));
+            }
+        }
+    }
+    if let Some(gpu) = gpu {
+        crate::gpu::admit(&mut session, gpu, cancel)?;
+    }
+    if let Some(memory) = memory {
+        crate::memory::admit(&mut session, memory, cancel)?;
+    }
+    Ok(session)
+}
+
+/// Extract inert JSON only; never load or evaluate an imported report's HTML.
+pub(super) fn json_text(text: &str) -> Result<&str, TraceError> {
+    let text = text.trim_start_matches('\u{feff}').trim_start();
     let json = if text.starts_with('<') {
         let marker = "id=\"gpui-data\"";
         let pos = text
@@ -147,31 +238,7 @@ pub fn parse(bytes: &[u8], cancel: &AtomicBool) -> Result<Session, TraceError> {
     } else {
         text
     };
-    let input: Input =
-        serde_json::from_str(json).map_err(|e| TraceError::caused("trace_json", e))?;
-    cancelled(cancel)?;
-    let source = Source {
-        capture_extension_version: None,
-        sha256: format!("{:x}", Sha256::digest(bytes)),
-        bytes: bytes.len(),
-        format: if text.starts_with('<') {
-            SourceFormat::GpuiHtmlData
-        } else {
-            SourceFormat::GpuiJson
-        },
-        producer_schema_version: input.gpui_trace.schema_version,
-        clock: input.gpui_trace.clock.clone(),
-        thread_ids: input.gpui_trace.thread_ids.clone(),
-        source_time_unit: "microseconds".into(),
-        analysis_time_unit: "nanoseconds".into(),
-    };
-    let mut input = input;
-    let gpu = input.gpui_capture.take();
-    let mut session = admit(input, source, cancel)?;
-    if let Some(gpu) = gpu {
-        crate::gpu::admit(&mut session, gpu, cancel)?;
-    }
-    Ok(session)
+    Ok(json)
 }
 
 fn admit(input: Input, source: Source, cancel: &AtomicBool) -> Result<Session, TraceError> {
@@ -458,6 +525,10 @@ fn admit(input: Input, source: Source, cancel: &AtomicBool) -> Result<Session, T
     }
     let frame_plot = crate::plot::PlotIndex::new(&frames, &events, cancel)?;
     Ok(Session {
+        gpu_tracks: Vec::new(),
+        gpu_execution: BTreeMap::new(),
+        memory: None,
+        thread_names: Default::default(),
         gpu: None,
         gpu_counts: Default::default(),
         gpu_lanes: Default::default(),

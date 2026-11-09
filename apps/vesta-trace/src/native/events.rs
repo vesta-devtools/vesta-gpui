@@ -13,7 +13,9 @@ impl ApplicationHandler<UserEvent> for App {
                         .with_title("Vesta Trace — native frame analysis")
                         .with_inner_size(LogicalSize::new(1480.0, 900.0))
                         .with_min_inner_size(LogicalSize::new(980.0, 640.0))
-                        .with_visible(!self.smoke),
+                        .with_theme(Some(winit::window::Theme::Dark))
+                        // AccessKit must own the window before its first show.
+                        .with_visible(false),
                 )?,
             );
             self.accessibility = Some(AccessibilityAdapter::with_event_loop_proxy(
@@ -24,6 +26,7 @@ impl ApplicationHandler<UserEvent> for App {
             let creation = RendererCreation::start(event_loop, window.clone())?;
             self.monitor = Some(creation.retirement_monitor());
             self.creation = Some(creation);
+            window.set_visible(!self.smoke);
             self.window = Some(window);
             Ok(())
         })();
@@ -34,6 +37,40 @@ impl ApplicationHandler<UserEvent> for App {
     fn user_event(&mut self, event_loop: &ActiveEventLoop, message: UserEvent) {
         let message = match message {
             UserEvent::Worker(message) => *message,
+            UserEvent::Capture(message) => {
+                if self.smoke && self.scene == Scene::MemoryCapture {
+                    println!(
+                        "trace_memory_status step={} state={} saved={} error={:?}",
+                        self.smoke_step,
+                        message.status["state"],
+                        message.saved.is_some(),
+                        message.error
+                    );
+                }
+                if message.completed_command {
+                    self.live_pending = false;
+                }
+                self.live_status = message.status;
+                if self.live_status["state"] == "idle"
+                    && self.live_status["memory_supported"] != true
+                {
+                    self.live_memory = false;
+                }
+                if let Some(error) = message.error {
+                    self.live_status["message"] = serde_json::json!(error);
+                    self.status = error;
+                }
+                if let Some(path) = message.saved {
+                    match self.open_source(path) {
+                        // Retain the previous view checkpoint before changing
+                        // the desired panel for this new capture.
+                        Ok(()) => self.panel = Panel::Frames,
+                        Err(error) => self.status = error.to_string(),
+                    }
+                }
+                self.redraw();
+                return;
+            }
             UserEvent::Accessibility(event) => {
                 if event_loop.exiting()
                     || self
@@ -97,6 +134,7 @@ impl ApplicationHandler<UserEvent> for App {
                     self.session = Some(session);
                     self.timer = report.inspection.timer.clone();
                     self.gpu = None;
+                    self.memory = Default::default();
                     self.gpu_scroll = Default::default();
                     self.report = Some(report);
                     self.panel = Panel::Timers;
@@ -273,7 +311,11 @@ impl ApplicationHandler<UserEvent> for App {
         };
         // The finite hidden scenario has no visible-window redraw cadence.
         // Observe completion/resize without borrowing the desktop or relaxing its deadline.
-        if self.smoke && (self.capture_waiting || self.session.is_some() && !self.busy()) {
+        if self.smoke
+            && (self.capture_waiting
+                || self.session.is_some() && !self.busy()
+                || matches!(self.scene, Scene::LiveCapture | Scene::MemoryCapture))
+        {
             deadline = Some(now + Duration::from_millis(16));
         }
         if pending {

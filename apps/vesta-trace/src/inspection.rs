@@ -8,6 +8,8 @@ use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
 };
+mod memory;
+pub use memory::{MemoryInspection, MemoryMode, MemorySelection};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Panel {
@@ -20,9 +22,11 @@ pub enum Panel {
     Counters,
     Diagnostics,
     Gpu,
+    Frames,
+    Memory,
 }
 impl Panel {
-    pub const ALL: [(Self, &'static str); 8] = [
+    pub const ALL: [(Self, &'static str); 10] = [
         (Self::Timers, "Timers"),
         (Self::Callers, "Callers"),
         (Self::Callees, "Callees"),
@@ -31,10 +35,14 @@ impl Panel {
         (Self::Counters, "Counters"),
         (Self::Diagnostics, "Quality"),
         (Self::Gpu, "GPU"),
+        (Self::Frames, "Frames"),
+        (Self::Memory, "Memory"),
     ];
 }
 #[derive(Clone, Debug, Default)]
 pub struct Selection {
+    pub memory: MemorySelection,
+    pub frame_sort: FrameTimingSort,
     pub gpu: Option<GpuKey>,
     pub panel: Panel,
     pub timer: Option<TimerKey>,
@@ -49,6 +57,7 @@ pub struct EventDetail {
 }
 #[derive(Debug)]
 pub struct Inspection {
+    pub memory: Option<MemoryInspection>,
     pub gpu: Option<GpuRecord>,
     pub timer: Option<TimerKey>,
     pub table: Option<Data>,
@@ -88,7 +97,7 @@ pub fn analyze(
         })
     });
     let query = match selection.panel {
-        Panel::Timers | Panel::Diagnostics => None,
+        Panel::Timers | Panel::Diagnostics | Panel::Memory => None,
         Panel::Callers | Panel::Callees => timer.clone().map(|timer| Query::Relations {
             timer,
             direction: if selection.panel == Panel::Callers {
@@ -106,11 +115,18 @@ pub fn analyze(
             category: None,
             name: None,
         }),
-        Panel::Gpu => Some(Query::GpuSubmissions {
-            sort: GpuSort::DurationDesc,
+        Panel::Gpu => Some(if session.gpu_counts.mapped != 0 {
+            Query::GpuExecution
+        } else {
+            Query::GpuSubmissions {
+                sort: GpuSort::DurationDesc,
+            }
+        }),
+        Panel::Frames => Some(Query::FrameTimings {
+            sort: selection.frame_sort,
         }),
     };
-    let table = query
+    let mut table = query
         .map(|query| {
             ask(
                 session,
@@ -133,6 +149,13 @@ pub fn analyze(
             )
         })
         .transpose()?;
+    let memory = if selection.panel == Panel::Memory {
+        let (memory, allocations) = memory::inspect(session, range, text, selection, cancel)?;
+        table = allocations;
+        Some(memory)
+    } else {
+        None
+    };
     let detail = selection
         .event
         .map(|key| {
@@ -201,6 +224,7 @@ pub fn analyze(
         tracks,
         analysis,
         inspection: Inspection {
+            memory,
             gpu,
             timer,
             table,
@@ -217,7 +241,10 @@ impl Inspection {
                 | Data::Events { page, .. }
                 | Data::Tree { page, .. }
                 | Data::Counters { page, .. }
-                | Data::GpuSubmissions { page, .. },
+                | Data::GpuSubmissions { page, .. }
+                | Data::GpuExecution { page, .. }
+                | Data::FrameTimings { page, .. }
+                | Data::MemoryAllocations { page, .. },
             ) => Some(page),
             _ => None,
         }

@@ -1,4 +1,5 @@
 //! ADR-0304/0577: private checked draw/shader and owned timestamp recording.
+pub(crate) mod gpu_clock;
 pub(crate) mod recording;
 use crate::{RendererError, painter::Uploaded};
 use std::sync::Arc;

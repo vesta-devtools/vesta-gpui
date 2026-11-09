@@ -18,6 +18,10 @@ vesta-viewport = { workspace = true, optional = true }
 vulkano = { version = "=0.35.2", default-features = false }
 winit.workspace = true
 naga = { version = "=27.0.3", features = ["wgsl-in", "spv-out"] }
+ash = { version = "=0.38.0", default-features = false }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "=0.61.2", features = ["Win32_System_Performance"] }
 
 [dev-dependencies]
 vesta-gpui-widgets.workspace = true
@@ -25,7 +29,7 @@ vesta-gpui-winit.workspace = true
 accesskit = "=0.21.1"
 arboard = { version = "=3.6.1", default-features = false }
 
-# ADR-0304: only checked_pipeline allows documented shader and draw calls.
+# ADR-0304/0046: checked_pipeline owns documented shader/draw and clock-query FFI.
 [lints.rust]
 unsafe_code = "deny"
 [lints.clippy]

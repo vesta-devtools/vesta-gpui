@@ -15,13 +15,15 @@ use std::{
         Arc, Mutex, MutexGuard,
         atomic::{AtomicBool, Ordering},
     },
-    thread::ThreadId,
     time::{Duration, Instant},
 };
 
 mod frames;
 pub mod gpu;
+pub mod memory;
+mod threads;
 pub use frames::{FrameCall, FrameMarker, FrameProfile, FrameTimer};
+pub use threads::TraceThread;
 
 const MAX_EVENTS: usize = 200_000;
 const MAX_DURATION: Duration = Duration::from_secs(300);
@@ -67,12 +69,14 @@ impl Default for TraceConfig {
 pub enum TraceError {
     AlreadyRecording,
     InvalidBudget,
+    MemoryUnavailable,
 }
 
 impl fmt::Display for TraceError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             Self::AlreadyRecording => "gpui_trace_already_recording",
+            Self::MemoryUnavailable => "gpui_trace_memory_allocator_not_installed",
             Self::InvalidBudget => {
                 "gpui_trace_invalid_budget (1..=200000 events, 0 < duration <= 300s)"
             }
@@ -94,6 +98,7 @@ pub struct TraceStats {
 /// The owner of a capture. Drop disables recording and discards data without I/O.
 pub struct TraceCapture {
     session: Arc<Session>,
+    memory: Option<memory::Recording>,
 }
 
 impl TraceCapture {
@@ -102,6 +107,15 @@ impl TraceCapture {
     }
 
     pub fn start_with_detail(config: TraceConfig, detail: TraceDetail) -> Result<Self, TraceError> {
+        Self::start_with_memory(config, detail, None)
+    }
+
+    pub fn start_with_memory(
+        config: TraceConfig,
+        detail: TraceDetail,
+        memory: Option<memory::MemoryConfig>,
+    ) -> Result<Self, TraceError> {
+        let _quiet = memory::suppress();
         if config.max_events == 0
             || config.max_events > MAX_EVENTS
             || config.max_duration.is_zero()
@@ -114,23 +128,33 @@ impl TraceCapture {
             return Err(TraceError::AlreadyRecording);
         }
         let session = Arc::new(Session {
+            threads: Arc::new(threads::Registry::default()),
             origin: Instant::now(),
             config,
             detail,
             state: Mutex::new(State {
                 gpu: gpu::State::default(),
                 events: Vec::with_capacity(config.max_events.min(4096)),
-                threads: HashMap::new(),
                 open: HashMap::new(),
                 invalid_nesting: 0,
                 dropped: 0,
                 stopped: None,
             }),
         });
+        let memory = memory
+            .map(|config| {
+                memory::Recording::start(
+                    session.origin,
+                    session.config.max_duration,
+                    config,
+                    session.threads.clone(),
+                )
+            })
+            .transpose()?;
         *active = Some(session.clone());
         DETAILS_ENABLED.store(detail == TraceDetail::Detailed, Ordering::Release);
         ENABLED.store(true, Ordering::Release);
-        Ok(Self { session })
+        Ok(Self { session, memory })
     }
 
     pub fn is_recording(&self) -> bool {
@@ -142,22 +166,33 @@ impl TraceCapture {
         self.session.expire(&mut state);
         self.session.stats_for(&state)
     }
+    pub fn memory_stats(&self) -> Option<memory::MemoryStats> {
+        self.memory.as_ref().map(memory::Recording::stats)
+    }
 
     /// Stop and freeze a consistent prefix. Active scopes are clipped and marked
     /// unfinished; dropping them later cannot mutate this snapshot.
-    pub fn stop(self) -> TraceSnapshot {
+    pub fn stop(mut self) -> TraceSnapshot {
+        let _quiet = memory::suppress();
         self.disable();
         let mut state = lock(&self.session.state);
         self.session.expire(&mut state);
         let end = self.session.now().min(self.session.config.max_duration);
         state.close(end);
+        let stats = self.session.stats_for(&state);
+        let events = std::mem::take(&mut state.events);
+        let gpu = std::mem::take(&mut state.gpu.capture);
+        drop(state);
+        let memory = self.memory.take().map(|memory| memory.stop(stats.elapsed));
         TraceSnapshot {
-            gpu: std::mem::take(&mut state.gpu.capture),
+            memory,
+            threads: self.session.threads.snapshot(),
+            gpu,
             process_id: std::process::id(),
             config: self.session.config,
             detail: self.session.detail,
-            stats: self.session.stats_for(&state),
-            events: std::mem::take(&mut state.events),
+            stats,
+            events,
         }
     }
 
@@ -176,6 +211,8 @@ impl TraceCapture {
 
 impl Drop for TraceCapture {
     fn drop(&mut self) {
+        let _quiet = memory::suppress();
+        self.memory.take();
         self.disable();
         let mut state = lock(&self.session.state);
         state.close(self.session.now().min(self.session.config.max_duration));
@@ -183,13 +220,14 @@ impl Drop for TraceCapture {
         // an abandoned event buffer or thread map. stop() has already moved any
         // requested snapshot out before this runs.
         state.events = Vec::new();
-        state.threads = HashMap::new();
+        self.session.threads.clear();
         state.open = HashMap::new();
         state.gpu = gpu::State::default();
     }
 }
 
 struct Session {
+    threads: Arc<threads::Registry>,
     origin: Instant,
     config: TraceConfig,
     detail: TraceDetail,
@@ -198,7 +236,6 @@ struct Session {
 struct State {
     gpu: gpu::State,
     events: Vec<Event>,
-    threads: HashMap<ThreadId, u32>,
     open: HashMap<u32, Vec<usize>>,
     invalid_nesting: u64,
     dropped: u64,
@@ -298,11 +335,7 @@ impl Session {
             state.dropped = state.dropped.saturating_add(1);
             return None;
         }
-        let next = state.threads.len() as u32 + 1;
-        let thread = *state
-            .threads
-            .entry(std::thread::current().id())
-            .or_insert(next);
+        let thread = self.threads.current();
         let index = state.events.len();
         let parent = if is_frame {
             None
@@ -368,6 +401,7 @@ fn record_active(
     if !ENABLED.load(Ordering::Acquire) {
         return None;
     }
+    let _quiet = memory::suppress();
     let mut active = lock(&ACTIVE);
     let session = active.as_ref()?;
     if detailed && session.detail != TraceDetail::Detailed {
@@ -461,6 +495,7 @@ impl TraceSpan {
     /// Close a measured interval using the static label known at its end. Useful
     /// for renderer phase boundaries; original capture ownership is unchanged.
     pub fn finish_with_name(mut self, name: &'static str) {
+        let _quiet = memory::suppress();
         if let Some((session, index)) = &mut self.entry {
             let mut state = lock(&session.state);
             session.expire(&mut state);
@@ -479,6 +514,7 @@ impl Drop for TraceSpan {
         let Some((session, index)) = &self.entry else {
             return;
         };
+        let _quiet = memory::suppress();
         let mut state = lock(&session.state);
         session.expire(&mut state);
         if state.stopped.is_none()
@@ -510,6 +546,8 @@ pub fn counter(category: &'static str, name: &'static str, value: f64) {
 }
 
 pub struct TraceSnapshot {
+    memory: Option<memory::MemoryCapture>,
+    threads: Vec<TraceThread>,
     gpu: gpu::GpuCapture,
     process_id: u32,
     config: TraceConfig,
@@ -517,8 +555,23 @@ pub struct TraceSnapshot {
     stats: TraceStats,
     events: Vec<Event>,
 }
+impl Drop for TraceSnapshot {
+    fn drop(&mut self) {
+        let _quiet = memory::suppress();
+        self.memory = None;
+        self.events = Vec::new();
+        self.threads = Vec::new();
+        self.gpu = gpu::GpuCapture::default();
+    }
+}
 
 impl TraceSnapshot {
+    pub fn memory(&self) -> Option<&memory::MemoryCapture> {
+        self.memory.as_ref()
+    }
+    pub fn memory_mut(&mut self) -> Option<&mut memory::MemoryCapture> {
+        self.memory.as_mut()
+    }
     pub fn stats(&self) -> TraceStats {
         self.stats
     }
@@ -526,6 +579,7 @@ impl TraceSnapshot {
     /// Chrome Trace Event JSON. Only caller-initiated export allocates JSON; the
     /// caller owns file I/O and should keep large exports off the UI thread.
     pub fn to_chrome_json(&self) -> Result<String, serde_json::Error> {
+        let _quiet = memory::suppress();
         use serde_json::json;
         let micros = |d: Duration| d.as_secs_f64() * 1_000_000.0;
         let mut events = Vec::with_capacity(self.events.len());
@@ -576,9 +630,14 @@ impl TraceSnapshot {
                 "invalid_nesting":self.stats.invalid_nesting,
                 "unframed_events":self.events.iter().filter(|event| event.frame.is_none()).count(),
                 "expired":self.stats.expired } });
+        document["gpui_threads"] =
+            json!({"schema_version":1,"process_id":std::process::id(),"threads":self.threads});
+        if let Some(memory) = &self.memory {
+            document["gpui_memory"] = serde_json::to_value(memory)?;
+        }
         if !self.gpu.submissions.is_empty() || self.gpu.dropped_records != 0 {
             let mut gpu = self.gpu.clone();
-            gpu.schema_version = 1;
+            gpu.schema_version = 2;
             gpu.process_id = self.process_id;
             gpu.elapsed_ns = self.stats.elapsed.as_nanos() as u64;
             document["gpui_capture"] = serde_json::to_value(gpu)?;
@@ -589,6 +648,7 @@ impl TraceSnapshot {
     /// Self-contained offline frame picker and recorded-call report. Export
     /// outside the live UI loop. The viewer does not compute a second analysis.
     pub fn to_html_report(&self) -> Result<String, serde_json::Error> {
+        let _quiet = memory::suppress();
         let data = self
             .to_chrome_json()?
             .replace('&', "\\u0026")
@@ -604,13 +664,13 @@ mod tests {
     #[test]
     fn abandoned_capture_releases_storage_while_a_late_scope_keeps_its_shell() {
         let session = Arc::new(Session {
+            threads: Arc::new(threads::Registry::default()),
             origin: Instant::now(),
             config: TraceConfig::default(),
             detail: TraceDetail::Detailed,
             state: Mutex::new(State {
                 events: Vec::with_capacity(4096),
                 gpu: gpu::State::default(),
-                threads: HashMap::new(),
                 open: HashMap::new(),
                 invalid_nesting: 0,
                 dropped: 0,
@@ -634,6 +694,7 @@ mod tests {
         };
         drop(TraceCapture {
             session: session.clone(),
+            memory: None,
         });
         {
             let state = lock(&session.state);
@@ -643,7 +704,7 @@ mod tests {
                 0,
                 "late guard must not retain abandoned storage"
             );
-            assert_eq!(state.threads.capacity(), 0);
+            assert!(session.threads.snapshot().is_empty());
         }
         drop(scope);
         assert!(lock(&session.state).events.is_empty());

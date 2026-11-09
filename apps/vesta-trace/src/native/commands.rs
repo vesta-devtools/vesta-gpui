@@ -34,6 +34,57 @@ impl App {
         self.table_scroll = 0;
     }
     pub(super) fn command(&mut self, command: Command) -> std::result::Result<(), TraceError> {
+        if self.smoke && self.scene == Scene::MemoryCapture {
+            println!(
+                "trace_memory_command step={} command={command:?}",
+                self.smoke_step
+            );
+        }
+        let capture = match command {
+            Command::CaptureLaunch => Some(crate::capture::Command::Launch {
+                executable: self.target.clone(),
+                arguments: self.target_arguments.clone(),
+            }),
+            Command::CaptureStart => Some(crate::capture::Command::Start {
+                duration_seconds: self.live_seconds,
+                max_events: 100_000,
+                detail: crate::capture::Detail::Stages,
+                memory: (self.live_memory && self.live_status["memory_supported"] == true)
+                    .then(crate::capture::MemoryOptions::default),
+            }),
+            Command::CaptureStop => Some(crate::capture::Command::Stop {}),
+            Command::CaptureDetach => Some(crate::capture::Command::Detach {}),
+            Command::CaptureLimit => {
+                self.live_seconds = match self.live_seconds {
+                    10 => 30,
+                    30 => 60,
+                    _ => 10,
+                };
+                self.redraw();
+                return Ok(());
+            }
+            Command::CaptureMemory => {
+                if self.live_status["state"] == "idle"
+                    && self.live_status["memory_supported"] == true
+                {
+                    self.live_memory = !self.live_memory;
+                }
+                self.redraw();
+                return Ok(());
+            }
+            _ => None,
+        };
+        if let Some(capture) = capture {
+            if self.live_pending {
+                return Ok(());
+            }
+            match self.live.submit(capture) {
+                Ok(()) => self.live_pending = true,
+                Err(error) => self.status = error.to_string(),
+            }
+            self.redraw();
+            return Ok(());
+        }
         if matches!(command, Command::Cancel) {
             return self.cancel_work();
         }
@@ -49,6 +100,49 @@ impl App {
             self.begin_change();
         }
         match command {
+            Command::GpuExecution(key) => {
+                if let Some(estimate) = self
+                    .session
+                    .as_ref()
+                    .and_then(|s| s.gpu_execution.get(&(key.generation, key.submission)))
+                    && let Some(timeline) = &mut self.timeline
+                {
+                    let start = (estimate.start_ns.max(0) as u64)
+                        .clamp(timeline.full.start, timeline.full.end - 1);
+                    let end = (estimate.end_ns.max(0) as u64)
+                        .max(start + 1)
+                        .min(timeline.full.end);
+                    timeline.select(start, end);
+                }
+                self.panel = Panel::Gpu;
+                self.gpu = Some(key);
+                self.gpu_scroll = Default::default();
+                self.reset_pages();
+                return self.reanalyze();
+            }
+            Command::MemoryAllocation(key) => {
+                self.memory.allocation = Some(key);
+                self.gpu_scroll = Default::default();
+                return self.reanalyze();
+            }
+            Command::MemoryMode(mode) => {
+                self.memory.mode = mode;
+                self.reset_pages();
+                return self.reanalyze();
+            }
+            Command::FrameOrder(order) => {
+                self.frame_sort = order;
+                self.panel = Panel::Frames;
+                self.reset_pages();
+                return self.reanalyze();
+            }
+            Command::InspectGpu(key) => {
+                self.panel = Panel::Gpu;
+                self.gpu = Some(key);
+                self.gpu_scroll = Default::default();
+                self.reset_pages();
+                return self.reanalyze();
+            }
             Command::Timeline | Command::Table => return Ok(()),
             Command::Gpu(key) => {
                 self.gpu = Some(key);
@@ -87,6 +181,7 @@ impl App {
             }
             Command::Panel(panel) => {
                 self.panel = panel;
+                self.gpu_scroll = Default::default();
                 self.reset_pages();
                 return self.reanalyze();
             }
@@ -132,7 +227,16 @@ impl App {
                             name: event.name.clone(),
                         });
                     }
-                    let mut y = 0.0;
+                    let mut y = if self.panel == Panel::Memory || self.panel == Panel::Counters {
+                        0.0
+                    } else {
+                        self.report
+                            .as_ref()
+                            .and_then(|r| r.tracks.as_ref())
+                            .map_or(session.gpu_tracks.len(), |t| t.gpu.len())
+                            as f32
+                            * 48.0
+                    };
                     if self.panel != Panel::Counters {
                         for lane in &session.lanes {
                             if lane.key == event.lane {

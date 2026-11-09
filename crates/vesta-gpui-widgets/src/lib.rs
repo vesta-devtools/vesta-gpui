@@ -175,10 +175,11 @@ pub use suggestion_view::{SuggestionViewIds, editable_combo_controlled};
 pub use tab_bar_state::TabBarState;
 pub use tab_switcher::{TabSwitcherEntry, TabSwitcherStyle, tab_switcher};
 pub use table_view::{
-    TableCell, TableCellContent, TableColumn, TableColumnContent, TableColumnResize,
-    TableResizeKey, TableRow, TableRowContent, TableViewError, TableWindowIds,
-    table_column_width_at, table_column_width_for_key, table_view, table_view_windowed,
-    table_view_windowed_scrolled, table_view_windowed_scrolled_with_content,
+    TableBandIds, TableCell, TableCellContent, TableColumn, TableColumnContent, TableColumnMetrics,
+    TableColumnResize, TableColumnWindow, TableResizeKey, TableRetainedFocus, TableRow,
+    TableRowContent, TableViewError, TableWindowIds, TableWindowRow, WideTableIds,
+    table_column_width_at, table_column_width_for_key, table_view, table_view_columns,
+    table_view_windowed, table_view_windowed_scrolled, table_view_windowed_scrolled_with_content,
     table_view_windowed_with_content, table_view_with_content,
 };
 pub use temporary_editor::{TemporaryEditorExchange, TemporaryEditorExit, TemporaryEditorState};
@@ -213,8 +214,9 @@ pub use vector_field::{
     editable_vector_field, vector_field,
 };
 pub use virtual_list::{
-    VariableListMetrics, VariableListRange, VirtualListError, VirtualListIds, VirtualListRange,
-    variable_list_with_items, virtual_list, virtual_list_with_items,
+    LazyListMetrics, ListMeasurement, ListScrollAnchor, VariableListMetrics, VariableListRange,
+    VirtualListError, VirtualListIds, VirtualListRange, variable_list_with_items, virtual_list,
+    virtual_list_with_items,
 };
 
 use vesta_gpui::{

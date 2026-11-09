@@ -54,6 +54,18 @@ rules remain; there is no universal NaN sanitizer or hidden geometry repair.
 Scroll plan admission now reuses Core Size/Rect validity, including advancing
 positive edges. Core alone owns final layout quantization and invalid output.
 
+Wide-table projection is opt-in through `TableColumnMetrics` and
+`table_view_columns`. Immutable width edges index the Host's current column
+order; row/header factories build the bounded column slice plus explicit focus
+retention. Host-provided band identities introduce no private ID allocator or
+business table model. Core's direct-child `ScrollAttachment::ViewportX` keeps
+the full-width content wrapper horizontally attached to its existing ScrollBox,
+while Widgets project scrolling/frozen clips from the same offset. Scrollbars,
+hits, semantics and Agent access retain the one layout authority.
+Reorder/resize rebuilds metrics; source data/selection/copy, offsets, focus/reveal
+and native event delivery remain Host responsibilities. Column geometry
+construction remains O(n), with bounded binary-search window projection.
+
 ## Interaction and terminal ownership
 
 Use native `open_in` entries for source-window ownership. Legacy local `open` /
@@ -84,8 +96,15 @@ in Host. No second catalogue or provider runtime is stored in Widgets.
 - Fixed lists admit the existing finite content extent and visible/overscan
   limits. Range decisions use f64 and round a nonrepresentable maximum offset
   inward; the final visible item is retained without allocating all source rows.
-  Variable metrics retain one prefix vector for caller-provided heights and
-  borrow it when projecting. Host owns source storage and retained-item policy.
+  Variable metrics retain caller-provided heights and a block-total index, and
+  borrow that geometry when projecting. A single height can update in place;
+  append and equal-length replacement update the index incrementally; other
+  structural splices rebuild the flat index in O(n). `LazyListMetrics` layers
+  bounded Host measurement and explicit width/font/content validity over that
+  same index, retaining provisional estimates and O(n) storage. Scroll anchors observe an
+  index and row inset; Host remaps the corresponding stable ID and owns removed
+  item/bottom-follow policy. Host owns source storage and retained-item policy.
+  See [decision 0040](decisions/0040-Incremental-Variable-List-Metrics-And-Scroll-Anchors.md).
 - Table views share one private projection for text/custom/windowed cells.
   Their visible range, extent, widths and resize contracts remain explicit.
   Tile grids retain existing u16 track/row limits and no new density quota;

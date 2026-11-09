@@ -68,6 +68,7 @@ impl Parameter {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Action {
+    OpenTrace,
     Study(Study),
     Tour,
     Play,
@@ -182,6 +183,7 @@ impl Model {
     }
     pub fn apply(&mut self, action: Action) {
         match action {
+            Action::OpenTrace => (), // Native host owns analyzer/session lifetime.
             Action::Study(study) => {
                 self.study = study;
                 self.tour = false;

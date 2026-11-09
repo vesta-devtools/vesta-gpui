@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vesta Trace · Perfetto</title>
+<style>
+  :root { color-scheme: dark; font: 13px system-ui, sans-serif; background: #191c22; color: #e9edf3; }
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 100vh; display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; gap: 16px; min-height: 54px; padding: 10px 18px; border-bottom: 1px solid #383e49; }
+  strong { white-space: nowrap; } #file { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #bec8d6; }
+  button { font: inherit; color: #f2f5fa; background: #343d4e; border: 1px solid #556178; border-radius: 5px; padding: 7px 13px; cursor: pointer; }
+  button:hover { background: #45526b; } button:focus-visible { outline: 2px solid #a9cbff; outline-offset: 2px; }
+  button:disabled { opacity: .45; cursor: default; } #start { background: #24593e; } #stop { background: #713942; }
+  #controls { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; padding: 12px 18px; border-bottom: 1px solid #383e49; }
+  label { display: flex; flex-direction: column; gap: 5px; color: #bec8d6; font-size: 12px; } .application { flex: 1; min-width: 220px; }
+  input, select { color: #e9edf3; background: #242a34; border: 1px solid #556178; border-radius: 4px; padding: 8px; font: inherit; }
+  #target-state { min-width: 180px; padding: 8px; color: #a9cbff; } details { width: 100%; color: #aebed5; } summary { cursor: pointer; } details input { margin: 8px; min-width: 330px; }
+  #notice { padding: 8px 18px; background: #302a1d; color: #f4d994; white-space: pre-wrap; max-height: 130px; overflow: auto; }
+  #notice:empty { display: none; } #error { color: #ffb9b9; padding: 10px 18px; background: #3a232b; } #error:empty { display: none; }
+  iframe { border: 0; flex: 1; width: 100%; min-height: 0; background: #fff; }
+  #welcome { padding: 70px 30px; text-align: center; color: #c2ccdc; } #welcome p { line-height: 1.8; }
+  #storage { color: #b3c0d3; padding: 5px 18px; font-size: 12px; user-select: text; } #storage:empty { display: none; }
+  #analysis-tools { position: fixed; top: 8px; right: 12px; z-index: 10; display: flex; gap: 6px; padding: 4px; border: 1px solid #505967; border-radius: 9px; background: #202631ee; box-shadow: 0 2px 12px #0003; opacity: .55; transition: opacity .15s; }
+  #analysis-tools:hover, #analysis-tools:focus-within { opacity: 1; } #analysis-tools button { padding: 5px 10px; font-size: 12px; }
+  #diagnostics { position: fixed; top: 54px; right: 12px; z-index: 11; width: min(620px, calc(100vw - 24px)); max-height: 70vh; overflow: auto; border: 1px solid #596272; border-radius: 8px; background: #202631; box-shadow: 0 8px 32px #0006; }
+  #diagnostics header { min-height: 42px; padding: 8px 14px; justify-content: space-between; } #notice { max-height: none; line-height: 1.55; } #storage { overflow-wrap: anywhere; padding: 10px 18px; }
+  body.analysis > header, body.analysis > #controls { display: none; } body.analysis #perfetto { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+  body.analysis #error:not(:empty) { position: fixed; top: 54px; left: 12px; right: 12px; z-index: 12; border-radius: 6px; }
+  #quality.has-notices { color: #f4d994; }
+  [hidden] { display: none !important; }
+</style>
+<header><strong>Vesta Trace · Perfetto</strong><span id="file">Open a GPUI capture to begin</span><button id="analyze" hidden>Analyze ↗</button><button id="native" disabled>GPU &amp; capture details</button><button id="open">Open capture…</button><button id="reload" title="Reload the analyzer">Reload</button><input id="picker" type="file" accept=".json,.html,.htm" hidden></header>
+<section id="controls" aria-label="Live capture controls">
+  <label class="application">GPUI application<input id="executable" placeholder="Path to your GPUI application.exe" spellcheck="false"></label>
+  <button id="launch">Launch &amp; connect</button><button id="disconnect" disabled>Disconnect</button>
+  <label>Capture limit<select id="duration"><option value="10">10 seconds</option><option value="30" selected>30 seconds</option><option value="60">60 seconds</option><option value="300">5 minutes</option></select></label>
+  <button id="start" disabled>● Start capture</button><button id="stop" disabled>■ Stop &amp; analyze</button>
+  <output id="target-state" aria-live="polite">Disconnected</output>
+  <details><summary>Connect to an application already running with trace control</summary><input id="descriptor" placeholder="Path to the application's session.json" spellcheck="false"><button id="connect">Connect</button></details>
+</section>
+<div id="error" role="alert"></div>
+<nav id="analysis-tools" aria-label="Analysis tools" hidden><button id="capture-controls" title="Show capture controls">Capture</button><button id="quality" aria-expanded="false" aria-controls="diagnostics">Details</button></nav>
+<aside id="diagnostics" aria-label="Capture diagnostics" hidden><header><strong>Capture diagnostics</strong><button id="close-diagnostics" aria-label="Close diagnostics">✕</button></header><div id="notice" role="status"></div><div id="storage"></div></aside>
+<main id="welcome"><h1>Capture and explore GPUI performance</h1><p>Launch your application, then click <b>Start capture</b>.<br>Use your application normally. Click <b>Stop &amp; analyze</b> to inspect its timeline here.<br>You can also open an existing JSON capture or HTML report.</p></main>
+<iframe id="perfetto" title="Perfetto trace analyzer" src="/#!/?mode=embedded" hidden></iframe>
+<script src="host.js"></script>
+</html>

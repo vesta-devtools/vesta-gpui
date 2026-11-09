@@ -2,9 +2,11 @@
 use crate::session::{Diagnostic, EventKey, LaneKey, Source};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+mod memory;
+pub use memory::*;
 
 pub const PROTOCOL_VERSION: u32 = 1;
-pub const ANALYSIS_VERSION: u32 = 4;
+pub const ANALYSIS_VERSION: u32 = 7;
 pub const MAX_REQUEST_BYTES: usize = 64 * 1024;
 pub const MAX_RESPONSE_BYTES: usize = 4 * 1024 * 1024;
 
@@ -28,6 +30,33 @@ pub struct Request {
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Query {
+    MemorySummary,
+    MemoryAllocations {
+        #[serde(default)]
+        sort: MemorySort,
+        #[serde(default)]
+        lifetime: MemoryPredicate,
+        stack: Option<MemoryStackKey>,
+    },
+    MemoryAllocation {
+        key: MemoryAllocationKey,
+    },
+    MemoryStackGroups {
+        #[serde(default)]
+        lifetime: MemoryPredicate,
+    },
+    MemoryStack {
+        key: MemoryStackKey,
+    },
+    MemoryCompare {
+        start_ns: u64,
+        end_ns: u64,
+    },
+    MemorySeries {
+        #[serde(default = "counter_columns")]
+        #[schemars(range(min = 1, max = 256))]
+        columns: usize,
+    },
     Session,
     Lanes,
     /// Whole-source device capability metadata; uncalibrated device clock domain.
@@ -40,9 +69,18 @@ pub enum Query {
     GpuSubmission {
         key: GpuKey,
     },
+    /// CPU-domain execution estimates, filtered by estimated interval overlap.
+    /// Unmapped records matching the other filters remain explicitly unplaced.
+    GpuExecution,
     Frames {
         #[serde(default)]
         sort: FrameSort,
+    },
+    /// Whole CPU frame attempts joined to whole GPU submissions by recorded
+    /// frame identity. Selection intersects CPU frames, not GPU execution time.
+    FrameTimings {
+        #[serde(default)]
+        sort: FrameTimingSort,
     },
     Events {
         kind: Option<Kind>,
@@ -98,6 +136,14 @@ pub struct GpuKey {
 pub enum FrameSort {
     #[default]
     DurationDesc,
+    StartAsc,
+}
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum FrameTimingSort {
+    #[default]
+    CpuDurationDesc,
+    GpuWorkDesc,
     StartAsc,
 }
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, JsonSchema)]
@@ -228,6 +274,7 @@ pub struct Cost {
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct Quality {
     pub gpu: Option<GpuCoverage>,
+    pub memory: Option<MemoryCoverage>,
     pub detail: String,
     pub dropped_events: u64,
     pub unfinished_spans: usize,
@@ -245,6 +292,41 @@ pub struct Quality {
 #[derive(Debug, Serialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Data {
+    GpuExecution {
+        items: Vec<GpuRecord>,
+        matched_estimates: usize,
+        unplaced_records: usize,
+        selection_basis: String,
+        page: PageInfo,
+    },
+    MemorySummary {
+        coverage: Option<MemoryCoverage>,
+        statistics: Option<MemoryStatistics>,
+    },
+    MemoryAllocations {
+        items: Vec<MemoryAllocationRecord>,
+        page: PageInfo,
+    },
+    MemoryAllocation {
+        item: MemoryAllocationRecord,
+    },
+    MemoryStackGroups {
+        items: Vec<MemoryStackGroup>,
+        page: PageInfo,
+    },
+    MemoryStack {
+        item: MemoryStackRecord,
+    },
+    MemoryCompare {
+        comparison: MemoryComparison,
+    },
+    MemorySeries {
+        columns: usize,
+        items: Vec<MemoryPoint>,
+        observations: usize,
+        omitted_observations: usize,
+        page: PageInfo,
+    },
     GpuClocks {
         attached: bool,
         clock_domain: String,
@@ -272,6 +354,15 @@ pub enum Data {
     Frames {
         items: Vec<EventRecord>,
         statistics: FrameStatistics,
+        page: PageInfo,
+    },
+    FrameTimings {
+        gpu_attached: bool,
+        /// Source-wide records without a CPU frame association; never inferred.
+        source_unframed_gpu_records: usize,
+        items: Vec<FrameTimingRecord>,
+        statistics: FrameTimingStatistics,
+        sort: FrameTimingSort,
         page: PageInfo,
     },
     Events {
@@ -317,9 +408,14 @@ pub struct GpuCoverage {
     pub unavailable: usize,
     pub dropped_records: u64,
     pub cpu_clock_mapping: bool,
+    pub execution_estimates: usize,
+    pub calibration_failed: usize,
+    pub unmapped_samples: usize,
+    pub drift_bound_known: bool,
 }
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct GpuClockRecord {
+    pub calibration_support: String,
     pub process: u64,
     pub generation: u64,
     pub device_name: String,
@@ -333,6 +429,9 @@ pub struct GpuClockRecord {
 }
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct GpuRecord {
+    pub execution: Option<GpuExecutionRecord>,
+    pub calibration: Option<GpuCalibrationRecord>,
+    pub calibration_error: Option<String>,
     pub key: GpuKey,
     pub window: u64,
     pub lane: LaneKey,
@@ -345,6 +444,26 @@ pub struct GpuRecord {
     pub elapsed_ns: Option<u64>,
     pub completion_upper_bound_ns: Option<u64>,
     pub unavailable: Option<String>,
+}
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct GpuExecutionRecord {
+    pub estimated_start_ns: i64,
+    pub estimated_end_ns: i64,
+    pub anchor_cpu_ns: i64,
+    pub anchor_uncertainty_ns: u64,
+    pub anchor_distance_ns: u64,
+    pub drift_bound_known: bool,
+}
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct GpuCalibrationRecord {
+    pub device_ticks: String,
+    pub host_ticks: String,
+    pub host_before_ticks: String,
+    pub host_after_ticks: String,
+    pub host_frequency_hz: String,
+    pub cpu_before_ns: u64,
+    pub cpu_after_ns: u64,
+    pub max_deviation_ns: u64,
 }
 #[derive(Clone, Copy, Debug, Serialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -383,6 +502,7 @@ pub struct PageInfo {
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct LaneRecord {
     pub key: LaneKey,
+    pub name: Option<String>,
     pub events: usize,
     pub max_depth: usize,
 }
@@ -422,4 +542,36 @@ pub struct FrameStatistics {
     pub p95_ns: Option<u64>,
     pub p99_ns: Option<u64>,
     pub worst: Option<EventKey>,
+}
+
+#[derive(Debug, Default, Serialize, JsonSchema)]
+pub struct FrameGpuWork {
+    pub records: usize,
+    pub samples: usize,
+    pub pending: usize,
+    pub unavailable: usize,
+    /// Sum of whole sampled submission durations, including work outside the
+    /// selected CPU interval. Overlap can make this exceed elapsed frame time.
+    /// Null is missing timing; Some(0) is an actual zero-duration sample.
+    pub sampled_work_ns: Option<u64>,
+    pub longest_sample_ns: Option<u64>,
+    pub longest_submission: Option<GpuKey>,
+    /// Only covers recorded submissions; false if none or producer GPU loss.
+    pub all_recorded_submissions_sampled: bool,
+}
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct FrameTimingRecord {
+    pub frame: EventRecord,
+    pub gpu: FrameGpuWork,
+}
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct FrameTimingStatistics {
+    pub cpu: FrameStatistics,
+    pub frames_with_gpu_records: usize,
+    pub frames_with_gpu_samples: usize,
+    pub frames_with_all_recorded_submissions_sampled: usize,
+    pub gpu_samples: usize,
+    pub gpu_pending: usize,
+    pub gpu_unavailable: usize,
+    pub source_dropped_gpu_records: u64,
 }

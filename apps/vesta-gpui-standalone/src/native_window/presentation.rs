@@ -82,8 +82,22 @@ impl App {
             );
             host.area_layout
                 .prepare(&mut self.area_state, &mut self.text_context);
+            if collection_samples::active(&self.demo, ContainerRef::Floating(host.logical_id)) {
+                let focus = focused_element
+                    .and_then(|element| host.actions.action_at(element))
+                    .and_then(|action| match action {
+                        DemoAction::Sample(action) => Some(*action),
+                        _ => None,
+                    });
+                host.collection_samples.prepare(
+                    &self.demo.collection_source,
+                    &mut self.text_context,
+                    focus,
+                );
+            }
             let gallery = build_gallery(&UiBuildState {
                 documents: &host.documents,
+                collection_samples: &host.collection_samples,
                 selected_feedback: native_capture::selected_feedback_enabled(self),
                 ui_window: host.ui_window,
                 menu_open: host.pane_menu.is_some(),
@@ -233,6 +247,13 @@ impl App {
                 host.scopes.gallery,
                 &layout,
             );
+            if host
+                .collection_samples
+                .sync_layout(host.scopes.gallery, &layout)
+            {
+                self.native_windows.insert(window_id, host);
+                continue;
+            }
             match host.documents.sync_layout(
                 host.scopes.markdown,
                 &layout,
@@ -316,6 +337,7 @@ impl App {
                     host.scopes.gallery,
                 );
             let mut scroll_changed = (ScrollStates {
+                samples: Some(&mut host.collection_samples),
                 tree: &mut self.demo.tree_scroll,
                 virtual_list: &mut self.demo.virtual_scroll,
                 virtual_table: &mut self.demo.virtual_table_scroll,
@@ -403,6 +425,12 @@ impl App {
                 focus_root,
                 &mut host.input,
             );
+            host.collection_samples.commit_focus(
+                host.scopes.gallery,
+                host.ui_window,
+                &scope,
+                &mut host.input,
+            );
             if let Some(restored) = scope.resolve_request(&mut host.input) {
                 let owner = host.ui_window;
                 if focus_native && restored.is_some() {
@@ -468,6 +496,7 @@ impl App {
                     layout_stable: !(wrap_changed || scroll_changed || tab_changed),
                 },
                 &mut ScrollStates {
+                    samples: Some(&mut host.collection_samples),
                     tree: &mut self.demo.tree_scroll,
                     virtual_list: &mut self.demo.virtual_scroll,
                     virtual_table: &mut self.demo.virtual_table_scroll,

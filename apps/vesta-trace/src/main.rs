@@ -1,13 +1,24 @@
 #![forbid(unsafe_code)]
 mod analysis;
+mod capture;
+mod capture_target;
 mod control;
 mod counters;
+#[cfg(test)]
+mod frame_timing_tests;
 mod gpu;
+#[cfg(test)]
+mod gpu_clock_tests;
 #[cfg(test)]
 mod gpu_tests;
 mod import;
 mod inspection;
+mod memory;
+#[cfg(test)]
+mod memory_tests;
 mod native;
+#[cfg(feature = "perfetto")]
+mod perfetto;
 mod plot;
 mod query;
 #[cfg(test)]
@@ -43,8 +54,43 @@ fn run() -> Result<(), session::TraceError> {
     let mut query_stdio = false;
     let mut schema = false;
     let mut self_trace = false;
+    let mut native_view = false;
+    let mut perfetto_view = false;
+    let mut perfetto_smoke = false;
+    let mut capture_smoke = false;
+    let mut perfetto_directory = None;
+    let mut target = None;
+    let mut target_arguments = Vec::new();
+    let mut connect = None;
+    let mut capture_stdio = false;
+    let mut capture_schema = false;
+    let mut output_directory = None;
     for argument in std::env::args().skip(1) {
-        if argument == "--trace-ui" || argument.starts_with("--trace-ui=") {
+        if argument == "--capture-stdio" {
+            capture_stdio = true;
+        } else if argument == "--capture-schema" {
+            capture_schema = true;
+        } else if let Some(value) = argument.strip_prefix("--connect=") {
+            connect = Some(PathBuf::from(value));
+        } else if let Some(value) = argument.strip_prefix("--output-dir=") {
+            output_directory = Some(PathBuf::from(value));
+        } else if let Some(value) = argument.strip_prefix("--target=") {
+            target = Some(PathBuf::from(value));
+        } else if let Some(value) = argument.strip_prefix("--target-arg=") {
+            target_arguments.push(value.to_owned());
+        } else if argument == "--native" {
+            native_view = true;
+        } else if argument == "--perfetto" {
+            perfetto_view = true;
+        } else if argument == "--perfetto-smoke" {
+            perfetto_view = true;
+            perfetto_smoke = true;
+        } else if argument == "--perfetto-capture-smoke" {
+            perfetto_view = true;
+            capture_smoke = true;
+        } else if let Some(value) = argument.strip_prefix("--perfetto-ui=") {
+            perfetto_directory = Some(PathBuf::from(value));
+        } else if argument == "--trace-ui" || argument.starts_with("--trace-ui=") {
             self_trace = true;
         } else if argument == "--schema" {
             schema = true;
@@ -54,9 +100,19 @@ fn run() -> Result<(), session::TraceError> {
             summary = true;
         } else if argument == "--smoke" {
             smoke = true;
+        } else if argument == "--live-smoke" {
+            smoke = true;
+            set_scene(&mut scene, native::Scene::LiveCapture)?;
+        } else if argument == "--memory-smoke" {
+            smoke = true;
+            set_scene(&mut scene, native::Scene::MemoryCapture)?;
         } else if argument == "--inspect-smoke" {
             smoke = true;
             set_scene(&mut scene, native::Scene::Inspection)?;
+        } else if let Some(value) = argument.strip_prefix("--clock-capture=") {
+            capture = Some(PathBuf::from(value));
+            smoke = true;
+            set_scene(&mut scene, native::Scene::GpuClock)?;
         } else if let Some(value) = argument.strip_prefix("--inspect-capture=") {
             capture = Some(PathBuf::from(value));
             smoke = true;
@@ -93,15 +149,54 @@ fn run() -> Result<(), session::TraceError> {
         } else {
             return Err(session::TraceError::new(
                 "trace_usage",
-                "vesta-trace [GPUI trace.json|report.html] [--schema|--query-stdio|--summary|--smoke] [--filter=text]",
+                "vesta-trace [GPUI trace.json|report.html] [--perfetto|--native|--schema|--query-stdio|--summary|--smoke] [--perfetto-ui=directory] [--filter=text]",
             ));
         }
     }
-    if usize::from(schema) + usize::from(query_stdio) + usize::from(summary) + usize::from(smoke)
+    if usize::from(schema)
+        + usize::from(query_stdio)
+        + usize::from(summary)
+        + usize::from(smoke)
+        + usize::from(capture_stdio)
+        + usize::from(capture_schema)
         > 1
         || ((schema || query_stdio) && (!filter.is_empty() || capture.is_some()))
         || (schema && input.is_some())
         || (self_trace && (schema || summary || query_stdio))
+        || (native_view && perfetto_view)
+        || ((perfetto_view || perfetto_directory.is_some())
+            && (schema || summary || query_stdio || smoke || self_trace || !filter.is_empty()))
+        || (target.is_none() && !target_arguments.is_empty())
+        || (target.is_some() && connect.is_some())
+        || (connect.is_some()
+            && (schema || query_stdio || summary || smoke || perfetto_view || self_trace))
+        || ((capture_stdio || capture_schema)
+            && (input.is_some()
+                || target.is_some()
+                || connect.is_some()
+                || perfetto_view
+                || native_view
+                || self_trace
+                || !filter.is_empty()
+                || capture.is_some()))
+        || (capture_schema && output_directory.is_some())
+        || (perfetto_smoke && input.is_none())
+        || (capture_smoke && (input.is_some() || perfetto_smoke))
+        || (matches!(
+            scene,
+            native::Scene::LiveCapture | native::Scene::MemoryCapture
+        ) && input.is_some())
+        || ((target.is_some() || !target_arguments.is_empty())
+            && (schema
+                || summary
+                || query_stdio
+                || (smoke
+                    && !matches!(
+                        scene,
+                        native::Scene::LiveCapture | native::Scene::MemoryCapture
+                    ))
+                || self_trace
+                || !filter.is_empty()))
         || matches!(scene, native::Scene::Focus | native::Scene::Lifecycle) != alternate.is_some()
     {
         return Err(session::TraceError::new(
@@ -118,6 +213,17 @@ fn run() -> Result<(), session::TraceError> {
     if schema {
         println!("{}", query::transport::schemas());
         return Ok(());
+    }
+    if capture_schema {
+        println!("{}", capture::schemas());
+        return Ok(());
+    }
+    if capture_stdio {
+        return capture::serve(
+            output_directory,
+            &mut std::io::stdin().lock(),
+            &mut std::io::stdout().lock(),
+        );
     }
     if query_stdio {
         let input = input.ok_or_else(|| {
@@ -136,6 +242,22 @@ fn run() -> Result<(), session::TraceError> {
         );
     }
     if !summary {
+        if perfetto_view || perfetto_directory.is_some() {
+            #[cfg(feature = "perfetto")]
+            return perfetto::run(
+                input,
+                perfetto_directory,
+                perfetto_smoke,
+                capture_smoke,
+                target,
+                target_arguments,
+            );
+            #[cfg(not(feature = "perfetto"))]
+            return Err(session::TraceError::new(
+                "trace_optional_feature",
+                "Perfetto proof requires an explicit build with --features perfetto; native Trace is the default",
+            ));
+        }
         return native::run(
             input,
             native::Options {
@@ -144,6 +266,10 @@ fn run() -> Result<(), session::TraceError> {
                 capture_dir: capture,
                 scene,
                 alternate,
+                target,
+                target_arguments,
+                connect,
+                output_directory,
             },
         )
         .map_err(|e| session::TraceError::new("trace_native", e.to_string()));

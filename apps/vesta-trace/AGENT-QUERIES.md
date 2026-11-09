@@ -84,7 +84,99 @@ query/display decimation, separate from capture loss. Every returned point is an
 actual observation; no zero-fill, averages or interpolated samples are generated.
 Use a minimum/maximum point's event key with `event` for full evidence drill-down.
 
+## Observed heap evidence — analysis 6
+
+`memory_summary` reports whether the optional heap extension exists. All other
+heap operations return `trace_memory_not_attached` when absent. `quality.memory`
+contains the inclusive last known instant (`through_ns`), operation/stack counts,
+event cap, hook errors, unresolved frames and unknown baseline operations. This
+channel covers observed Rust System global-allocator lifetimes; pre-capture,
+recorder-excluded, native/driver and GPU heaps are outside the baseline. Live
+bytes/counts are observed totals, not process-wide usage or a leak diagnosis.
+
+```jsonl
+{"schema_version":1,"request_id":"heap","query":{"op":"memory_summary"}}
+{"schema_version":1,"request_id":"live","query":{"op":"memory_allocations","sort":"size_desc","lifetime":{"state":"live_at","time_ns":50000000}},"page":{"limit":20}}
+{"schema_version":1,"request_id":"growth","query":{"op":"memory_compare","start_ns":10000000,"end_ns":50000000}}
+{"schema_version":1,"request_id":"new","query":{"op":"memory_allocations","lifetime":{"state":"new_survivors","start_ns":10000000,"end_ns":50000000}},"page":{"limit":20}}
+{"schema_version":1,"request_id":"stacks","query":{"op":"memory_stack_groups","lifetime":{"state":"live_at","time_ns":50000000}},"page":{"limit":20}}
+{"schema_version":1,"request_id":"heap-curve","query":{"op":"memory_series","columns":64},"page":{"limit":1000}}
+```
+
+Use times from this source's actual coverage. Time-point and comparison queries
+reject instants after `through_ns`; they never extrapolate a flat curve beyond
+the known prefix. `memory_compare` returns observed start/end totals plus common,
+new-surviving, released and transient lifetime cohorts. `observed_change_bytes`
+is an exact signed decimal string. Retrieve each cohort's actual rows with the
+corresponding `lifetime.state`: `common`, `new_survivors`, `released`, `transient`.
+At instant t all operations with timestamp <= t are applied; a free at t removes
+the block. Nanosecond ties preserve operation order in raw/series evidence.
+
+Allocation keys are `{process,allocation}`, where allocation is the original
+alloc/successful-realloc operation ID. Address reuse creates a distinct key.
+`memory_allocation` follows such a key; its returned `stack` key can be passed to
+`memory_stack`. Successful realloc closes the old lifetime and links a new one;
+failed realloc preserves the original. Unobserved prior allocations stay unknown.
+`sort` is `size_desc` (default), `allocated_asc`, or `lifetime_desc`; unresolved
+lifetimes use their observed duration through the coverage end for ordering.
+
+`quality.memory` also reports allocation records with/without stacks, requested
+depth, potentially truncated stacks, `stack_observations_dropped`, the stored
+frame budget and `symbol_budget_exhausted`. Missing stack/symbol metadata does
+not remove the lifetime operation or make the rest of the heap unknown.
+
+`memory_allocations` and `memory_stack_groups` support range/lane/text selection.
+Ranges select lifetimes intersecting the half-open interval (including an
+allocation/free observed at one timestamp); lanes select the allocation thread,
+including named memory-only threads. Text matches allocation addresses or stack
+addresses/function/file labels. An optional exact `stack` filter is available on
+allocations. CPU frame selection is unsupported because no allocation-to-frame
+ownership is invented. Summary and individual allocation/stack lookup do not
+accept filters; comparisons use their explicit A–B times and optional lane/text.
+
+`memory_series` returns actual post-operation bytes/counts in operation order.
+Its bounded bins retain first/last and min/max byte and count observations; no
+interpolation or zero-fill is emitted. `omitted_observations` is decimation,
+separate from capture loss. Series accepts only range selection. Page through
+the representatives if necessary; the curve is not a process-memory baseline.
+All list operations use the existing source/query-bound cursor and work budgets.
+Stack frames retain raw hexadecimal addresses, available local function/file/line
+metadata and potential truncation. CPU scope names remain recorded labels;
+heap stack resolution does not imply system CPU stack sampling.
+
 ## GPU evidence
+
+Analysis version 5 adds `frame_timings`, shared with the native **Frames** tab:
+
+```json
+{"schema_version":1,"request_id":"cpu-gpu","query":{"op":"frame_timings","sort":"gpu_work_desc"},"page":{"limit":10}}
+```
+
+Sort by `cpu_duration_desc` (default), `gpu_work_desc`, or `start_asc`. Normal
+range/lane/frame/text selection chooses CPU frame attempts. Text matches the
+frame's recorded name/category. Each row returns the whole CPU frame evidence
+and GPU submissions joined by its original frame key. `overlap_ns` shows CPU
+selection overlap; GPU durations are **whole associated submissions**, even
+when their CPU recording contexts lie outside the selected subinterval. A
+GPU-context query (`gpu_submissions`) retains its separate original semantics.
+
+`gpu.sampled_work_ns` sums available submission durations, which can overlap
+across queues/windows and exceed CPU frame elapsed time. It is not GPU frame
+latency or utilization. Null means no measured timing; zero means an actual
+zero-duration sample. Inspect `samples`, `pending`, `unavailable` and
+`all_recorded_submissions_sampled`; missing records and producer loss prevent a
+complete recorded-sample claim. `longest_submission` is an actual `GpuKey` for
+`gpu_submission` drill-down. Follow the CPU frame key with `hotspots`, `tree`, or
+`gpu_submissions` using `selection.frame` to inspect its individual work.
+
+Statistics describe all selected CPU frames before paging, including whole-frame
+CPU percentiles and GPU coverage counts. `source_unframed_gpu_records` and
+`statistics.source_dropped_gpu_records` explicitly describe the whole input;
+unframed submissions are not assigned to a nearby frame. CPU-only captures keep
+their rows with null GPU timing. Deterministic sorting, source/query-bound paging,
+request budgets, cancellation and checked totals use the shared query contract.
+CPU/GPU clock mapping remains unavailable. Analysis-4 cursors are rejected by
+analysis 5; request current schemas and fresh pages after upgrading.
 
 Analysis version 4 includes the optional capture-schema-1 GPU attachment. Original
 CPU schema 2 remains unchanged. Use actual returned keys rather than these

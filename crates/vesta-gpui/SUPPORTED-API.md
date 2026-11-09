@@ -20,6 +20,18 @@ integration with [the host recipe](../../docs/HOSTING.md).
 
 ## Additive process-local trace — 2026-10-30
 
+The in-development optional heap extension (ADR0045) adds
+`TraceCapture::start_with_memory`, `memory_stats`, `TraceSnapshot::memory` /
+`memory_mut`, `trace::memory::{MemoryConfig,MemoryCapture,MemoryOperation}` and
+capture-local `TraceThread` metadata. `vesta-gpui-winit::UiTraceAllocator` is an
+explicit `System` global-allocator wrapper; core stays safe Rust. Hosts opt in
+both to installing the wrapper and enabling a bounded memory capture. Allocator
+hook/suppression entry points are adapter plumbing, not a generic allocator or
+permission to change allocator semantics. The thread-bound suppression owner
+cannot cross threads. The extension does not establish system/native/GPU heap
+coverage, known pre-capture baseline or complete CPU stack sampling. Existing
+CPU-v2/GPU-v1 files remain readable; analysis 6 admits the optional heap schema 1.
+
 `trace::{TraceCapture, TraceConfig, TraceSnapshot, TraceStats, TraceSpan, TraceError}`
 and `trace::{frame, span, instant, counter, is_recording}` provide explicit bounded
 wall-time capture. Normal shared stages inherit current parent/frame automatically.
@@ -248,6 +260,19 @@ stable element identities in depth-first order. Paint, hit testing and scroll
 geometry consume these same rectangles and clips. An explicitly unclipped child
 contributes its visible extent; reserved scroll gutters reflow content, and
 scroll offsets affect the derived projection rather than author data.
+
+`ScrollAttachment` and `Style::scroll_attachment` explicitly control how a
+direct child follows its immediate ScrollBox parent's translation. `Content`
+is the unchanged default; `ViewportX`, `ViewportY` and `Viewport` omit translation
+on the named axes. Natural layout, content extent, parent clipping and scrollbar
+geometry remain authoritative. Other parents ignore this field; it does not
+escape an ancestor clip or find a more distant scroll owner. Paint, hits,
+AccessKit and Agent inspection consume the resulting one LayoutTree. The wide
+table uses one horizontally attached content wrapper with full content width,
+then projects its scrolling/frozen bands through that same scroll offset.
+There is no independent sticky-element state or second solver. Callers own the
+tree, valid dimensions and scroll policy; lifecycle ends with the Element.
+[Decision 0044](../../docs/decisions/0044-Streaming-Lists-And-Wide-Tables.md).
 
 Hosts use `compute_with_text_context` for the same font shaping and baselines as
 paint, or provide their own metrics through the existing measurement entries.

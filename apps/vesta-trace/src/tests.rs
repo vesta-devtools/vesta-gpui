@@ -168,6 +168,8 @@ fn native_inspection_keeps_range_work_separate_from_whole_event_and_parent_evide
     let cancel = AtomicBool::new(false);
     let range = TimeRange::new(25000, 60000).expect("selection");
     let mut selection = Selection {
+        memory: Default::default(),
+        frame_sort: Default::default(),
         gpu: None,
         panel: Panel::Callers,
         timer: Some(TimerKey {

@@ -141,6 +141,7 @@ impl App {
         let pointer = self.cursor;
         let geometry = self.scroll_geometry.clone();
         let mut states = ScrollStates {
+            samples: Some(&mut self.collection_samples),
             tree: &mut self.demo.tree_scroll,
             virtual_list: &mut self.demo.virtual_scroll,
             virtual_table: &mut self.demo.virtual_table_scroll,
@@ -181,6 +182,7 @@ impl App {
         let pointer = self.cursor;
         let geometry = self.scroll_geometry.clone();
         let mut states = ScrollStates {
+            samples: Some(&mut self.collection_samples),
             tree: &mut self.demo.tree_scroll,
             virtual_list: &mut self.demo.virtual_scroll,
             virtual_table: &mut self.demo.virtual_table_scroll,
@@ -511,6 +513,7 @@ impl App {
             let hit = self.hit_test.hit(self.cursor);
             let geometry = self.scroll_geometry.clone();
             let mut states = ScrollStates {
+                samples: Some(&mut self.collection_samples),
                 tree: &mut self.demo.tree_scroll,
                 virtual_list: &mut self.demo.virtual_scroll,
                 virtual_table: &mut self.demo.virtual_table_scroll,

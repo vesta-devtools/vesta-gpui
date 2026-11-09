@@ -385,6 +385,38 @@ node tools/verify/gpui_ui_control.mjs --agent
 
 ### Interactive Gallery
 
+The **Messages & Data** tab is the native consumer for measured messages and
+column-windowed tables (decision 0044). Messages support Append, Earlier,
+Stream and Latest; wheel/thumb/keyboard reading pauses tail following, while
+history insertion preserves the viewed record. Source data is shared by this
+Host, with independent width/font measurements and scroll/focus/selection in
+each window. The table has 10,000 rows and 512 fields, frozen logical ends,
+LTR/RTL, source reorder/width changes and stable focused-cell retention.
+Arrows, Page Up/Down, Home/End and Control+Home/End navigate cells;
+Shift+click/arrows selects a rectangle and Copy/Control+C writes Host values
+through the existing clipboard. The demonstration bounds copying to 4,096
+cells; its values contain no TSV delimiters. It adds no general export service.
+
+For a fresh, nonpersistent Main/Float comparison over the same source:
+
+```powershell
+.\target\debug\vesta-gpui-standalone.exe --collections-fixture --ui-control-stdio
+node tools/verify/streaming_collections.mjs
+```
+
+The fixture skips preference/session restore and save, creates actual windows
+at different widths and uses the ordinary presentation/input/rendering paths.
+It requires its own interactive run, separate from the other finite smoke
+drivers. The verifier owns one such process, discovers semantic commands,
+checks complete snapshots, shared append, reader anchors across prepend/append
+and native resize, narrow freeze fallback, Float RTL range navigation and
+per-window focus retention. It records next-presented GPU PNGs and explicit
+offscreen 1/1.5/2-scale images plus executable/protocol/exit evidence under
+`target/research/native-collections-agent/`. Those semantic commands are
+separate from physical input and screen-reader qualification. Offscreen scale
+images do not change the native desktop DPI. Hints wrap in narrow panes; copying
+and following/reading notices use the existing polite Status semantic role.
+
 ```powershell
 cargo run -p vesta-gpui-standalone -- --mode=2d
 cargo run -p vesta-gpui-standalone -- --mode=3d

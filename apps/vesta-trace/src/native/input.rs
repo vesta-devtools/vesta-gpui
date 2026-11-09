@@ -304,7 +304,7 @@ impl App {
                 }
                 let scale = self.window.as_ref().map_or(1.0, |w| w.scale_factor());
                 let delta = vesta_gpui_winit::wheel_delta(*delta, scale, 32.0);
-                if self.panel == Panel::Gpu
+                if matches!(self.panel, Panel::Gpu | Panel::Memory)
                     && self
                         .layout_tree
                         .as_ref()
@@ -415,7 +415,7 @@ impl App {
     }
 
     fn gpu_scroll_key(&mut self, key: &Key) -> bool {
-        if self.panel != Panel::Gpu
+        if !matches!(self.panel, Panel::Gpu | Panel::Memory)
             || self
                 .ownership
                 .focus()

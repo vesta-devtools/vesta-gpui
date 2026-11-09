@@ -1503,6 +1503,7 @@ pub(super) fn build_gallery(input: &UiBuildState<'_>) -> GalleryUi {
         ),
     ]);
     let mut pages = pages;
+    collection_samples::register_page(input, &mut pages, &mut actions);
     native_capture::project_selected_feedback(input, &mut pages, &mut actions);
     input
         .documents

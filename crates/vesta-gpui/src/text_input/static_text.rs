@@ -5,7 +5,9 @@ use std::{
     hash::Hash,
 };
 
-const STATIC_TEXT_CACHE_ENTRIES: usize = 512;
+// A 32x24 realized table has 792 header/cell strings. Keep that short-text
+// working set without increasing the independent source-byte budget.
+const STATIC_TEXT_CACHE_ENTRIES: usize = 1024;
 const STATIC_TEXT_CACHE_BYTES: usize = 128 * 1024;
 
 pub(super) type StaticTextBaseKey = (String, u32, FontRole);

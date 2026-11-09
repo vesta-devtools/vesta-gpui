@@ -38,6 +38,8 @@ use vulkano::{
     render_pass::RenderPass,
 };
 
+mod glyph_scissor;
+
 pub(super) enum Prepared {
     Shape {
         vertices: Vec<[f32; 12]>,
@@ -167,9 +169,12 @@ fn glyphs(
     color: Color,
     rasterizer: &mut TextRasterizer,
 ) -> Result<(), RendererError> {
-    let Some(scissor) = render::scissor(view.clip, viewport) else {
+    let Some(local_scissor) = render::scissor(view.clip, viewport) else {
         return Ok(());
     };
+    let common_scissor = render::scissor(viewport.logical_rect(), viewport);
+    let first = out.len();
+    let mut contained = true;
     rasterizer
         .visit_glyph_refs(snapshot, view, viewport.scale_factor, |glyph| {
             if glyph.width == 0 || glyph.height == 0 {
@@ -182,26 +187,36 @@ fn glyphs(
                 glyph.width as f32 / scale,
                 glyph.height as f32 / scale,
             );
-            // Match the wgpu atlas: filtering at a glyph edge samples a transparent gutter.
+            contained &= glyph_scissor::contains(local_scissor, rect, viewport);
+            // Preserve the original quad, UVs and atlas insertion order. Only
+            // remove the run scissor when it cannot discard any glyph coverage.
             let width = glyph.width + 2;
             let height = glyph.height + 2;
             let left = 1.0 / width as f32;
             let top = 1.0 / height as f32;
             let right = (glyph.width + 1) as f32 / width as f32;
             let bottom = (glyph.height + 1) as f32 / height as f32;
+            let vertices = render::texture_vertices_uv(
+                rect,
+                viewport,
+                [[left, top], [right, top], [right, bottom], [left, bottom]],
+            )
+            .map(texture);
             out.push(Prepared::Glyph {
-                vertices: render::texture_vertices_uv(
-                    rect,
-                    viewport,
-                    [[left, top], [right, top], [right, bottom], [left, bottom]],
-                )
-                .map(texture),
-                scissor,
+                vertices,
+                scissor: local_scissor,
                 glyph: glyph.clone(),
                 color,
             });
         })
         .map_err(|e| RendererError::at("raster", format!("{e:?}")))?;
+    if contained && let Some(common_scissor) = common_scissor {
+        for draw in &mut out[first..] {
+            if let Prepared::Glyph { scissor, .. } = draw {
+                *scissor = common_scissor;
+            }
+        }
+    }
     Ok(())
 }
 

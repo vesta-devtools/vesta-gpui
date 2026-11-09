@@ -56,6 +56,7 @@ struct Drag {
     playing: bool,
 }
 struct App {
+    trace_host: Option<vesta_gpui_winit::UiTraceHost>,
     model: Model,
     window: Option<Arc<Window>>,
     creation: Option<RendererCreation>,
@@ -113,6 +114,24 @@ impl App {
         self.input.cancel_capture();
     }
     fn apply(&mut self, action: Action) {
+        if action == Action::OpenTrace {
+            let result = (|| -> std::io::Result<bool> {
+                if self.trace_host.is_none() {
+                    self.trace_host = Some(vesta_gpui_winit::UiTraceHost::new()?);
+                }
+                self.trace_host
+                    .as_mut()
+                    .expect("host trace owner")
+                    .open_default_analyzer()
+            })();
+            self.model.status = match result {
+                Ok(true) => "Trace analyzer opened — start a capture there".into(),
+                Ok(false) => "Trace analyzer is already open".into(),
+                Err(error) => format!("Trace: {error}"),
+            };
+            self.redraw();
+            return;
+        }
         if matches!(action, Action::Study(_)) {
             self.cancel_drag(true);
         }
@@ -850,6 +869,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         model.apply(Action::Tour);
     }
     let mut app = App {
+        trace_host: None,
         model,
         window: None,
         creation: None,

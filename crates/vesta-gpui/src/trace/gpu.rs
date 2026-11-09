@@ -1,5 +1,7 @@
 //! Portable, capture-owned submission facts. No graphics objects or scheduling.
 use super::{Session, active, lock};
+mod clock;
+pub use clock::*;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet, hash_map::Entry},
@@ -34,6 +36,8 @@ pub struct GpuClock {
     /// Null when the driver supplied invalid metadata, never a fabricated period.
     pub period_ns: Option<f64>,
     pub unavailable: Option<GpuUnavailable>,
+    #[serde(default)]
+    pub calibration_support: GpuCalibrationSupport,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -60,6 +64,10 @@ pub struct GpuSubmission {
     /// CPU recording context, NOT GPU execution start or a clock calibration.
     pub recorded_cpu_ns: u64,
     pub outcome: GpuOutcome,
+    #[serde(default)]
+    pub calibration: Option<GpuCalibration>,
+    #[serde(default)]
+    pub calibration_error: Option<GpuCalibrationFailure>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -131,6 +139,7 @@ pub fn begin_submission(
     submission: u64,
 ) -> Option<GpuSubmissionToken> {
     let session = active()?;
+    let _quiet = super::memory::suppress();
     let mut state = lock(&session.state);
     session.expire(&mut state);
     if state.stopped.is_some() {
@@ -140,11 +149,7 @@ pub fn begin_submission(
         state.gpu.capture.dropped_records = state.gpu.capture.dropped_records.saturating_add(1);
         return None;
     }
-    let next = state.threads.len() as u32 + 1;
-    let thread = *state
-        .threads
-        .entry(std::thread::current().id())
-        .or_insert(next);
+    let thread = session.threads.current();
     let frame_id = state
         .open
         .get(&thread)
@@ -173,6 +178,8 @@ pub fn begin_submission(
         frame_id,
         recorded_cpu_ns: session.now().as_nanos() as u64,
         outcome: GpuOutcome::Recording,
+        calibration: None,
+        calibration_error: None,
     });
     drop(state);
     Some(GpuSubmissionToken {
@@ -184,6 +191,64 @@ pub fn begin_submission(
 }
 
 impl GpuSubmissionToken {
+    /// Capture-owned clock observation; None after freeze/expiry. No global
+    /// lookup can accidentally observe a successor capture's origin.
+    pub fn cpu_time_ns(&self) -> Option<u64> {
+        let _quiet = super::memory::suppress();
+        let mut state = lock(&self.session.state);
+        self.session.expire(&mut state);
+        state
+            .stopped
+            .is_none()
+            .then(|| self.session.now().as_nanos() as u64)
+    }
+    pub fn complete_with_calibration(
+        mut self,
+        outcome: GpuOutcome,
+        calibration: Result<GpuCalibration, GpuCalibrationFailure>,
+    ) {
+        let _quiet = super::memory::suppress();
+        self.completed = true;
+        let mut state = lock(&self.session.state);
+        self.session.expire(&mut state);
+        if state.stopped.is_some() {
+            return;
+        }
+        let Some(record) = state.gpu.capture.submissions.get(self.index) else {
+            return;
+        };
+        let calibration = calibration.and_then(|sample| {
+            let clock = state
+                .gpu
+                .capture
+                .clocks
+                .iter()
+                .find(|c| c.generation == record.generation)
+                .ok_or(GpuCalibrationFailure::InvalidMetadata)?;
+            let GpuOutcome::Sample {
+                raw_ticks,
+                elapsed_ns,
+                ..
+            } = outcome
+            else {
+                return Err(GpuCalibrationFailure::InvalidMetadata);
+            };
+            map_execution(
+                clock,
+                raw_ticks,
+                record.recorded_cpu_ns,
+                elapsed_ns,
+                &sample,
+            )?;
+            Ok(sample)
+        });
+        let record = &mut state.gpu.capture.submissions[self.index];
+        record.outcome = outcome;
+        match calibration {
+            Ok(sample) => record.calibration = Some(sample),
+            Err(error) => record.calibration_error = Some(error),
+        }
+    }
     fn update(&self, outcome: GpuOutcome) {
         let mut state = lock(&self.session.state);
         self.session.expire(&mut state);

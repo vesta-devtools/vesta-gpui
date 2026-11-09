@@ -1,6 +1,8 @@
 //! GPUI projection of the independent session and analysis models.
 mod counters;
+mod frames;
 mod gpu;
+mod memory;
 mod panels;
 use crate::{analysis::Analysis, session::*, timeline::Timeline};
 use crate::{
@@ -15,7 +17,18 @@ use vesta_gpui_widgets::{ControlState, Widget, WidgetIdentity, WidgetTheme, butt
 
 #[derive(Clone, Debug)]
 pub enum Command {
+    CaptureLaunch,
+    CaptureStart,
+    CaptureStop,
+    CaptureDetach,
+    CaptureLimit,
+    CaptureMemory,
+    MemoryAllocation(crate::query::protocol::MemoryAllocationKey),
+    MemoryMode(crate::inspection::MemoryMode),
+    FrameOrder(crate::query::protocol::FrameTimingSort),
+    InspectGpu(crate::query::protocol::GpuKey),
     Gpu(crate::query::protocol::GpuKey),
+    GpuExecution(crate::query::protocol::GpuKey),
     Fit,
     ZoomIn,
     ZoomOut,
@@ -229,6 +242,97 @@ fn preview(mut text: String) -> String {
     text
 }
 
+/// Compact capture controls share the title strip; analysis keeps the full
+/// timeline/table workspace and does not pay for a second configuration panel.
+pub fn capture_bar(
+    projection: &mut Projection,
+    width: f32,
+    status: &serde_json::Value,
+    pending: bool,
+    seconds: u64,
+    memory: bool,
+    busy: bool,
+) {
+    let right = width - if busy { 122.0 } else { 20.0 };
+    let left = (right - 600.0).max(210.0);
+    let mut b = Builder::new(width, 58.0);
+    b.next = 9_700_000;
+    b.block(
+        Rect::new(left, 8.0, right - left, 43.0),
+        Color::rgb8(24, 31, 42),
+    );
+    let state = status["state"].as_str().unwrap_or("detached");
+    let pid = status["process_id"]
+        .as_u64()
+        .map(|p| format!("PID {p} · "))
+        .unwrap_or_default();
+    let title = if pending {
+        "Capture: working…".to_owned()
+    } else if status["message"].is_string() {
+        "Capture: error (see status)".to_owned()
+    } else {
+        format!("{pid}{state}")
+    };
+    b.label(Rect::new(left + 8.0, 17.0, 170.0, 27.0), title, 12.0, MUTED);
+    if !pending {
+        match state {
+            "detached" => b.control(
+                160,
+                Rect::new(right - 142.0, 14.0, 142.0, 28.0),
+                "Launch target",
+                Command::CaptureLaunch,
+            ),
+            "idle" => {
+                if status["memory_supported"] == true {
+                    b.control(
+                        170,
+                        Rect::new(right - 412.0, 14.0, 112.0, 28.0),
+                        if memory { "Memory: on" } else { "Memory: off" },
+                        Command::CaptureMemory,
+                    );
+                }
+                b.control(
+                    162,
+                    Rect::new(right - 292.0, 14.0, 64.0, 28.0),
+                    &format!("{seconds}s"),
+                    Command::CaptureLimit,
+                );
+                b.control(
+                    164,
+                    Rect::new(right - 220.0, 14.0, 124.0, 28.0),
+                    "Start capture",
+                    Command::CaptureStart,
+                );
+                b.control(
+                    166,
+                    Rect::new(right - 88.0, 14.0, 88.0, 28.0),
+                    "Detach",
+                    Command::CaptureDetach,
+                );
+            }
+            "recording" | "expired" | "unsaved" => b.control(
+                168,
+                Rect::new(right - 164.0, 14.0, 164.0, 28.0),
+                "Stop & analyze",
+                Command::CaptureStop,
+            ),
+            "exited" | "unavailable" => b.control(
+                166,
+                Rect::new(right - 88.0, 14.0, 88.0, 28.0),
+                "Detach",
+                Command::CaptureDetach,
+            ),
+            _ => (),
+        }
+    }
+    projection.widget.actions.extend(b.root.actions);
+    projection
+        .widget
+        .element
+        .children
+        .extend(b.root.element.children);
+}
+
 pub fn build(view: View<'_>) -> Projection {
     let _projection = vesta_gpui::trace::span("vesta.trace", "view.project");
     let View {
@@ -328,7 +432,11 @@ pub fn build(view: View<'_>) -> Projection {
             Element::container(TRACK, ElementKey::new("trace.timeline"))
                 .semantic(Semantic::new(
                     SemanticRole::Group,
-                    "Recorded thread timeline",
+                    if panel == Panel::Memory {
+                        "Observed heap bytes and allocation count; select an A–B interval"
+                    } else {
+                        "Recorded thread timeline"
+                    },
                 ))
                 .styled(
                     geometry(track)
@@ -433,13 +541,36 @@ pub fn build(view: View<'_>) -> Projection {
     let mut drawn = 0;
     let mut collapsed = 0;
     let mut visible_events = 0;
-    if panel == Panel::Counters {
+    if panel == Panel::Memory {
+        memory::track(
+            &mut b,
+            inspection.and_then(|i| i.memory.as_ref()),
+            timeline,
+            track,
+        );
+    } else if panel == Panel::Counters {
         let counts = counters::build(&mut b, session, timeline, tracks, &filter, track, columns);
         drawn = counts.drawn;
         collapsed = counts.collapsed;
         visible_events = counts.visible;
         y = track.y - timeline.scroll + counts.height;
     } else {
+        let gpu_tracks = tracks.map_or(session.gpu_tracks.as_slice(), |t| t.gpu.as_slice());
+        let counts = gpu::timeline(
+            &mut b,
+            session,
+            timeline,
+            gpu_tracks,
+            track,
+            y,
+            columns,
+            6000,
+            inspection.and_then(|i| i.gpu.as_ref()),
+        );
+        drawn += counts.0;
+        collapsed += counts.1;
+        visible_events += counts.2;
+        y += gpu_tracks.len() as f32 * 48.0;
         for (lane_index, lane) in session.lanes.iter().enumerate() {
             if y >= track.y && y + 24.0 <= track.bottom() {
                 b.block(
@@ -448,7 +579,14 @@ pub fn build(view: View<'_>) -> Projection {
                 );
                 b.label(
                     Rect::new(20.0, y + 3.0, 160.0, 20.0),
-                    format!("P{} / thread {}", lane.key.process, lane.key.thread),
+                    session
+                        .thread_names
+                        .get(&lane.key)
+                        .and_then(|n| n.as_ref())
+                        .map_or_else(
+                            || format!("P{} / thread {}", lane.key.process, lane.key.thread),
+                            |name| format!("{name} / T{}", lane.key.thread),
+                        ),
                     12.0,
                     TEXT,
                 );

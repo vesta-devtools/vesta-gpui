@@ -40,7 +40,7 @@ fn gpu_admission_rejects_forged_joins_capabilities_and_timestamp_math() {
     assert_eq!(session.gpu_counts.pending, 1);
     assert_eq!(session.gpu_counts.unavailable, 2);
     for (pointer, replacement) in [
-        ("/gpui_capture/schema_version", json!(2)),
+        ("/gpui_capture/schema_version", json!(3)),
         ("/gpui_capture/process_id", json!(18)),
         ("/gpui_capture/submissions/1/submission", json!(1)),
         ("/gpui_capture/submissions/0/frame_id", json!(2)),
@@ -80,7 +80,10 @@ fn gpu_queries_preserve_missing_zero_paging_frames_and_native_evidence() {
         &session,
         json!({"query":{"op":"gpu_submissions","sort":"duration_desc"},"page":{"limit":2}}),
     );
-    assert_eq!(first["analysis_version"], 4);
+    assert_eq!(
+        first["analysis_version"],
+        crate::query::protocol::ANALYSIS_VERSION
+    );
     assert_eq!(first["quality"]["gpu"]["samples"], 2);
     assert_eq!(first["quality"]["gpu"]["pending"], 1);
     assert_eq!(first["quality"]["gpu"]["unavailable"], 2);

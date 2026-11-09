@@ -764,6 +764,14 @@ impl App {
         refresh_metrics: bool,
     ) {
         let mut states = ScrollStates {
+            samples: if window == STANDALONE_WINDOW {
+                Some(&mut self.collection_samples)
+            } else {
+                self.native_windows
+                    .values_mut()
+                    .find(|host| host.ui_window == window)
+                    .map(|host| &mut host.collection_samples)
+            },
             tree: &mut self.demo.tree_scroll,
             virtual_list: &mut self.demo.virtual_scroll,
             virtual_table: &mut self.demo.virtual_table_scroll,

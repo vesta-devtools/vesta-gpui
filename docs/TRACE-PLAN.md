@@ -7,6 +7,182 @@ GPU capture ownership: [0036](decisions/0036-Capture-Owned-Gpu-Submission-Eviden
 Native semantic/input boundary: [0037](decisions/0037-Native-Trace-Accessibility-And-Evidence-Focus.md).
 Native work lifecycle: [0038](decisions/0038-Transactional-Native-Trace-Work-And-Cancellation.md).
 
+## Current direction: native Insights alignment (2026-11-09)
+
+The latest user decision is to continue self-developed native Trace, aligning
+professional analysis and interaction with Unreal Insights. The host opens it
+through GPUI for capture/save/analysis, and Agents use versioned acquisition and
+the existing shared evidence engine. [Decision 0043](decisions/0043-Native-Insights-Workflow-And-Agent-Capture.md)
+defines IN01–IN05. These larger exits are **in progress**, independently of the
+earlier qualified finite VT01–VT06 scope.
+
+IN01 implementation restores native default, adds `UiTraceHost` and Motion's
+Trace action, an off-UI capture worker and `--capture-stdio`/`--capture-schema`.
+Local IN01 foundation qualification is recorded at
+`target/research/native-insights-20261109/qualification.json`, with relocated
+development tools in `target/distribution/vesta-trace-native-dev-20261109-02/`.
+Motion's actual Trace action opens the native analyzer on PID 63032; repeated
+manual captures preserve 615/1106 frames and GPU submissions, and 10-second
+limits automatically save/analyze 595/578-frame captures. Closing/reopening the
+analyzer preserves the host and reconnects. A real Agent capture preserves 59
+CPU frames and 58 GPU records; its expired capture is not stolen by the GUI.
+Four native captures have 32 schema-validated query messages, plus 14 Agent
+acquisition/query messages with matching source hashes. The current executable
+also passes the five-step native and nineteen-step inspection/GPU scenes.
+
+SDK lifecycle tests cover authorization, budgets, repeated capture, expiry,
+on-demand ownership and retirement. The Agent integration test covers failed
+save/retry without data loss, event-limit status, active-detach rejection and
+source identity. Trace's 21 all-feature unit tests, two Motion tests, three SDK
+trace lifecycle tests, two Agent workflow tests, strict Clippy and the eight-
+library architecture check pass. Actual interactive startup exposed and repaired
+the AccessKit-before-first-show ordering that hidden smoke did not cover.
+Direct active-close qualification was interrupted by user input; automation
+stopped and preserved the user's active windows. This remains distinct from the
+implemented best-effort save-on-close path.
+
+CPU/GPU clock calibration, system stack sampling and allocation/free memory
+diagnosis remain open under IN02–IN05. Perfetto is optional proof only. This is a
+local development qualification, not complete Insights parity or a source release;
+the workspace contains concurrent changes and has not been sealed for publication.
+
+IN02 frame-comparison work has local qualification: analysis version 5 introduces the
+shared `frame_timings` operation and native Frames tab. It groups whole GPU
+submissions by actual CPU frame identity, retains null versus zero and sample
+coverage, supports CPU/GPU/time ordering, paging and raw-submission navigation.
+The CPU range selects whole frames, with original overlap retained; GPU spans
+are not clipped to a CPU interval. Focused contracts cover cross-window work,
+partial/missing/zero samples, frame/text filtering, producer loss, cursor identity,
+budget/cancellation, native/query equivalence and overflow rejection.
+
+Evidence is in `target/research/native-frame-timings-20261109/`. The current
+twenty-five-step native inspection covers minimum layout, CPU/GPU/time ordering,
+source-addressed frame selection, longest-submission drill-down and paging; a
+CPU-only 808,000-event source also passes the applicable native steps. Independent
+Python integer arithmetic verifies all 615 real frames and all 8,000 synthetic
+frames in three complete paginated orders, with 60 schema-checked messages.
+Measured query-analysis costs in these local oracle runs peak at 1.236ms and
+31.362ms respectively; the larger run's 57.9s wall time includes the independent
+Python/schema work and import, not just product query cost. The first verifier
+watchdog attempt failed because it counted that independent work while the
+child waited on stdin; the corrected per-response watchdog run is preserved
+separately from that failed attempt.
+
+The actual native live-control scenario passes six command-origin stages:
+automatic 2-second capture/save/analyze, repeated manual stop/save/analyze,
+default Frames publication and close while recording. Three real Motion
+snapshots preserve 107/17/32 CPU attempts and 98/18/32 GPU records; the third
+snapshot is saved by the owned worker during analyzer retirement. The counts
+remain separate because startup/unframed/in-flight work is not invented into
+one-to-one CPU/GPU records. This closes the previously deferred direct active-
+close check without operating the user's visible windows. IN02's wider timing
+workspace and IN03–IN05 remain active; clock calibration, execution relationships,
+stack sampling and allocation/free diagnosis are still open.
+
+The local development package `target/distribution/vesta-trace-native-dev-20261109-03/`
+has a per-file manifest and analysis-5 schemas. Its exact analyzer
+`4f7aaadd45f4209e899774183b936ae07aa188ed6f420c7fbb5d381e402f4b0e`
+passes the final GPU, CPU-only and live-capture scenarios in `final/`; the
+GPU run includes 25 framebuffer images, and the live run saves its active capture
+on close. Ninety schema-checked oracle messages cover the original real/large
+inputs plus all three new live snapshots. Twenty-four all-feature unit tests,
+two acquisition integration tests, strict all-target Clippy (including the
+optional Perfetto feature), formatting, whitespace and eight-library architecture
+checks pass. The per-scope evidence and explicit remaining work are summarized
+in `target/research/native-frame-timings-20261109/qualification.json`.
+
+## Observed heap lifetimes and native memory workspace (2026-11-10)
+
+The IN03/IN04 foundation now includes explicit `UiTraceAllocator` installation
+in Motion, capture-owned allocation/free/realloc operations, named shared
+CPU/heap thread identities and Windows allocation-stack addresses. Local symbols
+resolve after freeze on the I/O worker. CPU-v2/GPU-v1 remain compatible; the
+optional `gpui_memory` extension is schema 1. Query analysis 6 shares immutable
+allocation lifetimes, source-bound paging, time-point queries, stack grouping,
+A–B cohorts and extrema-preserving byte/count observations with the native
+**Memory** workspace. A successful realloc creates a linked new lifetime; failure
+keeps the original. Pointer range overlap, malformed metadata and invalid times
+reject. Baseline and later out-of-prefix totals remain unknown.
+
+The heap recorder bounds operations to 200,000, depth to 32, unique stacks to
+8,192 and stored stack frames to 131,072. Retained symbol strings and the lookup
+cache each have a 4 MiB bound, with at most 4,096 address lookups and a cooperative
+two-second resolution budget. Stack/symbol omissions are explicit and do not
+remove lifetime operations. The global allocator forwards System operations
+exactly; capture is independently opt-in. Core remains safe Rust; only the narrow
+native adapter admits documented allocator forwarding/current-stack FFI.
+
+The local development package
+`target/distribution/vesta-trace-native-dev-20261110-02/` includes both executables,
+matching debug symbols, schemas and guides. Its analyzer is
+`7a79b39018374e9504d10e564cfa6e793f0e18ba27d0bbdeabed84b59d018f71`;
+Motion is `de47d7586addff8485dcb47328be607d4e4bd13b984c1ca026222df4c313333d`.
+The exact packaged analyzer passes thirteen real native memory stages (ten
+framebuffer images) and the existing twenty-five timing inspection stages.
+The A–B range is selected through actual input routes using busy-work instants;
+it contains 25,138 transient lifetimes, with allocation/stack and cohort checks.
+The test's hidden repaint cadence now includes pre-import controls; its existing
+45-second deadline remains. A finite warm-up separates running-host qualification
+from startup allocations before asynchronous GPU initialization.
+
+`target/research/native-memory-20261110/qualification.json` collects the scoped
+receipts. GUI and Agent captures each preserve 100,000 original operations, with
+55,181/55,803 lifetimes respectively. They retain 15 CPU/14 GPU and 56 CPU/56 GPU
+records; these counts are not forced into one-to-one associations. Independent
+integer arithmetic validates three complete paginated orders, cohorts, actual
+series extrema, raw stack evidence and generated schemas. A separate startup
+capture retains 53,964 lifetimes, explicit stack/symbol budget exhaustion and
+absent GPU evidence; it passes heap reconciliation without being signed as a
+joint CPU/GPU workload. The Agent also repeats capture with memory off.
+
+Twenty-nine all-feature analyzer contracts and two acquisition tests pass; the
+updated five memory contracts also pass after strict pointer-range validation.
+Two actual-allocator tests cover zeroed allocations, successful realloc,
+cross-thread free, surviving blocks, shared thread IDs and local caller symbols.
+Explicit diagnostic simulations cover reentrancy, panic-result preservation,
+event/time caps and stack-budget exhaustion; no real OOM is forced. Two directed
+core trace tests, strict all-target/all-feature Clippy, formatting, whitespace and
+the eight-library architecture check pass. Raw startup and failed fixture
+attempts remain distinct from the qualified warmed-host runs.
+
+The recorded sample's stack groups identify allocation turnover in
+`painter::prepare`, `ScenePainter::record` and Motion's draw path, with original
+stack keys retained in `final02/diagnosis.json`. Turnover is not process-wide live
+memory or a leak claim. Calibrated CPU/GPU execution, async/task relationships,
+system stack sampling, native/driver/GPU resource lifetimes, richer memory
+interaction and measured enabled/disabled/long-capture cost remain open under
+IN02–IN05. This shared workspace is unsealed; the package is local development
+evidence, not an immutable SDK release or completed Insights equivalence.
+
+## Previous integrated Perfetto proof (2026-11-09)
+
+[Decision 0041](decisions/0041-Integrated-Perfetto-Capture-Tools.md) records the
+user-selected Perfetto path and integrated capture workflow. The tool must launch
+or attach to a GPUI application, start/stop recording from its own controls, save
+the result and load the embedded timeline. An offline viewer alone is insufficient.
+Keep the old GPU evidence and Agent queries through the native details entry.
+See the [tool guide](../apps/vesta-trace/PERFETTO.md) for build, packaging and use.
+
+The implementation adds an opt-in target control worker, private session
+descriptors, per-run loopback resource transport and pinned offline UI assets.
+Local live qualification has recorded two real Motion captures with 100 frames /
+100 GPU submissions each, exact Perfetto span/instant count agreement and normal
+disconnection. Final software, packaging and interaction checks are recorded below
+when complete; this does not claim system sampling or calibrated GPU tracks.
+
+## Previous bundled-tool direction (2026-11-06)
+
+[Decision 0039](decisions/0039-Bundled-Third-Party-Trace-Tools.md) sets the next
+direction: integrate a mature profiler, with Tracy as the preferred first
+candidate, and bundle its compatible analyzer with the GPUI SDK/developer tools.
+Consumers should use one provided launch/connect entry without a separate trace
+tool installation or PATH configuration. Keep capture opt-in and prioritize
+integration and packaging over expanding the self-developed generic analysis UI.
+Implementation, compatibility, migration of existing GPU/Agent evidence and
+clean-environment distribution qualification are pending.
+
+## Completed native analyzer delivery
+
 Deliver a professional native GPUI trace analyzer as an independent application.
 The finite release focuses on UI performance diagnosis: locate a slow frame or
 range, inspect recorded work on each thread, follow callers/callees and counters,

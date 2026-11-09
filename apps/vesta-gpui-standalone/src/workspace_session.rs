@@ -42,6 +42,7 @@ pub fn load() -> Result<Option<RestoredWorkspace>, String> {
                                 | "gallery.collections"
                                 | "gallery.layout"
                                 | "gallery.documents"
+                                | "gallery.streaming"
                                 | "gallery.blank"
                         )
                     })
@@ -118,6 +119,7 @@ pub(super) fn demo_workspace() -> WorkspaceModel {
         .add_item(right, "Layout", PanelTypeId::new("gallery.layout"))
         .expect("the static right pane exists");
     ensure_documents_tab(&mut model);
+    ensure_streaming_tab(&mut model);
     model
         .activate(collections)
         .expect("static gallery tab exists");
@@ -145,5 +147,32 @@ pub(super) fn ensure_documents_tab(model: &mut WorkspaceModel) -> Option<ItemId>
     let pane = model.panes().first()?.id;
     model
         .add_item(pane, "Documents", PanelTypeId::new("gallery.documents"))
+        .ok()
+}
+
+pub(super) fn ensure_streaming_tab(model: &mut WorkspaceModel) -> Option<ItemId> {
+    if let Some(item) = model
+        .root()
+        .panes()
+        .into_iter()
+        .chain(
+            model
+                .floating_windows()
+                .iter()
+                .flat_map(|window| window.root.panes()),
+        )
+        .filter_map(|pane| model.pane(pane))
+        .flat_map(|pane| pane.items.iter())
+        .find(|item| item.panel_type.as_str() == super::collection_samples::PANEL)
+    {
+        return Some(item.id);
+    }
+    let pane = model.panes().first()?.id;
+    model
+        .add_item(
+            pane,
+            "Messages & Data",
+            PanelTypeId::new(super::collection_samples::PANEL),
+        )
         .ok()
 }

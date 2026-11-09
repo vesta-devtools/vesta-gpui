@@ -31,6 +31,7 @@ pub(super) enum DemoAction {
     SelectTableCell(u8, u8),
     SelectVirtualTable(usize),
     CollectionData(CollectionDataAction),
+    Sample(collection_samples::Action),
     TreeData(tree_collections::TreeDataAction),
     SelectTile(usize),
     RampSelect(u32),
@@ -147,6 +148,7 @@ impl App {
         }
         match action {
             DemoAction::Noop => {}
+            DemoAction::Sample(action) => self.apply_sample_action(self.action_window, action),
             DemoAction::SelectMode(mode) => {
                 if mode == AcceptanceMode::Viewport3d && !self.demo.viewport3d_available {
                     eprintln!(

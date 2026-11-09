@@ -42,6 +42,12 @@ pub(super) fn build(b: &mut Builder, p: Panels<'_>) -> TableProjection {
     let mut x = 20.0;
     for (n, (value, title)) in Panel::ALL.into_iter().enumerate() {
         let w = match value {
+            Panel::Gpu if width < 1100.0 => 46.0,
+            Panel::Memory if width < 1100.0 => 76.0,
+            Panel::Counters if width < 1100.0 => 76.0,
+            Panel::Events if width < 1100.0 => 94.0,
+            Panel::Tree if width < 1100.0 => 78.0,
+            _ if width < 1100.0 => 64.0,
             Panel::Events => 106.0,
             Panel::Tree => 90.0,
             _ => 76.0,
@@ -84,21 +90,38 @@ pub(super) fn build(b: &mut Builder, p: Panels<'_>) -> TableProjection {
         ""
     };
     let timer = inspection.and_then(|i| i.timer.as_ref());
-    let label = timer.map_or_else(
-        || "Select a recorded scope group".into(),
-        |t| format!("{} / {}", t.category, t.name),
-    );
-    b.label(
-        Rect::new(20.0, top + 46.0, width - 40.0, 22.0),
-        format!(
-            "{preview}{}–{} ms · {} ms range · {label}",
-            ms(range.start),
-            ms(range.end),
-            ms(range.duration())
-        ),
-        12.0,
-        MUTED,
-    );
+    let label = if panel == Panel::Frames {
+        "whole CPU frames / associated GPU work".into()
+    } else if panel == Panel::Gpu {
+        if session.gpu_counts.mapped != 0 {
+            "estimated GPU execution / unplaced records included".into()
+        } else {
+            "CPU recording contexts / original device durations".into()
+        }
+    } else {
+        timer.map_or_else(
+            || "Select a recorded scope group".into(),
+            |t| format!("{} / {}", t.category, t.name),
+        )
+    };
+    if panel != Panel::Memory {
+        b.label(
+            Rect::new(
+                20.0,
+                top + 46.0,
+                width - if panel == Panel::Frames { 280.0 } else { 40.0 },
+                22.0,
+            ),
+            format!(
+                "{preview}{}–{} ms · {} ms range · {label}",
+                ms(range.start),
+                ms(range.end),
+                ms(range.duration())
+            ),
+            12.0,
+            MUTED,
+        );
+    }
     let table_width = (width * 0.66).max(580.0);
     let body = Rect::new(
         18.0,
@@ -113,6 +136,9 @@ pub(super) fn build(b: &mut Builder, p: Panels<'_>) -> TableProjection {
         _ => match data {
             Some(Data::Relations { items, .. }) => items.len(),
             Some(Data::GpuSubmissions { items, .. }) => items.len(),
+            Some(Data::GpuExecution { items, .. }) => items.len(),
+            Some(Data::FrameTimings { items, .. }) => items.len(),
+            Some(Data::MemoryAllocations { items, .. }) => items.len(),
             Some(
                 Data::Events { items, .. }
                 | Data::Tree { items, .. }
@@ -145,14 +171,72 @@ pub(super) fn build(b: &mut Builder, p: Panels<'_>) -> TableProjection {
     let first = scroll.min(total.saturating_sub(visible.max(1)));
     let row_y = |index: usize| body.y + (index - first) as f32 * row_height;
     match panel {
-        Panel::Gpu => {
+        Panel::Memory => {
+            memory::modes(
+                b,
+                inspection.and_then(|i| i.memory.as_ref()),
+                top + 46.0,
+                table_width,
+            );
             b.label(
-                Rect::new(24.0, top + 75.0, table_width - 32.0, 21.0),
-                "SUBMISSION / CPU CONTEXT (ms) / GPU DURATION (ms)",
+                Rect::new(24.0, top + 75.0, table_width - 40.0, 21.0),
+                "ALLOCATION / BYTES / LIFETIME / ALLOCATION THREAD",
                 11.0,
                 MUTED,
             );
-            if let Some(Data::GpuSubmissions { items, .. }) = data {
+            if let Some(Data::MemoryAllocations { items, .. }) = data {
+                memory::rows(
+                    b,
+                    session,
+                    items,
+                    inspection
+                        .and_then(|i| i.memory.as_ref())
+                        .and_then(|m| m.allocation.as_ref()),
+                    body,
+                    first,
+                    visible,
+                );
+            }
+        }
+        Panel::Frames => {
+            for (x, w, title) in [
+                (24.0, table_width - 388.0, "FRAME / THREAD / START ms"),
+                (table_width - 360.0, 104.0, "CPU ms"),
+                (table_width - 240.0, 104.0, "GPU WORK ms"),
+                (table_width - 120.0, 110.0, "SAMPLES"),
+            ] {
+                b.label(Rect::new(x, top + 75.0, w, 21.0), title, 11.0, MUTED);
+            }
+            if let Some(Data::FrameTimings { items, sort, .. }) = data {
+                frames::order(b, width, top, *sort);
+                frames::rows(
+                    b,
+                    session,
+                    items,
+                    inspection
+                        .and_then(|i| i.detail.as_ref())
+                        .and_then(|d| d.item.frame),
+                    body,
+                    table_width,
+                    first,
+                    visible,
+                );
+            }
+        }
+        Panel::Gpu => {
+            b.label(
+                Rect::new(24.0, top + 75.0, table_width - 32.0, 21.0),
+                if session.gpu_counts.mapped != 0 {
+                    "SUBMISSION / ESTIMATED EXECUTION / DEVICE DURATION"
+                } else {
+                    "SUBMISSION / CPU CONTEXT (ms) / GPU DURATION (ms)"
+                },
+                11.0,
+                MUTED,
+            );
+            if let Some(Data::GpuSubmissions { items, .. } | Data::GpuExecution { items, .. }) =
+                data
+            {
                 gpu::rows(
                     b,
                     session,
@@ -311,16 +395,51 @@ pub(super) fn build(b: &mut Builder, p: Panels<'_>) -> TableProjection {
                 )
             },
             |p| {
-                format!(
-                    "{} rows in page / {} total · more {} · recorded evidence only",
-                    p.returned, p.total, p.has_more
-                )
+                if panel == Panel::Frames {
+                    format!(
+                        "{} / {} rows · GPU work may overlap · {} execution estimates",
+                        p.returned, p.total, session.gpu_counts.mapped
+                    )
+                } else {
+                    format!(
+                        "{} rows in page / {} total · more {} · recorded evidence only",
+                        p.returned, p.total, p.has_more
+                    )
+                }
             },
         ),
         11.0,
         MUTED,
     );
-    if panel == Panel::Gpu {
+    if panel == Panel::Frames {
+        if let Some(data) = data {
+            frames::detail(
+                b,
+                data,
+                inspection
+                    .and_then(|i| i.detail.as_ref())
+                    .and_then(|d| d.item.frame),
+                Rect::new(
+                    table_width + 22.0,
+                    top + 75.0,
+                    width - table_width - 42.0,
+                    (height - 45.0 - top - 75.0).max(0.0),
+                ),
+            );
+        }
+    } else if panel == Panel::Memory {
+        memory::detail(
+            b,
+            inspection.and_then(|i| i.memory.as_ref()),
+            gpu_scroll,
+            Rect::new(
+                table_width + 22.0,
+                top + 75.0,
+                width - table_width - 42.0,
+                (height - 45.0 - top - 75.0).max(0.0),
+            ),
+        );
+    } else if panel == Panel::Gpu {
         gpu::detail(
             b,
             session,
@@ -490,7 +609,7 @@ fn event_row(
         ACCENT,
     );
 }
-fn paragraph(b: &mut Builder, rect: Rect, text: String, color: Color) {
+pub(super) fn paragraph(b: &mut Builder, rect: Rect, text: String, color: Color) {
     let text = preview(text);
     let value = b.next;
     b.next += 1;

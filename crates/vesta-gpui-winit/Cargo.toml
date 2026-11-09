@@ -13,14 +13,17 @@ vesta-gpui.workspace = true
 winit = { workspace = true, features = ["serde"] }
 serde_json.workspace = true
 url = "=2.5.8"
+getrandom = "=0.3.4"
+tempfile = "=3.27.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 open = "=5.4.2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-windows-sys = { version = "=0.61.2", features = ["Win32_Graphics_Gdi"] }
+windows-sys = { version = "=0.61.2", features = ["Win32_Graphics_Gdi", "Win32_System_Diagnostics_Debug"] }
+backtrace = "=0.3.76"
 
-# Only the read-only monitor query admits documented Win32 calls.
+# Only monitor and trace_allocator admit documented native boundary calls.
 [lints.rust]
 unsafe_code = "deny"
 [lints.clippy]

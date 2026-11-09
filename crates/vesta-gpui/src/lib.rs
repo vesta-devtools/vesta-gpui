@@ -64,8 +64,9 @@ pub use paint::{
 };
 pub use style::{
     Align, Axis, ClipMode, Color, Dimension, FlexWrap, FlowDirection, FocusIndicator, FontRole,
-    GridCell, GridTrack, HitShape, Insets, Justify, Polyline, PositionMode, ScrollbarGutter,
-    ScrollbarStyle, ScrollbarVisibility, Style, TextHAlign, TextVAlign, VisualStyle,
+    GridCell, GridTrack, HitShape, Insets, Justify, Polyline, PositionMode, ScrollAttachment,
+    ScrollbarGutter, ScrollbarStyle, ScrollbarVisibility, Style, TextHAlign, TextVAlign,
+    VisualStyle,
 };
 pub use text_input::{
     EllipsisError, EllipsizedText, StyledTextAlignment, StyledTextError, StyledTextOptions,

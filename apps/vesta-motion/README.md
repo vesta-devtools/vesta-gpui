@@ -10,6 +10,10 @@ cargo build --locked -p vesta-motion --bin vesta-motion
 
 Use **1–6** to switch between Orbit Study, Wave Field, Orbital Sphere, Double Helix, Kinetic Bloom and Prism Spiral. **T** starts the demo reel and **Space** toggles playback. Drag parameters or the timeline, change palette or toggle layer visibility. Each study retains its own parameters; Reset affects only the selected study.
 
+Build `vesta-trace` alongside Motion and click **Trace…** to open the native
+analyzer attached to this running host. Start/stop capture there; saving opens
+the result for analysis. [Host and Agent capture guide](../vesta-trace/CAPTURE.md).
+
 The workspace, buttons, sliders, lists, focus/input and custom timeline graphics use public Vesta GPUI APIs. Geometry and animation are host-owned display previews. Keyframes and curves are read-only; author save/undo, object manipulation and export are outside this example. Read the local [source guide](GPUI-GUIDE.md), [view](src/view.rs), [state](src/model.rs) and [native host](src/app.rs).
 
 The retained [interface concept](design/interface-concept.png) is a design reference.

@@ -75,6 +75,21 @@ pub enum FlowDirection {
     RightToLeft,
 }
 
+/// How a direct child follows its immediate ScrollBox parent's translation.
+/// Natural layout and scroll extents stay unchanged. Other parents ignore it.
+/// This controls derived geometry once, before paint, hit testing and semantics.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ScrollAttachment {
+    #[default]
+    Content,
+    /// Keep the natural horizontal position; follow vertical scrolling.
+    ViewportX,
+    /// Keep the natural vertical position; follow horizontal scrolling.
+    ViewportY,
+    /// Keep both natural positions.
+    Viewport,
+}
+
 impl FlowDirection {
     #[must_use]
     pub const fn horizontal(self, value: f32) -> f32 {
@@ -361,6 +376,7 @@ pub struct Style {
     pub polyline: Option<Polyline>,
     pub filled_quad: Option<[crate::geometry::Point; 4]>,
     pub scrollbar: ScrollbarStyle,
+    pub scroll_attachment: ScrollAttachment,
     pub visual: VisualStyle,
 }
 
@@ -410,6 +426,7 @@ impl Default for Style {
             polyline: None,
             filled_quad: None,
             scrollbar: ScrollbarStyle::default(),
+            scroll_attachment: ScrollAttachment::Content,
             visual: VisualStyle::default(),
         }
     }
@@ -431,6 +448,12 @@ impl Style {
     #[must_use]
     pub fn scrollbar(mut self, scrollbar: ScrollbarStyle) -> Self {
         self.scrollbar = scrollbar;
+        self
+    }
+
+    #[must_use]
+    pub fn scroll_attachment(mut self, attachment: ScrollAttachment) -> Self {
+        self.scroll_attachment = attachment;
         self
     }
 

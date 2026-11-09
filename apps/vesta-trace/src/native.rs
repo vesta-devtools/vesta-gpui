@@ -1,5 +1,6 @@
 //! Independent application host. Captured files are read and analyzed on its worker.
 mod accessibility;
+mod capture;
 mod commands;
 mod events;
 mod input;
@@ -54,6 +55,9 @@ pub(crate) enum Scene {
     Navigation,
     Focus,
     Lifecycle,
+    LiveCapture,
+    MemoryCapture,
+    GpuClock,
 }
 pub(crate) struct Options {
     pub smoke: bool,
@@ -61,9 +65,14 @@ pub(crate) struct Options {
     pub capture_dir: Option<PathBuf>,
     pub scene: Scene,
     pub alternate: Option<PathBuf>,
+    pub target: Option<PathBuf>,
+    pub target_arguments: Vec<String>,
+    pub connect: Option<PathBuf>,
+    pub output_directory: Option<PathBuf>,
 }
 enum UserEvent {
     Worker(Box<worker::Message>),
+    Capture(capture::Message),
     Accessibility(AccessibilityEvent),
 }
 impl From<worker::Message> for UserEvent {
@@ -84,6 +93,14 @@ struct Drag {
     moved: bool,
 }
 struct App {
+    live: capture::Worker,
+    live_status: serde_json::Value,
+    live_pending: bool,
+    live_seconds: u64,
+    live_memory: bool,
+    memory_warmup: Option<Instant>,
+    target: PathBuf,
+    target_arguments: Vec<String>,
     window: Option<Arc<Window>>,
     proxy: winit::event_loop::EventLoopProxy<UserEvent>,
     accessibility: Option<AccessibilityAdapter>,
@@ -112,6 +129,8 @@ struct App {
     table_page_rows: usize,
     track_scroll_max: f32,
     panel: Panel,
+    frame_sort: crate::query::protocol::FrameTimingSort,
+    memory: crate::inspection::MemorySelection,
     timer: Option<TimerKey>,
     gpu: Option<GpuKey>,
     gpu_scroll: vesta_gpui_widgets::ScrollAreaState,
@@ -142,6 +161,7 @@ struct App {
     smoke_source: Option<String>,
     smoke_page: bool,
     smoke_counter: Option<EventKey>,
+    frame_probe: Option<(EventKey, Option<GpuKey>)>,
     source_path: Option<PathBuf>,
     started: Instant,
     presented: usize,
@@ -208,13 +228,15 @@ impl App {
                 range: timeline.analysis_range(),
                 filter: self.filter.clone(),
                 tracks: self.report.as_ref().and_then(|r| r.tracks.clone()),
-                selection: InspectionSelection {
+                selection: Box::new(InspectionSelection {
+                    memory: self.memory.clone(),
+                    frame_sort: self.frame_sort,
                     gpu: self.gpu,
                     panel: self.panel,
                     timer: self.timer.clone(),
                     event: timeline.selected,
                     cursor: self.page.clone(),
-                },
+                }),
             })?;
         }
         Ok(())
@@ -253,7 +275,7 @@ impl App {
             _ => self.status.clone(),
         };
         let report = (!self.busy()).then_some(self.report.as_ref()).flatten();
-        let projection = view::build(view::View {
+        let mut projection = view::build(view::View {
             session: self.session.as_deref(),
             analysis: report.map(|r| r.analysis.as_ref()),
             timeline: self.timeline.as_ref(),
@@ -271,6 +293,17 @@ impl App {
             previous_page: !self.previous_pages.is_empty(),
             busy: self.busy(),
         });
+        if !self.smoke || matches!(self.scene, Scene::LiveCapture | Scene::MemoryCapture) {
+            view::capture_bar(
+                &mut projection,
+                viewport.width,
+                &self.live_status,
+                self.live_pending,
+                self.live_seconds,
+                self.live_memory,
+                self.busy(),
+            );
+        }
         self.area = projection.timeline;
         if projection.drawn_events + projection.collapsed_events != projection.visible_events {
             return Err("trace_plot_accounting_mismatch".into());
@@ -408,7 +441,11 @@ impl App {
                 .sync_ime(&window, focused, self.search.view);
             self.updates.presented();
             self.presented += 1;
-            if self.smoke
+            if self.smoke && ready && self.scene == Scene::LiveCapture {
+                self.live_capture_presented(event_loop)?;
+            } else if self.smoke && ready && self.scene == Scene::MemoryCapture {
+                self.memory_capture_presented(event_loop)?;
+            } else if self.smoke
                 && ready
                 && self.session.is_some()
                 && !self.busy()
@@ -431,8 +468,12 @@ fn run_host(path: Option<PathBuf>, options: Options) -> Result<()> {
         capture_dir,
         scene,
         alternate,
+        target,
+        target_arguments,
+        connect,
+        output_directory,
     } = options;
-    if smoke && path.is_none() {
+    if smoke && path.is_none() && !matches!(scene, Scene::LiveCapture | Scene::MemoryCapture) {
         return Err("trace_smoke_requires_file".into());
     }
     if let Some(directory) = &capture_dir {
@@ -450,7 +491,29 @@ fn run_host(path: Option<PathBuf>, options: Options) -> Result<()> {
     }
     let search = search::Search::new(&mut context, &filter)?;
     let worker = Worker::new(event_loop.create_proxy())?;
+    let live = capture::Worker::new(
+        event_loop.create_proxy(),
+        output_directory,
+        connect.map(|descriptor| crate::capture::Command::Connect { descriptor }),
+    )?;
+    let target = target.unwrap_or(std::env::current_exe()?.with_file_name(if cfg!(windows) {
+        "vesta-motion.exe"
+    } else {
+        "vesta-motion"
+    }));
     let mut app = App {
+        live,
+        live_status: serde_json::json!({"state":"detached"}),
+        live_pending: false,
+        live_seconds: if matches!(scene, Scene::LiveCapture | Scene::MemoryCapture) {
+            2
+        } else {
+            30
+        },
+        live_memory: false,
+        memory_warmup: None,
+        target,
+        target_arguments,
         window: None,
         proxy: event_loop.create_proxy(),
         accessibility: None,
@@ -479,6 +542,8 @@ fn run_host(path: Option<PathBuf>, options: Options) -> Result<()> {
         table_page_rows: 1,
         track_scroll_max: 0.0,
         panel: Panel::Timers,
+        frame_sort: Default::default(),
+        memory: Default::default(),
         timer: None,
         gpu: None,
         gpu_scroll: Default::default(),
@@ -509,6 +574,7 @@ fn run_host(path: Option<PathBuf>, options: Options) -> Result<()> {
         smoke_source: None,
         smoke_page: false,
         smoke_counter: None,
+        frame_probe: None,
         source_path: None,
         started: Instant::now(),
         presented: 0,
@@ -530,6 +596,7 @@ fn run_host(path: Option<PathBuf>, options: Options) -> Result<()> {
     app.renderer = None;
     app.accessibility = None;
     app.window = None;
+    let live_retired = app.live.finish();
     let worker = app.worker.finish();
     let retired = app
         .monitor
@@ -537,6 +604,7 @@ fn run_host(path: Option<PathBuf>, options: Options) -> Result<()> {
         .map_or(Ok(()), |m| m.observe(Duration::from_secs(10)));
     result?;
     worker?;
+    live_retired?;
     retired?;
     println!("trace_resources_retired gpu=true worker_joined=true");
     if let Some(error) = app.error {

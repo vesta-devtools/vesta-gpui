@@ -87,11 +87,31 @@ impl GpuContext {
         seed: &crate::recovery::RecoverySeed,
         stage: &'static str,
     ) -> Result<Arc<Self>, RendererError> {
+        let calibration_api = (seed.instance.api_version() >= vulkano::Version::V1_1
+            && seed.physical.api_version() >= vulkano::Version::V1_1)
+            || seed
+                .instance
+                .enabled_extensions()
+                .khr_get_physical_device_properties2;
         let (device, mut queues) = Device::new(
             seed.physical.clone(),
             DeviceCreateInfo {
                 enabled_extensions: DeviceExtensions {
                     khr_swapchain: true,
+                    khr_calibrated_timestamps: calibration_api
+                        && seed
+                            .physical
+                            .supported_extensions()
+                            .khr_calibrated_timestamps,
+                    ext_calibrated_timestamps: calibration_api
+                        && !seed
+                            .physical
+                            .supported_extensions()
+                            .khr_calibrated_timestamps
+                        && seed
+                            .physical
+                            .supported_extensions()
+                            .ext_calibrated_timestamps,
                     ..DeviceExtensions::empty()
                 },
                 queue_create_infos: vec![QueueCreateInfo {

@@ -113,6 +113,7 @@ impl PlotIndex {
 
 #[derive(Debug)]
 pub struct FilteredTracks {
+    pub gpu: Vec<crate::gpu::plot::Track>,
     pub source_sha256: String,
     pub text: String,
     pub lanes: Vec<Vec<EventRow>>,
@@ -178,6 +179,7 @@ impl FilteredTracks {
         }
         cancelled(cancel)?;
         Ok(Some(Arc::new(Self {
+            gpu: crate::gpu::plot::filtered(session, &text, cancel)?,
             counters,
             source_sha256: session.source.sha256.clone(),
             text,

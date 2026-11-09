@@ -558,9 +558,22 @@ pub(super) fn virtual_data_controls(
             "Toggle row heights",
             CollectionDataAction::ToggleRowHeights,
         ),
+        (
+            6,
+            "Resize selected row",
+            CollectionDataAction::ResizeSelectedRow,
+        ),
     ] {
-        let enabled = action != CollectionDataAction::RemoveSelected
-            || demo.virtual_selection.selected_ids().next().is_some();
+        let enabled = match action {
+            CollectionDataAction::RemoveSelected => {
+                demo.virtual_selection.selected_ids().next().is_some()
+            }
+            CollectionDataAction::ResizeSelectedRow => {
+                demo.virtual_metrics.is_some()
+                    && demo.virtual_selection.selected_ids().next().is_some()
+            }
+            _ => true,
+        };
         widget = widget.child(button(
             identity(1 + index * 2, label),
             identity(2 + index * 2, &format!("{label}.label")),

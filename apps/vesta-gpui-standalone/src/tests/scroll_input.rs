@@ -452,6 +452,7 @@ fn nested_axes_preserve_exact_remainders(flow: FlowDirection, scale: f32) {
     }
     fn offer(app: &mut App, hit: ElementId, movement: Point) -> Point {
         let mut states = ScrollStates {
+            samples: Some(&mut app.collection_samples),
             tree: &mut app.demo.tree_scroll,
             virtual_list: &mut app.demo.virtual_scroll,
             virtual_table: &mut app.demo.virtual_table_scroll,

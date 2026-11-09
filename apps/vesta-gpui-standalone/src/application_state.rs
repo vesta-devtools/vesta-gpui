@@ -43,6 +43,7 @@ impl App {
                 std::env::args().any(|arg| ui_query::stdio_argument(&arg).is_some()),
             ),
             documents: GalleryDocuments::default(),
+            collection_samples: collection_samples::View::default(),
             mode: AcceptanceMode::from_args(),
             theme: WidgetTheme::dark(),
             window: None,
@@ -157,6 +158,7 @@ impl App {
 }
 
 pub(super) struct DemoState {
+    pub(super) collection_source: collection_samples::Source,
     pub(super) locale: UiLocale,
     pub(super) long_document: bool,
     pub(super) viewport3d_available: bool,
@@ -333,6 +335,7 @@ impl Default for DemoState {
         tree_expansion.toggle(0);
         let tree_entries = tree_collections::sample_entries();
         let mut state = Self {
+            collection_source: collection_samples::Source::default(),
             locale: UiLocale::EnUs,
             long_document: false,
             viewport3d_available: true,

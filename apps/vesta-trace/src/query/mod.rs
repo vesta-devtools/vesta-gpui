@@ -1,6 +1,8 @@
 //! One read-only evidence engine for machine clients and native analysis views.
 mod counters;
+mod frame_timings;
 mod gpu;
+mod memory;
 pub mod protocol;
 pub mod transport;
 
@@ -15,6 +17,7 @@ pub fn quality(session: &Session) -> Quality {
     Quality {
         gpu_execution_timing: gpu.as_ref().is_some_and(|g| g.samples != 0),
         gpu,
+        memory: memory::coverage(session),
         detail: session.detail.clone(),
         dropped_events: session.dropped_events,
         unfinished_spans: session.unfinished_spans,
@@ -321,6 +324,7 @@ fn run(
             .binary_search_by_key(&lane, |l| l.key)
             .is_err()
             && !session.gpu_lanes.contains(&lane)
+            && !session.thread_names.contains_key(&lane)
     }) {
         return Err(TraceError::new(
             "trace_lane_not_found",
@@ -353,9 +357,20 @@ fn run(
         ));
     }
     let data = match &request.query {
-        Query::GpuClocks | Query::GpuSubmissions { .. } | Query::GpuSubmission { .. } => {
-            gpu::run(session, request, range, &hash, control)?
+        Query::MemorySummary
+        | Query::MemoryAllocations { .. }
+        | Query::MemoryAllocation { .. }
+        | Query::MemoryStackGroups { .. }
+        | Query::MemoryStack { .. }
+        | Query::MemoryCompare { .. }
+        | Query::MemorySeries { .. } => memory::run(session, request, range, &hash, control)?,
+        Query::FrameTimings { sort } => {
+            frame_timings::run(session, request, range, &selection, *sort, &hash, control)?
         }
+        Query::GpuClocks
+        | Query::GpuSubmissions { .. }
+        | Query::GpuSubmission { .. }
+        | Query::GpuExecution => gpu::run(session, request, range, &hash, control)?,
         Query::Session => Data::Session {
             bounds_ns: [session.bounds.start, session.bounds.end],
             events: session.events.len(),
@@ -379,6 +394,7 @@ fn run(
                 }
                 items.push(LaneRecord {
                     key: lane.key,
+                    name: session.thread_names.get(&lane.key).cloned().flatten(),
                     events: count,
                     max_depth: lane.max_depth,
                 });

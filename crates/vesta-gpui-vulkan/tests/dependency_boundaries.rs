@@ -65,7 +65,18 @@ fn renderer_does_not_depend_on_other_backends_or_author_models() {
     assert!(source.contains("#![deny(unsafe_code)]"));
     assert_eq!(source.matches("#[allow(unsafe_code)]").count(), 1);
     assert!(!source.contains("popup_monitor"));
-    assert!(!production.contains("windows-sys"));
+    // ADR-0046 allows only the Windows performance-counter bridge needed by
+    // Vulkan's calibrated timestamp QPC domain, inside checked_pipeline.
+    // Window/input/monitor APIs remain native-adapter responsibilities.
+    assert_eq!(production.matches("windows-sys").count(), 1);
+    let (_, windows_clock) = production
+        .split_once("[target.'cfg(windows)'.dependencies]")
+        .expect("clock bridge must stay Windows-only");
+    assert_eq!(
+        windows_clock.trim(),
+        r#"windows-sys = { version = "=0.61.2", features = ["Win32_System_Performance"] }"#,
+        "only the pinned performance-counter feature belongs in this target section"
+    );
     for name in ["lib.rs", "painter.rs", "viewport.rs", "targets.rs"] {
         let source = fs::read_to_string(root.join("src").join(name)).expect("source");
         assert!(!source.contains("unsafe {"), "unsafe leaked into {name}");

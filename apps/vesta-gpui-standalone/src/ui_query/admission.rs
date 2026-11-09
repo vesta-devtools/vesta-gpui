@@ -86,6 +86,7 @@ pub(crate) fn action_kind(action: DemoAction) -> (&'static str, Option<&'static 
         | DemoAction::SelectTableCell(..)
         | DemoAction::SelectVirtualTable(..)
         | DemoAction::CollectionData(..)
+        | DemoAction::Sample(..)
         | DemoAction::TreeData(..)
         | DemoAction::SelectTile(..)
         | DemoAction::RampSelect(..)

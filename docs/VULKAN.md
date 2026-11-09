@@ -112,6 +112,14 @@ explicit maximum image dimension. `PreparedPaint::output`, `batch_count` and
 `vertex_count` describe CPU batches before atlas/upload merging, not GPU draw
 counts. The native/offscreen paths use that same preparation.
 
+When every original glyph quad in a run fits its existing physical scissor, that
+run can share the viewport scissor. Overflow keeps its original clipping; quads,
+UVs and atlas insertion order stay intact. Adjacent fitting text in separate
+cells can use the same atlas batch while intervening paint keeps its order. Layout,
+cell hit/focus/accessibility/Agent identities and rich content stay on the
+ordinary Element path. See [decision 0042](decisions/0042-Dense-Table-Text-Preparation-And-Clip-Batching.md)
+for the fractional-DPI coverage checks and scoped native comparison.
+
 Image failures are local structured `ImageDiagnostic`s and fallback geometry;
 allocation, mapping and submission failures remain renderer failures. An image
 must have nonzero valid RGBA dimensions, fit the supplied device dimension and

@@ -4,6 +4,23 @@ Reusable widgets built from `vesta-gpui` Elements and typed Actions. Callers own
 business data, stable identities, editor state and document commands. Widgets do
 not require an engine, window toolkit or GPU renderer.
 
+The opt-in `TableColumnMetrics` / `table_view_columns` path projects visible
+columns, logical-start/end frozen columns and one retained focused cell/header.
+Host-supplied band identities preserve the existing Element/typed-action tree;
+the same Core ScrollBox retains full extent and scrollbar/input geometry. The
+public consumer exercises 10,000 records × 512 columns, reorder/resize, focused
+child reveal, RTL, themes and Host source-order rectangle copy:
+
+```powershell
+cargo run --locked --offline -p vesta-gpui-widgets --example wide_table -- C:/Windows/Fonts/segoeui.ttf C:/Windows/Fonts/msyh.ttc
+```
+
+This portable real-font consumer opens no native window or clipboard. Bounds,
+limits, failures and Host duties are in the [Table contract](SUPPORTED-API.md#column-windows-and-frozen-bands--2026-11-09-addition).
+Add `--measure` for the equal-visible-work CPU comparison against the existing
+all-column projector; [scope and measurements](../../docs/PERFORMANCE.md#column-window-cpu-checkpoint--2026-11-09)
+remain separate from native/GPU acceptance.
+
 Editor-specific node cards/pins, parameter value/slider presentations and path/menu
 chrome belong to [vesta-world-builder-ui (historical context)](../../docs/VALIDATION.md#historical-evidence).
 Studio and Builder consume that business library; these APIs are outside the
@@ -182,5 +199,39 @@ ancestor reveal and stable source refresh. Keep author data and window focus in
 the host. The original `interaction_sessions` example exercises 10,105 entries,
 bounded retained rows, hit/action/semantic identity and invalid-source refusal.
 See [the complete module ledger (historical context)](../../docs/VALIDATION.md#historical-evidence).
+
+Measured variable lists support `VariableListMetrics::update_height` without a
+full rebuild. Capture a range's `ListScrollAnchor` before changing measurements
+or order, retain the row's stable ID in Host, and restore with its new index via
+`offset_for_anchor`. The borrowed range still drives ordinary bounded Element,
+action and semantic projection. Source count/order changes require rebuilding;
+measurement, removed-item and bottom-follow policy remain caller-owned.
+
+The `variable_list_updates` example compares equal deterministic point updates
+plus anchor restoration using full reconstruction and incremental updates. It
+also reports the steady query tradeoff against the previous prefix-vector search:
+
+```powershell
+cargo run --locked -p vesta-gpui-widgets --example variable_list_updates
+```
+
+`VariableListMetrics::splice` adds validated append/prepend/replace/remove.
+Append grows the existing block index; general insertion/removal still rebuilds
+the flat index. `LazyListMetrics` wraps that same geometry with provisional
+estimates, explicit width/font/content validity and a bounded Host callback.
+It owns neither source messages nor scroll policy, and uses O(n) storage.
+
+The public message consumer covers tail following, user scroll-up, history
+prepend, streamed height changes, width reflow, empty/restart, retained child
+focus, actual layout/hit/actions, AccessKit and Agent inspection with real fonts:
+
+```powershell
+cargo run --locked -p vesta-gpui-widgets --example message_list -- C:\Windows\Fonts\segoeui.ttf C:\Windows\Fonts\msyh.ttc
+```
+
+This opens no native window. [Decision 0044](../../docs/decisions/0044-Streaming-Lists-And-Wide-Tables.md)
+tracks the current collection programme separately from product integration and release.
+
+It opens no native window and reports CPU wall intervals, not FPS or GPU timing.
 
 Historical context links explain the original evidence scope; see the independent validation and release procedure.

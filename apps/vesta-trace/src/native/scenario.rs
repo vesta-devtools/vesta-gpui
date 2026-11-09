@@ -1,7 +1,11 @@
 //! Finite command-origin acceptance using the current native view and input path.
 mod accessibility;
 pub(super) mod focus;
+mod frame_timings;
+mod gpu_clock;
 pub(super) mod lifecycle;
+mod live_capture;
+mod memory_capture;
 pub(super) mod navigation;
 use super::*;
 use vesta_gpui_winit::{UiInputEvent as Event, UiInputOrigin, UiKeyEvent};
@@ -64,7 +68,9 @@ impl App {
     }
     pub(super) fn smoke_ready(&self, viewport: Viewport) -> bool {
         let resized = match self.scene {
-            Scene::Basic => false,
+            Scene::Basic | Scene::LiveCapture => false,
+            Scene::MemoryCapture => self.smoke_step == 12,
+            Scene::GpuClock => self.smoke_step == 7,
             Scene::Inspection => self.smoke_step == 9,
             Scene::Navigation => self.smoke_step == 8,
             Scene::Focus | Scene::Lifecycle => false,
@@ -72,7 +78,13 @@ impl App {
         !resized || (viewport.width - 980.0).abs() < 1.0
     }
     pub(super) fn smoke_steps(&self) -> usize {
-        if self.scene == Scene::Lifecycle {
+        if self.scene == Scene::GpuClock {
+            8
+        } else if self.scene == Scene::MemoryCapture {
+            13
+        } else if self.scene == Scene::LiveCapture {
+            6
+        } else if self.scene == Scene::Lifecycle {
             7
         } else if self.scene == Scene::Focus {
             10
@@ -80,15 +92,8 @@ impl App {
             9
         } else if self.scene == Scene::Basic {
             5
-        } else if self
-            .session
-            .as_ref()
-            .and_then(|s| s.gpu.as_ref())
-            .is_some_and(|g| !g.submissions.is_empty())
-        {
-            19
         } else {
-            14
+            25
         }
     }
     fn logical_key(&mut self, logical: Key, text: Option<&str>, physical: KeyCode) -> Result<()> {
@@ -150,7 +155,12 @@ impl App {
             .layout_tree
             .as_ref()
             .and_then(|l| l.node(element))
-            .ok_or("trace_inspection_target_not_realized")?;
+            .ok_or_else(|| {
+                format!(
+                    "trace_inspection_target_not_realized element={element:?} step={}",
+                    self.smoke_step
+                )
+            })?;
         let rect = node
             .rect
             .intersection(node.inherited_clip)
@@ -198,6 +208,12 @@ impl App {
         );
         let step = self.smoke_step;
         self.smoke_step += 1;
+        if self.scene == Scene::GpuClock {
+            return self.gpu_clock_presented(event_loop, step);
+        }
+        if self.scene == Scene::Inspection && step >= 19 {
+            return self.frame_timings_presented(event_loop, step);
+        }
         if self.scene == Scene::Lifecycle {
             return self.lifecycle_presented(event_loop, step);
         }
@@ -457,14 +473,17 @@ impl App {
                 {
                     return Err("trace_reload_identity_or_state_changed".into());
                 }
-                if self.smoke_steps() > 14 {
+                if self
+                    .session
+                    .as_ref()
+                    .and_then(|s| s.gpu.as_ref())
+                    .is_some_and(|g| !g.submissions.is_empty())
+                {
                     self.click_element(vesta_gpui::ElementId::new(114))?;
                 } else {
-                    println!(
-                        "trace_inspection_complete command_origin=true steps=14 source_unchanged=true pagination_exercised={}",
-                        self.smoke_page
-                    );
-                    event_loop.exit();
+                    self.smoke_step = 19;
+                    self.command(Command::Fit)?;
+                    self.command(Command::Panel(Panel::Frames))?;
                 }
             }
             14 => {
@@ -531,9 +550,10 @@ impl App {
                     return Err("trace_gpu_frame_join_failed".into());
                 }
                 println!(
-                    "trace_inspection_complete command_origin=true steps=19 source_unchanged=true gpu_frame_join=true gpu_detail_scroll=true"
+                    "trace_gpu_inspection_complete command_origin=true steps=19 source_unchanged=true gpu_frame_join=true gpu_detail_scroll=true"
                 );
-                event_loop.exit();
+                self.command(Command::Fit)?;
+                self.command(Command::Panel(Panel::Frames))?;
             }
             _ => return Err("trace_inspection_step_overrun".into()),
         }

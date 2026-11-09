@@ -296,6 +296,7 @@ impl App {
                     }
                     if let Some((element, drag)) = host.scrollbar_drag {
                         let mut states = ScrollStates {
+                            samples: Some(&mut host.collection_samples),
                             tree: &mut self.demo.tree_scroll,
                             virtual_list: &mut self.demo.virtual_scroll,
                             virtual_table: &mut self.demo.virtual_table_scroll,
@@ -358,6 +359,7 @@ impl App {
                     let hit = host.hit_test.hit(host.cursor);
                     let scrollbar = {
                         let mut states = ScrollStates {
+                            samples: Some(&mut host.collection_samples),
                             tree: &mut self.demo.tree_scroll,
                             virtual_list: &mut self.demo.virtual_scroll,
                             virtual_table: &mut self.demo.virtual_table_scroll,
@@ -777,12 +779,13 @@ impl App {
                     }
                 }
                 if tab_strip.is_none()
-                    && let Some(host) = self.native_windows.get(&window_id)
+                    && let Some(host) = self.native_windows.get_mut(&window_id)
                 {
                     let gallery = host.scopes.gallery;
                     let hit = host.hit_test.hit(host.cursor);
                     let geometry = host.scroll_geometry.clone();
                     let mut states = ScrollStates {
+                        samples: Some(&mut host.collection_samples),
                         tree: &mut self.demo.tree_scroll,
                         virtual_list: &mut self.demo.virtual_scroll,
                         virtual_table: &mut self.demo.virtual_table_scroll,

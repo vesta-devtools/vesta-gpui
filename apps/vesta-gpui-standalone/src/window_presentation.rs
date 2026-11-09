@@ -80,9 +80,18 @@ impl App {
             let viewport = Viewport::new(logical.width, logical.height, scale);
             self.area_layout
                 .prepare(&mut self.area_state, &mut self.text_context);
+            if collection_samples::active(&self.demo, ContainerRef::Main) {
+                let focus = self.sample_focus(STANDALONE_WINDOW);
+                self.collection_samples.prepare(
+                    &self.demo.collection_source,
+                    &mut self.text_context,
+                    focus,
+                );
+            }
             let mut built = build_root(
                 UiBuildState {
                     documents: &self.documents,
+                    collection_samples: &self.collection_samples,
                     selected_feedback: native_capture::selected_feedback_enabled(self),
                     ui_window: STANDALONE_WINDOW,
                     menu_open: self.demo.menu.is_open(),
@@ -175,6 +184,12 @@ impl App {
                 return;
             };
             frame_trace.mark(FrameStage::Layout);
+            if self
+                .collection_samples
+                .sync_layout(self.scopes.gallery, &layout)
+            {
+                continue;
+            }
             match self.documents.sync_layout(
                 self.scopes.markdown,
                 &layout,
@@ -220,6 +235,12 @@ impl App {
                 STANDALONE_WINDOW,
                 &actions,
                 focus_root,
+                &mut self.input_ownership,
+            );
+            self.collection_samples.commit_focus(
+                self.scopes.gallery,
+                STANDALONE_WINDOW,
+                &scope,
                 &mut self.input_ownership,
             );
             if let Some(restored) = scope.resolve_request(&mut self.input_ownership) {
@@ -323,6 +344,7 @@ impl App {
                     self.scopes.gallery,
                 );
             page_changed |= (ScrollStates {
+                samples: Some(&mut self.collection_samples),
                 tree: &mut self.demo.tree_scroll,
                 virtual_list: &mut self.demo.virtual_scroll,
                 virtual_table: &mut self.demo.virtual_table_scroll,
@@ -563,6 +585,7 @@ impl App {
                     layout_stable: !(layout_changed || wrap_changed),
                 },
                 &mut ScrollStates {
+                    samples: Some(&mut self.collection_samples),
                     tree: &mut self.demo.tree_scroll,
                     virtual_list: &mut self.demo.virtual_scroll,
                     virtual_table: &mut self.demo.virtual_table_scroll,

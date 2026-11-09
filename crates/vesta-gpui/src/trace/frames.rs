@@ -200,6 +200,8 @@ mod tests {
             is_frame,
         };
         let snapshot = TraceSnapshot {
+            memory: None,
+            threads: Vec::new(),
             gpu: Default::default(),
             process_id: 1,
             config: TraceConfig::default(),

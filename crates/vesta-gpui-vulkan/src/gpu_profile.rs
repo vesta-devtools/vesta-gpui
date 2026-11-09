@@ -117,10 +117,15 @@ pub(super) struct GpuTimestampState {
     pub stream: GpuProfileStream,
     submission: u64,
     clock: GpuClock,
+    calibration_clock: Arc<crate::checked_pipeline::gpu_clock::CalibratedClock>,
 }
 
 impl GpuTimestampState {
     pub fn new(gpu: &GpuContext) -> Result<Self, RendererError> {
+        let _quiet = vesta_gpui::trace::memory::suppress();
+        let calibration_clock = Arc::new(crate::checked_pipeline::gpu_clock::CalibratedClock::new(
+            &gpu.device,
+        ));
         let generation = NEXT_GENERATION
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
                 value.checked_add(1)
@@ -157,6 +162,7 @@ impl GpuTimestampState {
                     valid_bits,
                     period_ns: (period_ns.is_finite() && period_ns > 0.0).then_some(period_ns),
                     unavailable: unavailable.map(GpuTimingUnavailable::portable),
+                    calibration_support: calibration_clock.support(),
                 }
             },
             stream: GpuProfileStream {
@@ -170,6 +176,7 @@ impl GpuTimestampState {
                 dropped: Arc::new(AtomicU64::new(0)),
             },
             submission: 0,
+            calibration_clock,
         })
     }
 
@@ -184,6 +191,7 @@ impl GpuTimestampState {
         &mut self,
         native_window: u64,
     ) -> Result<Option<GpuTimestampTicket>, RendererError> {
+        let _quiet = vesta_gpui::trace::memory::suppress();
         self.submission = self.submission.checked_add(1).ok_or_else(|| {
             RendererError::at("gpu_profile_identity", "profiling submissions exhausted")
         })?;
@@ -204,11 +212,13 @@ impl GpuTimestampState {
                 submission: self.submission,
             },
             stream: self.stream.clone(),
+            calibration_clock: self.calibration_clock.clone(),
         }))
     }
 }
 
 pub(super) struct GpuTimestampTicket {
+    calibration_clock: Arc<crate::checked_pipeline::gpu_clock::CalibratedClock>,
     trace: Option<GpuSubmissionToken>,
     key: GpuProfileKey,
     stream: GpuProfileStream,
@@ -233,6 +243,7 @@ impl PendingGpuTimestamp {
         }
     }
     pub fn complete(mut self, maximum_elapsed: Duration) -> Result<(), RendererError> {
+        let _quiet = vesta_gpui::trace::memory::suppress();
         let mut values = [0_u64; 4];
         let available = self
             .pool
@@ -260,7 +271,7 @@ impl PendingGpuTimestamp {
             maximum_elapsed,
         );
         if let Some(trace) = self.ticket.trace.take() {
-            trace.complete(match observation {
+            let outcome = match observation {
                 GpuProfileObservation::Sample(sample) => {
                     match (
                         u64::try_from(sample.elapsed.as_nanos()),
@@ -283,7 +294,29 @@ impl PendingGpuTimestamp {
                     reason: reason.portable(),
                     raw_ticks,
                 },
-            });
+            };
+            if self.ticket.calibration_clock.support().available()
+                && matches!(outcome, GpuOutcome::Sample { .. })
+            {
+                let before = trace.cpu_time_ns();
+                let sample = before.map(|_| self.ticket.calibration_clock.sample());
+                if let (Some(before), Some(after), Some(sample)) =
+                    (before, trace.cpu_time_ns(), sample)
+                {
+                    trace.complete_with_calibration(
+                        outcome,
+                        sample.map(|mut s| {
+                            s.cpu_before_ns = before;
+                            s.cpu_after_ns = after;
+                            s
+                        }),
+                    );
+                } else {
+                    trace.complete(outcome);
+                }
+            } else {
+                trace.complete(outcome);
+            }
         }
         self.ticket.stream.publish(observation);
         Ok(())

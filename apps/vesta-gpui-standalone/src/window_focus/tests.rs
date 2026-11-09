@@ -546,6 +546,7 @@ fn process_caret_probe(
             layout_stable,
         },
         &mut ScrollStates {
+            samples: Some(&mut app.collection_samples),
             tree: &mut app.demo.tree_scroll,
             virtual_list: &mut app.demo.virtual_scroll,
             virtual_table: &mut app.demo.virtual_table_scroll,

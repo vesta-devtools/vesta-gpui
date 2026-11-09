@@ -1,5 +1,21 @@
 # Vesta Trace
 
+The default tool is the self-developed **native GPUI analyzer**. Its compact
+title-strip controls launch a GPUI host, start a bounded capture and **Stop &
+analyze** the saved file. Motion's **Trace…** button opens the analyzer already
+connected to that host. See [capture and host integration](CAPTURE.md).
+The larger Insights alignment effort is in progress under
+[decision 0043](../../docs/decisions/0043-Native-Insights-Workflow-And-Agent-Capture.md).
+Perfetto remains an [optional technical proof](PERFETTO.md), enabled explicitly
+with the `perfetto` build feature and `--perfetto`; it is not the default frontend.
+
+The optional **Memory** workspace records real Rust System allocator lifetimes
+and allocation stacks on an explicitly integrated host. It shares allocation,
+time-point, stack grouping and A–B cohort queries with Agents (analysis 6).
+Enable **Memory: on** before capture; select a row to inspect the original stack.
+Pre-capture/native/driver/GPU heaps remain outside this channel's baseline.
+See [host setup and coverage](CAPTURE.md).
+
 The primary delivery criterion is Agent-friendly evidence acquisition and
 analysis. See the [versioned read-only query interface](AGENT-QUERIES.md) for
 generated schemas, persistent JSONL requests, stable evidence IDs, paging and
@@ -47,7 +63,12 @@ The current timeline provides a frame overview, recorded thread/depth tracks,
 slowest-frame navigation, zoom, pan, range selection, interval timer totals and
 frame percentiles. It preserves unframed events. Dense views display bounded
 pixel aggregates and disclose collapsed events; zoom to inspect individual work.
-Search uses the shared text/IME editor. Eight inspection tabs expose timer totals,
+The **Frames** tab compares whole CPU attempts with associated GPU submission
+work, orders by CPU/GPU/time, exposes missing/pending/failed timing and jumps
+from a frame to its longest measured GPU submission. It uses the same versioned
+`frame_timings` query as Agents. GPU work is a sum of recorded submission spans;
+it can overlap and does not establish a calibrated CPU/GPU execution timeline.
+Search uses the shared text/IME editor. The other inspection tabs expose timer totals,
 callers, callees, individual occurrences, recorded trees, raw counter observations
 capture quality and GPU submission evidence. Parent/frame buttons follow original event keys. The native
 inspection jobs use the same bounded query engine as machine clients. The counter

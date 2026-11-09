@@ -9,6 +9,15 @@ It is disabled until the host explicitly starts it. Disabled stage hooks return
 before taking a lock or reading the clock. Active recording introduces overhead;
 use a short capture when investigating a problem.
 
+The [native Trace tool](../apps/vesta-trace/CAPTURE.md) is the default path for
+host-open, launch/connect, start/stop, saving and analysis. `UiTraceHost` exposes
+the host-owned, on-demand entry; `UiTraceRecording::from_arguments` supports hosts
+launched by the tool. Both use the same recorder and local control worker.
+Ordinary launch remains disabled. Agents acquire captures through versioned
+`--capture-stdio` requests and analyze the saved evidence through `--query-stdio`.
+[Decision 0043](decisions/0043-Native-Insights-Workflow-And-Agent-Capture.md)
+records the renewed self-developed direction and remaining Insights coverage.
+
 ```rust
 use vesta_gpui::trace::{self, TraceCapture, TraceConfig};
 

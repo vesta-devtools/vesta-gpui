@@ -67,9 +67,15 @@ fn install_action_route_for_container(
         .prepare(&mut app.area_state, &mut app.text_context);
     let password_snapshot = app.password_display_snapshot();
     let table_note_snapshot = app.table_note_state.snapshot();
+    if collection_samples::active(&app.demo, container) {
+        let focus = app.sample_focus(STANDALONE_WINDOW);
+        app.collection_samples
+            .prepare(&app.demo.collection_source, &mut app.text_context, focus);
+    }
     let built = build_root(
         UiBuildState {
             documents: &app.documents,
+            collection_samples: &app.collection_samples,
             selected_feedback: native_capture::selected_feedback_enabled(app),
             ui_window: STANDALONE_WINDOW,
             menu_open: app.demo.menu.is_open(),

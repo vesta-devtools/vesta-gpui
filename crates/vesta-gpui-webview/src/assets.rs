@@ -108,6 +108,7 @@ impl AssetRoot {
             Some("ttf") => "font/ttf",
             Some("otf") => "font/otf",
             Some("txt") => "text/plain; charset=utf-8",
+            Some("md") => "text/markdown; charset=utf-8",
             _ => {
                 return Err(WebError::new(
                     "web_resource_type_disallowed",

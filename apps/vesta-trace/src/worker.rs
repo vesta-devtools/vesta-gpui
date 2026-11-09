@@ -26,7 +26,7 @@ pub enum Task {
         session: Arc<Session>,
         range: TimeRange,
         filter: String,
-        selection: Selection,
+        selection: Box<Selection>,
         tracks: Option<Arc<crate::plot::FilteredTracks>>,
     },
 }

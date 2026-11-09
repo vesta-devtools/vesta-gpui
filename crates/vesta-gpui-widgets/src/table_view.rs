@@ -7,6 +7,12 @@ use vesta_gpui::{
     Align, Axis, Dimension, Element, ElementId, Insets, Point, Semantic, SemanticRole, Style,
 };
 
+mod window;
+pub use window::{
+    TableBandIds, TableColumnMetrics, TableColumnWindow, TableRetainedFocus, TableWindowRow,
+    WideTableIds, table_view_columns,
+};
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct TableColumn<A> {
     pub header: WidgetIdentity,
@@ -298,19 +304,8 @@ fn table_view_projected<A: Clone>(
     {
         return Err(TableViewError::InvalidColumnWidth);
     }
-    if columns
-        .iter()
-        .filter_map(|column| column.resize.as_ref())
-        .any(|resize| {
-            !resize.min_width.is_finite()
-                || !resize.max_width.is_finite()
-                || !resize.keyboard_step.is_finite()
-                || resize.min_width <= 0.0
-                || resize.max_width < resize.min_width
-                || resize.keyboard_step <= 0.0
-        })
-    {
-        return Err(TableViewError::InvalidResizeBounds);
+    for column in &columns {
+        validate_resize(column.resize.as_ref())?;
     }
     if rows.iter().any(|row| row.cells.len() != columns.len()) {
         return Err(TableViewError::CellCount);
@@ -342,56 +337,9 @@ fn table_view_projected<A: Clone>(
         .map(|column| column.width)
         .collect::<Vec<_>>();
     for column in columns {
-        let handle_width = if column.resize.is_some() { 6.0 } else { 0.0 };
-        let label = column.body.label().to_owned();
-        let mut widget = column.body.project(column.header);
-        widget.element = widget
-            .element
-            .semantic(Semantic::new(SemanticRole::ColumnHeader, &label))
-            .styled(
-                Style::default()
-                    .size(
-                        Dimension::Px((column.width - handle_width).max(1.0)),
-                        Dimension::Px(theme.metrics.control_height),
-                    )
-                    .flex(0.0, 0.0)
-                    .padding(Insets::symmetric(7.0, 0.0))
-                    .text(theme.typography.font_size, theme.palette.text)
-                    .background(theme.palette.surface)
-                    .clipped(),
-            );
-        if let Some(action) = column.sort_action {
-            actions.push((widget.element.id, action));
-            widget.element.style.focusable = true;
-        } else {
-            widget.element.style.pointer_events = false;
-        }
-        actions.extend(widget.actions);
-        header_element = header_element.child(widget.element);
-        if let Some(resize) = &column.resize {
-            header_element = header_element.child(
-                Element::container(resize.handle.element, resize.handle.key.clone())
-                    .semantic(
-                        Semantic::new(SemanticRole::Splitter, format!("Resize {label} column"))
-                            .numeric(
-                                f64::from(column.width),
-                                f64::from(resize.min_width),
-                                f64::from(resize.max_width),
-                                Some(f64::from(resize.keyboard_step)),
-                            ),
-                    )
-                    .styled(
-                        Style::default()
-                            .size(
-                                Dimension::Px(handle_width),
-                                Dimension::Px(theme.metrics.control_height),
-                            )
-                            .flex(0.0, 0.0)
-                            .background(theme.palette.border)
-                            .focusable(true),
-                    ),
-            );
-        }
+        header_element
+            .children
+            .extend(project_column(column, theme, &mut actions));
     }
 
     let mut root_element = Element::container(root.element, root.key)
@@ -425,35 +373,13 @@ fn table_view_projected<A: Clone>(
             );
         actions.push((row_element.id, row.select_action));
         for (cell, width) in row.cells.into_iter().zip(&widths) {
-            let mut style = Style::default()
-                .size(
-                    Dimension::Px(*width),
-                    Dimension::Px(theme.metrics.control_height),
-                )
-                .flex(0.0, 0.0)
-                .padding(Insets::symmetric(7.0, 0.0))
-                .text(theme.typography.font_size, theme.palette.text)
-                .clipped();
-            if cell.selected {
-                style = style.background(theme.palette.selection);
-            }
-            if cell.select_action.is_some() {
-                style.focusable = true;
-            } else {
-                style.pointer_events = false;
-            }
-            let cell_id = cell.identity.element;
-            let label = cell.body.label().to_owned();
-            let mut content = cell.body.project(cell.identity);
-            content.element = content
-                .element
-                .semantic(Semantic::new(SemanticRole::Cell, label).selected(cell.selected))
-                .styled(style);
-            row_element = row_element.child(content.element);
-            actions.extend(content.actions);
-            if let Some(action) = cell.select_action {
-                actions.push((cell_id, action));
-            }
+            row_element.children.push(project_cell(
+                cell,
+                *width,
+                theme.metrics.control_height,
+                theme,
+                &mut actions,
+            ));
         }
         root_element = root_element.child(row_element);
     }
@@ -470,6 +396,101 @@ fn table_view_projected<A: Clone>(
         element: root_element,
         actions,
     })
+}
+
+fn project_column<A>(
+    column: ColumnProjection<A>,
+    theme: WidgetTheme,
+    actions: &mut Vec<(ElementId, A)>,
+) -> Vec<Element> {
+    let mut elements = Vec::new();
+    let handle_width = if column.resize.is_some() { 6.0 } else { 0.0 };
+    let label = column.body.label().to_owned();
+    let mut widget = column.body.project(column.header);
+    widget.element = widget
+        .element
+        .semantic(Semantic::new(SemanticRole::ColumnHeader, &label))
+        .styled(
+            Style::default()
+                .size(
+                    Dimension::Px((column.width - handle_width).max(1.0)),
+                    Dimension::Px(theme.metrics.control_height),
+                )
+                .flex(0.0, 0.0)
+                .padding(Insets::symmetric(7.0, 0.0))
+                .text(theme.typography.font_size, theme.palette.text)
+                .background(theme.palette.surface)
+                .clipped(),
+        );
+    if let Some(action) = column.sort_action {
+        actions.push((widget.element.id, action));
+        widget.element.style.focusable = true;
+    } else {
+        widget.element.style.pointer_events = false;
+    }
+    actions.extend(widget.actions);
+    elements.push(widget.element);
+    if let Some(resize) = &column.resize {
+        elements.push(
+            Element::container(resize.handle.element, resize.handle.key.clone())
+                .semantic(
+                    Semantic::new(SemanticRole::Splitter, format!("Resize {label} column"))
+                        .numeric(
+                            f64::from(column.width),
+                            f64::from(resize.min_width),
+                            f64::from(resize.max_width),
+                            Some(f64::from(resize.keyboard_step)),
+                        ),
+                )
+                .styled(
+                    Style::default()
+                        .size(
+                            Dimension::Px(handle_width),
+                            Dimension::Px(theme.metrics.control_height),
+                        )
+                        .flex(0.0, 0.0)
+                        .background(theme.palette.border)
+                        .focusable(true),
+                ),
+        );
+    }
+
+    elements
+}
+
+fn project_cell<A>(
+    cell: CellProjection<A>,
+    width: f32,
+    height: f32,
+    theme: WidgetTheme,
+    actions: &mut Vec<(ElementId, A)>,
+) -> Element {
+    let mut style = Style::default()
+        .size(Dimension::Px(width), Dimension::Px(height))
+        .flex(0.0, 0.0)
+        .padding(Insets::symmetric(7.0, 0.0))
+        .text(theme.typography.font_size, theme.palette.text)
+        .clipped();
+    if cell.selected {
+        style = style.background(theme.palette.selection);
+    }
+    if cell.select_action.is_some() {
+        style.focusable = true;
+    } else {
+        style.pointer_events = false;
+    }
+    let cell_id = cell.identity.element;
+    let label = cell.body.label().to_owned();
+    let mut content = cell.body.project(cell.identity);
+    content.element = content
+        .element
+        .semantic(Semantic::new(SemanticRole::Cell, label).selected(cell.selected))
+        .styled(style);
+    actions.extend(content.actions);
+    if let Some(action) = cell.select_action {
+        actions.push((cell_id, action));
+    }
+    content.element
 }
 
 /// Keep the table header visible while projecting only the host's bounded row range.
@@ -565,24 +586,7 @@ fn table_view_windowed_projected<A: Clone>(
     mut row_at: impl FnMut(usize) -> RowProjection<A>,
     theme: WidgetTheme,
 ) -> Result<Widget<A>, TableViewError> {
-    if !range.row_height.is_finite()
-        || range.row_height < 1.0
-        || !range.viewport_height.is_finite()
-        || range.viewport_height <= 0.0
-        || !range.content_height.is_finite()
-        || !(0.0..=16_777_216.0).contains(&range.content_height)
-        || !range.offset.is_finite()
-        || range.first > range.end
-        || range.end > range.count
-        || range.end - range.first > 320
-        || (f64::from(range.content_height) - range.count as f64 * f64::from(range.row_height))
-            .abs()
-            > f64::from(range.row_height)
-        || range.offset < 0.0
-        || range.offset > (range.content_height - range.viewport_height).max(0.0)
-    {
-        return Err(TableViewError::InvalidViewport);
-    }
+    validate_row_window(range)?;
     if ids.viewport.element == ids.content.element {
         return Err(TableViewError::DuplicateElement(ids.viewport.element));
     }
@@ -659,3 +663,39 @@ fn table_view_windowed_projected<A: Clone>(
 
 #[cfg(test)]
 mod tests;
+
+fn validate_row_window(range: VirtualListRange) -> Result<(), TableViewError> {
+    if !range.row_height.is_finite()
+        || range.row_height < 1.0
+        || !range.viewport_height.is_finite()
+        || range.viewport_height <= 0.0
+        || !range.content_height.is_finite()
+        || !(0.0..=16_777_216.0).contains(&range.content_height)
+        || !range.offset.is_finite()
+        || range.first > range.end
+        || range.end > range.count
+        || range.end - range.first > 320
+        || (f64::from(range.content_height) - range.count as f64 * f64::from(range.row_height))
+            .abs()
+            > f64::from(range.row_height)
+        || range.offset < 0.0
+        || range.offset > (range.content_height - range.viewport_height).max(0.0)
+    {
+        return Err(TableViewError::InvalidViewport);
+    }
+    Ok(())
+}
+
+fn validate_resize(resize: Option<&TableColumnResize>) -> Result<(), TableViewError> {
+    if resize.is_some_and(|resize| {
+        !resize.min_width.is_finite()
+            || !resize.max_width.is_finite()
+            || !resize.keyboard_step.is_finite()
+            || resize.min_width <= 0.0
+            || resize.max_width < resize.min_width
+            || resize.keyboard_step <= 0.0
+    }) {
+        return Err(TableViewError::InvalidResizeBounds);
+    }
+    Ok(())
+}

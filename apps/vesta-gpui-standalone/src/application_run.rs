@@ -15,6 +15,7 @@ pub(super) fn run() -> Result<(), Box<dyn Error>> {
     event_loop.set_control_flow(ControlFlow::Wait);
     let mut app = App::new();
     app.prepare_native_capture()?;
+    app.prepare_collection_fixture()?;
     app.prepare_frame_reflow_probe()?;
     if app.smoke && app.mode == AcceptanceMode::Gallery2d {
         // Exercise text/popover controls and the image cache in the same visible Dock pages.
@@ -181,7 +182,11 @@ impl ApplicationHandler<UserEvent> for App {
         if self.window.is_some() {
             return;
         }
-        if !self.smoke && self.native_capture.is_none() && !frame_reflow_probe::requested() {
+        if !self.smoke
+            && self.native_capture.is_none()
+            && !frame_reflow_probe::requested()
+            && !collection_samples::fixture_requested()
+        {
             match ui_preferences::load() {
                 Ok(Some(preferences)) => {
                     let drawer = self.drawer_state();
@@ -204,6 +209,7 @@ impl ApplicationHandler<UserEvent> for App {
                     }
                     self.demo.workspace = restored.workspace;
                     ensure_documents_tab(&mut self.demo.workspace);
+                    workspace_session::ensure_streaming_tab(&mut self.demo.workspace);
                     self.demo.pane_history.clear();
                     self.demo.zoomed_panes.clear();
                     self.demo.sync_workspace_ui();
@@ -367,6 +373,7 @@ impl ApplicationHandler<UserEvent> for App {
             && self.native_capture.is_none()
             && self.window.is_some()
             && !frame_reflow_probe::requested()
+            && !collection_samples::fixture_requested()
         {
             let drawer_width = self
                 .drawer_resize

@@ -13,6 +13,8 @@ pub(super) struct Checkpoint {
     source: String,
     timeline: Timeline,
     panel: Panel,
+    frame_sort: crate::query::protocol::FrameTimingSort,
+    memory: crate::inspection::MemorySelection,
     timer: Option<TimerKey>,
     gpu: Option<GpuKey>,
     gpu_scroll: vesta_gpui_widgets::ScrollAreaState,
@@ -38,6 +40,8 @@ impl App {
                 source: session.source.sha256.clone(),
                 timeline: timeline.clone(),
                 panel: self.panel,
+                frame_sort: self.frame_sort,
+                memory: self.memory.clone(),
                 timer: self.timer.clone(),
                 gpu: self.gpu,
                 gpu_scroll: self.gpu_scroll,
@@ -66,6 +70,8 @@ impl App {
             }
             self.timeline = Some(saved.timeline);
             self.panel = saved.panel;
+            self.frame_sort = saved.frame_sort;
+            self.memory = saved.memory;
             self.timer = saved.timer;
             self.gpu = saved.gpu;
             self.gpu_scroll = saved.gpu_scroll;

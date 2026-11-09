@@ -208,6 +208,7 @@ fn toolbar(m: &Model, width: f32) -> Widget<Action> {
     .child(text(m, 30, "Fit", 11.0, m.theme.palette.text))
     .child(text(m, 31, "  1920 × 1080  ·  30 fps  ", 11.0, MUTED))
     .child(export)
+    .child(button(m, 38, "Trace…", Action::OpenTrace, 76.0, false))
 }
 fn layers(m: &Model, height: f32) -> Widget<Action> {
     let compact = height < 500.0;

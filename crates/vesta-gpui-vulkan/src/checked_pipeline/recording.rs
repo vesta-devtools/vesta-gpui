@@ -47,6 +47,7 @@ pub(crate) fn record(
         };
     let timing = ticket
         .map(|ticket| {
+            let _quiet = vesta_gpui::trace::memory::suppress();
             QueryPool::new(
                 renderer.gpu.device.clone(),
                 QueryPoolCreateInfo {

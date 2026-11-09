@@ -22,13 +22,23 @@ pub(super) fn rows(
         else {
             continue;
         };
+        let placement = r.execution.as_ref().map_or_else(
+            || format!("unplaced · CPU context {} ms", ms(r.recorded_cpu_ns)),
+            |e| {
+                format!(
+                    "est {:.3}–{:.3} ms",
+                    e.estimated_start_ns as f64 / 1_000_000.0,
+                    e.estimated_end_ns as f64 / 1_000_000.0
+                )
+            },
+        );
         let label = format!(
-            "GPU {}:{} · window {} / T{} · CPU {} ms · GPU {} ms · {:?}",
+            "GPU {}:{} · window {} / T{} · {} · GPU {} ms · {:?}",
             r.key.generation,
             r.key.submission,
             r.window,
             r.lane.thread,
-            ms(r.recorded_cpu_ns),
+            placement,
             r.elapsed_ns.map_or_else(|| "—".into(), ms),
             r.status
         );
@@ -82,7 +92,11 @@ pub(super) fn detail(
     );
     b.label(
         Rect::new(x, y + 23.0, w, 21.0),
-        "CPU / GPU clocks: uncalibrated",
+        if record.is_some_and(|r| r.execution.is_some()) {
+            "CPU / GPU: calibrated estimate"
+        } else {
+            "CPU / GPU clocks: uncalibrated"
+        },
         11.0,
         GOLD,
     );
@@ -139,6 +153,34 @@ pub(super) fn detail(
                 .map_or_else(|| "unavailable".into(), |v| v.to_string())
         ),
     ];
+    if let Some(e) = &r.execution {
+        lines.extend([
+            format!("Estimated execution: {}–{} ns (CPU clock)",e.estimated_start_ns,e.estimated_end_ns),
+            format!("Anchor: {} ns; anchor uncertainty ±{} ns; distance {} ns",e.anchor_cpu_ns,e.anchor_uncertainty_ns,e.anchor_distance_ns),
+            "Anchor uncertainty excludes extrapolation clock drift. Execution placement is an estimate, not a presentation measurement.".into(),
+        ]);
+    }
+    if let Some(c) = &r.calibration {
+        lines.extend([
+            format!("Calibration device tick: {}", c.device_ticks),
+            format!(
+                "Calibrated QPC tick: {} / {} Hz",
+                c.host_ticks, c.host_frequency_hz
+            ),
+            format!(
+                "Host QPC bracket: {}–{}",
+                c.host_before_ticks, c.host_after_ticks
+            ),
+            format!(
+                "Capture CPU bracket: {}–{} ns",
+                c.cpu_before_ns, c.cpu_after_ns
+            ),
+            format!("Driver maxDeviation: {} ns", c.max_deviation_ns),
+        ]);
+    }
+    if let Some(error) = &r.calibration_error {
+        lines.push(format!("Calibration unavailable: {error}"));
+    }
     if let Some(c) = clock {
         lines.extend([
             c.device_name.clone(),
@@ -196,4 +238,94 @@ pub(super) fn detail(
             Command::Frame(frame),
         );
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn timeline(
+    b: &mut Builder,
+    session: &Session,
+    timeline: &Timeline,
+    tracks: &[crate::gpu::plot::Track],
+    rect: Rect,
+    top: f32,
+    columns: usize,
+    limit: usize,
+    selected: Option<&GpuRecord>,
+) -> (usize, usize, usize) {
+    let Some(capture) = &session.gpu else {
+        return (0, 0, 0);
+    };
+    let (mut drawn, mut collapsed, mut visible) = (0, 0, 0);
+    for (row, track) in tracks.iter().enumerate() {
+        let y = top + row as f32 * 48.0;
+        if y >= rect.bottom() {
+            break;
+        }
+        if y + 44.0 <= rect.y {
+            continue;
+        }
+        if y >= rect.y && y + 20.0 <= rect.bottom() {
+            b.label(
+                Rect::new(20.0, y + 2.0, 160.0, 20.0),
+                format!("GPU G{} / W{}", track.generation, track.window),
+                11.0,
+                Color::rgb8(178, 160, 237),
+            );
+            b.label(
+                Rect::new(rect.x + 4.0, y + 2.0, rect.width - 8.0, 20.0),
+                "Execution estimates · fresh device/QPC calibration · drift bound unknown",
+                11.0,
+                MUTED,
+            );
+        }
+        let bar_top = (y + 23.0).max(rect.y);
+        let bar_bottom = (y + 42.0).min(rect.bottom());
+        if bar_top >= bar_bottom {
+            continue;
+        }
+        for bucket in track.buckets(timeline.view, columns) {
+            visible += bucket.count;
+            if drawn >= limit {
+                collapsed += bucket.count;
+                continue;
+            }
+            collapsed += bucket.count - 1;
+            drawn += 1;
+            let record = &capture.submissions[bucket.record];
+            let Some(e) = session
+                .gpu_execution
+                .get(&(record.generation, record.submission))
+            else {
+                continue;
+            };
+            let x = rect.x
+                + (timeline.fraction(e.start_ns.max(0) as u64).clamp(0.0, 1.0)
+                    * f64::from(rect.width)) as f32;
+            let right = rect.x
+                + (timeline.fraction(e.end_ns.max(0) as u64).clamp(0.0, 1.0)
+                    * f64::from(rect.width)) as f32;
+            let key = crate::query::protocol::GpuKey {
+                process: u64::from(capture.process_id),
+                generation: record.generation,
+                submission: record.submission,
+            };
+            b.selectable(
+                40_000_000 + bucket.record as u64,
+                Rect::new(
+                    x.min(rect.right() - 1.0),
+                    bar_top,
+                    (right - x).max(2.0).min((rect.right() - x).max(1.0)),
+                    bar_bottom - bar_top,
+                ),
+                &format!(
+                    "GPU #{} · estimated {}–{} ns · anchor ±{} ns; drift unbounded",
+                    record.submission, e.start_ns, e.end_ns, e.anchor_uncertainty_ns
+                ),
+                Color::rgb8(93, 77, 146),
+                selected.is_some_and(|s| s.key == key),
+                Command::GpuExecution(key),
+            );
+        }
+    }
+    (drawn, collapsed, visible)
 }

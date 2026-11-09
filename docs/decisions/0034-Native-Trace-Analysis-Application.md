@@ -4,6 +4,12 @@ Status: Accepted; finite implementation and acceptance qualified, 2026-11-03.
 Date: 2026-11-01.
 Base: 5260c71452c51cc9d2b8d3b6edbb8fff905a2f33.
 
+Future direction revised on 2026-11-06 by
+[0039](0039-Bundled-Third-Party-Trace-Tools.md): prioritize a bundled mature
+profiler integration. The latest [0043](0043-Native-Insights-Workflow-And-Agent-Capture.md)
+restores the self-developed native direction with a larger Insights alignment
+scope. This decision retains the completed finite native delivery record.
+
 The user requests a professional trace analyzer with a GPUI frontend, operated
 as an independent native process. Build `apps/vesta-trace` in this repository,
 using its normal `target/debug/vesta-trace.exe` entry. It is an application,

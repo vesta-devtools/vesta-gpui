@@ -1,4 +1,5 @@
 //! Strict portable capture admission; graphics API ownership stays in the renderer.
+pub mod plot;
 use crate::session::*;
 use std::{
     collections::BTreeSet,
@@ -11,6 +12,8 @@ pub struct Counts {
     pub samples: usize,
     pub pending: usize,
     pub unavailable: usize,
+    pub mapped: usize,
+    pub calibration_failed: usize,
 }
 
 fn invalid(message: &str) -> TraceError {
@@ -22,7 +25,7 @@ pub fn admit(
     mut capture: GpuCapture,
     cancel: &AtomicBool,
 ) -> Result<(), TraceError> {
-    if capture.schema_version != 1 {
+    if !matches!(capture.schema_version, 1 | 2) {
         return Err(TraceError::new(
             "trace_capture_schema",
             "unsupported gpui_capture extension",
@@ -74,6 +77,12 @@ pub fn admit(
                 "clock capabilities contradict their unavailable state",
             ));
         }
+        if capture.schema_version == 1
+            && clock.calibration_support
+                != vesta_gpui::trace::gpu::GpuCalibrationSupport::NotRecorded
+        {
+            return Err(invalid("GPU schema 1 cannot assert a calibrated clock"));
+        }
     }
     let windows: BTreeSet<_> = capture.windows.iter().copied().collect();
     if windows.len() != capture.windows.len() || windows.contains(&0) {
@@ -83,6 +92,8 @@ pub fn admit(
     }
     let mut pending = 0;
     let mut unavailable = 0;
+    let mut mapped = 0;
+    let mut calibration_failed = 0;
     for (n, record) in capture.submissions.iter().enumerate() {
         if n % 1024 == 0 && cancel.load(Ordering::Relaxed) {
             return Err(TraceError::new(
@@ -181,6 +192,50 @@ pub fn admit(
                 unavailable += 1;
             }
         }
+        if record.calibration.is_some() && record.calibration_error.is_some()
+            || capture.schema_version == 1
+                && (record.calibration.is_some() || record.calibration_error.is_some())
+        {
+            return Err(invalid("Calibration state contradicts its schema or error"));
+        }
+        if let Some(calibration) = &record.calibration {
+            let GpuOutcome::Sample {
+                raw_ticks,
+                elapsed_ns,
+                ..
+            } = &record.outcome
+            else {
+                return Err(invalid(
+                    "Uncompleted submission cannot have execution calibration",
+                ));
+            };
+            if calibration.cpu_after_ns > capture.elapsed_ns {
+                return Err(invalid("Calibration extends after the frozen CPU prefix"));
+            }
+            let estimate = vesta_gpui::trace::gpu::map_execution(
+                clock,
+                *raw_ticks,
+                record.recorded_cpu_ns,
+                *elapsed_ns,
+                calibration,
+            )
+            .map_err(|_| invalid("Calibration arithmetic or host/device bounds are invalid"))?;
+            session
+                .gpu_execution
+                .insert((record.generation, record.submission), estimate);
+            session.bounds.end = session.bounds.end.max(calibration.cpu_after_ns + 1);
+            mapped += 1;
+        }
+        if record.calibration_error.is_some() {
+            if !clock.calibration_support.available()
+                || !matches!(record.outcome, GpuOutcome::Sample { .. })
+            {
+                return Err(invalid(
+                    "Calibration failure has no supported completed query",
+                ));
+            }
+            calibration_failed += 1;
+        }
         session.bounds.start = session.bounds.start.min(record.recorded_cpu_ns);
         session.bounds.end = session.bounds.end.max(record.recorded_cpu_ns + 1);
     }
@@ -189,11 +244,17 @@ pub fn admit(
         samples: capture.submissions.len() - pending - unavailable,
         pending,
         unavailable,
+        mapped,
+        calibration_failed,
     };
-    session.diagnostics.push(Diagnostic {
+    if mapped == 0 {
+        session.diagnostics.push(Diagnostic {
         code: "trace_gpu_clock_uncalibrated",
         message: "Device ticks have no calibrated CPU mapping. CPU recording context is an association, not GPU execution start or presentation latency.".into(),
     });
+    } else {
+        session.diagnostics.push(Diagnostic{code:"trace_gpu_execution_estimates",message:format!("{mapped} GPU submissions have fresh device/QPC execution estimates; anchor uncertainty excludes extrapolation clock drift and is not a whole-interval error guarantee.")});
+    }
     if pending != 0 || unavailable != 0 || capture.dropped_records != 0 {
         session.diagnostics.push(Diagnostic {
             code: "trace_gpu_coverage",
@@ -204,6 +265,22 @@ pub fn admit(
         });
     }
     capture.clocks.sort_unstable_by_key(|c| c.generation);
+    session.gpu_tracks = plot::build(&capture, &session.gpu_execution, cancel)?;
     session.gpu = Some(capture);
     Ok(())
+}
+pub fn matches_text(session: &Session, record: &GpuSubmission, text: &str) -> bool {
+    text.is_empty()
+        || record
+            .frame_id
+            .and_then(|event| {
+                session.indices.get(&EventKey {
+                    process: u64::from(session.gpu.as_ref().map_or(0, |g| g.process_id)),
+                    event,
+                })
+            })
+            .map(|i| &session.events[*i])
+            .is_some_and(|e| {
+                e.category.to_lowercase().contains(text) || e.name.to_lowercase().contains(text)
+            })
 }

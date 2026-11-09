@@ -3,6 +3,9 @@ use std::{error::Error, ffi::OsString, fmt, fs::OpenOptions, io::Write, path::Pa
 use vesta_gpui::trace::{
     TraceCapture, TraceConfig, TraceDetail, TraceError, TraceSnapshot, TraceStats,
 };
+mod control;
+mod host;
+pub use host::UiTraceHost;
 
 #[derive(Debug)]
 pub enum UiTraceError {
@@ -40,6 +43,7 @@ impl Error for UiTraceError {
 /// event loop returns (or explicitly on a host-owned background I/O task).
 pub struct UiTraceRecording {
     active: Option<(TraceCapture, PathBuf)>,
+    control: Option<control::ControlServer>,
 }
 
 /// Frozen capture and its explicit destination. Send this owned value to the
@@ -72,11 +76,28 @@ impl UiTraceRecording {
         config: TraceConfig,
         detail: TraceDetail,
     ) -> Result<Self, UiTraceError> {
-        let path = path.into();
+        Self::start_capture(path.into(), config, detail, None)
+    }
+    pub fn start_with_memory(
+        path: impl Into<PathBuf>,
+        config: TraceConfig,
+        detail: TraceDetail,
+        memory: vesta_gpui::trace::memory::MemoryConfig,
+    ) -> Result<Self, UiTraceError> {
+        Self::start_capture(path.into(), config, detail, Some(memory))
+    }
+    fn start_capture(
+        path: PathBuf,
+        config: TraceConfig,
+        detail: TraceDetail,
+        memory: Option<vesta_gpui::trace::memory::MemoryConfig>,
+    ) -> Result<Self, UiTraceError> {
         validate_destination(&path)?;
         Ok(Self {
+            control: None,
             active: Some((
-                TraceCapture::start_with_detail(config, detail).map_err(UiTraceError::Capture)?,
+                TraceCapture::start_with_memory(config, detail, memory)
+                    .map_err(UiTraceError::Capture)?,
                 path,
             )),
         })
@@ -88,7 +109,9 @@ impl UiTraceRecording {
 
     /// Freeze without JSON serialization or file I/O. The host owns worker lifetime.
     pub fn stop(self) -> Option<UiTraceExport> {
-        self.active.map(|(capture, path)| UiTraceExport {
+        let Self { active, control } = self;
+        drop(control);
+        active.map(|(capture, path)| UiTraceExport {
             snapshot: capture.stop(),
             path,
         })
@@ -124,9 +147,16 @@ impl UiTraceRecording {
             validate_destination(&path)?;
             output = Some(path);
         }
-        output.map_or(Ok(Self { active: None }), |path| {
-            Self::start(path, TraceConfig::default(), TraceDetail::Stages)
-        })
+        if output.is_some() && std::env::var_os(control::ENVIRONMENT).is_some() {
+            return Err(UiTraceError::Argument);
+        }
+        match output {
+            Some(path) => Self::start(path, TraceConfig::default(), TraceDetail::Stages),
+            None => Ok(Self {
+                active: None,
+                control: control::ControlServer::from_environment().map_err(UiTraceError::Io)?,
+            }),
+        }
     }
 
     /// Stop and export once. Dropping without finish discards the capture with
@@ -162,20 +192,23 @@ impl UiTraceExport {
 
     /// Serialize and write once, refusing existing/racing output paths.
     pub fn write(self) -> Result<PathBuf, UiTraceError> {
-        let content = if self.path.extension().is_some_and(|ext| ext == "html") {
-            self.snapshot.to_html_report()
+        let _quiet = vesta_gpui::trace::memory::suppress();
+        let Self { path, mut snapshot } = self;
+        crate::trace_allocator::resolve_stacks(&mut snapshot);
+        let content = if path.extension().is_some_and(|ext| ext == "html") {
+            snapshot.to_html_report()
         } else {
-            self.snapshot.to_chrome_json()
+            snapshot.to_chrome_json()
         }
         .map_err(UiTraceError::Export)?;
         let mut file = OpenOptions::new()
             .write(true)
             .create_new(true)
-            .open(&self.path)
+            .open(&path)
             .map_err(UiTraceError::Io)?;
         file.write_all(content.as_bytes())
             .map_err(UiTraceError::Io)?;
-        Ok(self.path)
+        Ok(path)
     }
 }
 

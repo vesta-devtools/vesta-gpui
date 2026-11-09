@@ -27,6 +27,8 @@ pub use text_metrics::{TextLayoutMetrics, TextLayoutRequest};
 mod measurement;
 pub use measurement::{ContentConstraint, DesiredSize};
 #[cfg(test)]
+mod attachment_tests;
+#[cfg(test)]
 mod baseline_tests;
 #[cfg(test)]
 mod cumulative_rounding_tests;
@@ -459,6 +461,15 @@ fn collect_layout(
     };
     for child in &element.children {
         let mut child_origin = content_origin;
+        if matches!(element.kind, crate::ElementKind::ScrollBox(_)) {
+            use crate::ScrollAttachment::{Viewport, ViewportX, ViewportY};
+            if matches!(child.style.scroll_attachment, ViewportX | Viewport) {
+                child_origin.x = origin.x;
+            }
+            if matches!(child.style.scroll_attachment, ViewportY | Viewport) {
+                child_origin.y = origin.y;
+            }
+        }
         if flow_direction == FlowDirection::RightToLeft
             && child.style.position != PositionMode::Absolute
         {

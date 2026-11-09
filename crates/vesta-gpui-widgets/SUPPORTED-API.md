@@ -759,6 +759,59 @@ alone does not create an always-follow intent. GPV02/GPV06 and whole collection
 freeze retain their separate requirements. Ordinary Table content is separate
 from document Markdown table rendering, including UI-DOC-TABLE-001.
 
+### Column windows and frozen bands — 2026-11-09 addition
+
+`TableColumnMetrics::new(widths, leading, trailing)` admits immutable geometry
+in the Host's current visual column order. Widths are finite and at least one
+logical pixel; summed width is at most 16,777,216. Frozen columns are contiguous
+logical-start/end prefixes/suffixes, disjoint and at most 64 total. Rebuild this
+geometry when width/order/frozen counts change. It owns no records, IDs, source
+model, sorting or accepted column resize state.
+
+`window(width, offset, overscan, flow)` returns a borrowed `TableColumnWindow`.
+The usable width must be finite/positive, fit the frozen widths, and leave a
+positive scrolling viewport when scrolling columns exist. Finite offsets clamp
+from logical start in LTR or RTL. Overscan caps at 32 per side; at most 256
+visible scrolling columns and 320 total columns are admitted. Binary edge lookup
+and construction depend on the projected columns after the O(n) metrics build.
+`indices`, `column_bounds`, `offset`, `max_offset` and `offset_to_reveal` are derived
+geometry/arithmetic. The Host applies reveal results to its existing scroll
+state; revealing a frozen column needs no movement. Bounds are physical and
+precede Core's final logical-pixel edge policy. This is not a second hit test.
+
+`table_view_columns` takes `WideTableIds`, the column window, the existing fixed
+row `VirtualListRange`, optional `TableRetainedFocus`, lazy header/row factories
+and theme. `TableBandIds` supplies three explicit wrapper identities for each
+header/row, in the same identity namespace as arbitrary content. The row factory
+receives the exact ordered column-index slice and returns `TableWindowRow` with
+an explicit accessible row `label` and `TableRowContent` cells in that order.
+The name remains stable across different realized slices. Only the retained row receives its extra
+offscreen focused column; retaining a header does not construct that cell in all
+rows. One retained row/cell/header stays in the current route and semantic tree,
+with offscreen hits clipped. Unrealized cells are absent from inspection, so
+source queries/reveal remain Host work.
+
+The Core ScrollBox owns full horizontal/vertical extent, scrollbar geometry and
+its one offset. A horizontally attached content wrapper and clipped bands keep
+frozen columns stationary, including fractional scrolling, without compensating
+rounded positions. Headers and cells share declared widths and explicit flow;
+logical-start frozen columns appear on the right in RTL. This addition uses
+Overlay gutters. The Host supplies usable width and owns reserved-space policy,
+input delivery, scroll/reveal, source identities/order, focus reconciliation,
+selection/editing buffers and clipboard I/O. Factories must not execute commands.
+
+The new path rejects invalid geometry/retained indices with `InvalidViewport`,
+invalid widths/extent or a factory width differing from its metric with
+`InvalidColumnWidth`, invalid resize metadata with `InvalidResizeBounds`, wrong
+cell count with `CellCount`, and repeated shell/wrapper/content Element IDs with
+`DuplicateElement`. Resizable columns need at least seven pixels for the shared
+six-pixel handle plus header. Some failures occur after factories run; caller
+side effects cannot be rolled back. Core still rejects duplicate keys and all
+invalid final geometry. Existing constructors, widths and error variants retain
+their contracts. The public [wide-table consumer](examples/wide_table.rs) keeps
+stable record/column IDs through reorder/resize, source-based rectangle copy and
+focus reveal; this addition does not inherit the earlier GPV05 native approval.
+
 ## Tile range, content and retained focus — 0.1 source contract (GPV04)
 
 The full original GPV04 exit is qualified as of2026-10-21. The
@@ -825,17 +878,34 @@ retained index, without building a visible retained item twice. Stable identitie
 come from current caller records, not geometry indices.
 
 `VariableListMetrics::new` validates caller-measured logical row heights and
-stores immutable prefix positions. Heights are finite and at least1 logical
-pixel; total content uses the existing16,777,216-pixel limit. Rebuild the metrics
-when the caller's current item order or measurements change. This is an O(n)
-explicit measurement update, not automatic row measurement or an application cache.
+stores their geometry. Heights are finite and at least1 logical pixel; total
+content uses the existing16,777,216-pixel limit. `splice(range, heights)` admits
+visual append/prepend/replace/remove atomically. Append grows the block index
+incrementally (ordinary Vec growth may reallocate); equal-length replacement
+updates changed heights. Other structural changes rebuild the flat index in O(n).
+`update_height(index, height)` changes one
+measurement in O(log(blocks)), returning false for an unchanged value. Invalid
+indices return `ItemIndexOutOfBounds`; invalid heights or excessive totals return
+the existing geometry/extent errors. All failures leave the metrics unchanged.
+The private index uses 64-row blocks; it is derived geometry, not automatic row
+measurement or an application cache. The additive implementation/qualification
+is recorded separately in [decision 0040](../../docs/decisions/0040-Incremental-Variable-List-Metrics-And-Scroll-Anchors.md).
 
-`range` borrows that same metrics authority and uses binary searches for the
-current viewport. It admits at most256 actual visible rows, clamps overscan to32
+`range` borrows that same metrics authority and uses block-index searches plus
+bounded local scans for the current viewport. It admits at most256 actual visible rows, clamps overscan to32
 per side, clamps the offset and rejects invalid/nonfinite or overly dense
 geometry through the existing `VirtualListError`. Fractional offsets at large
 coordinates round inward so the final row does not disappear at the content edge.
 `row_bounds` exposes the same geometry for caller-owned reveal policy.
+
+Computed fixed and variable ranges expose `anchor() -> Option<ListScrollAnchor>`:
+the first actually visible index and its row inset, excluding overscan. Empty
+lists yield None. The snapshot borrows no metrics and is not a stable data ID or
+version token. Host keeps that row's actual ID, maps it to the current index after
+mutation, then calls `VariableListMetrics::offset_for_anchor(anchor, index,
+viewport_height)`. Shrunk rows clamp the inset inside the row; content/viewport
+edges take precedence. Removed-item and bottom-follow behavior remain Host policy.
+The fixed-range entry keeps its raw DTO geometry preconditions.
 
 `variable_list_with_items` checks the typed data count before calling a factory.
 It constructs only the bounded range and at most one explicit retained offscreen
@@ -845,16 +915,46 @@ the new entry share one private ScrollBox/absolute-row projection. Geometry
 indices do not become author identities. The original fixed-height signatures,
 limits and behavior remain supported.
 
-The qualified exports are `VirtualListError`, `VirtualListIds`,
+The current exports are `VirtualListError`, `VirtualListIds`,
 `VirtualListRange`, `virtual_list`, `virtual_list_with_items`,
-`VariableListMetrics`, `VariableListRange` and `variable_list_with_items`, with
+`VariableListMetrics`, `VariableListRange`, `ListScrollAnchor`, `LazyListMetrics`,
+`ListMeasurement` and `variable_list_with_items`, with
 their current public fields/methods. Host measurement, selection, current
 stable-ID-to-index mapping, focus eligibility, scroll/reveal and lifecycle remain
-caller-owned. No automatic measurement/cache, new collection-family variable
+caller-owned. No implicit measurement, new collection-family variable
 API, native factory/CPU/memory performance number or broad reader claim follows.
 This is the complete original GPV03 source contract, not an immutable SDK
 publication or completion of the other GPV01–06 exits. [Implementation](src/virtual_list.rs),
 [measured geometry](src/virtual_list/variable.rs).
+
+`LazyListMetrics::with_estimate(count, height, width, text_revision)` owns one
+variable geometry index and per-row validity, with O(n) initialization/storage.
+`metrics()` borrows its geometry for existing ranges/projection. The exact wrap
+width and Core `TextMeasurementRevision` define measurement validity; changed
+`set_context` invalidates flags while retaining old heights as provisional
+estimates. Host content changes use `invalidate(range)`, and source mutations
+use `splice(range, estimates)`; all inputs reject atomically. Stable IDs and
+records remain in Host. This is not a sparse giant-history index.
+
+`measure(range, budget, callback)` visits only unknown rows, with at most `budget`
+attempts inside a bounded 320-row range. Choose the current visible/overscan range
+or an explicit retained focus row. None defers one attempt; valid Some heights
+apply together. An invalid returned height rejects all geometry/validity changes,
+although caller callback side effects cannot be rolled back. `ListMeasurement`
+reports attempted/measured counts, geometry change and pending unknown rows in
+that requested range. Host restores its stable anchor or tail policy and
+recomputes the visible range after measurement. Fonts, source text, worker/error
+policy and redraw settlement remain Host-owned.
+
+The public [message list example](examples/message_list.rs) exercises real-font
+budgeted measurement, append/prepend, streaming tail/history behavior, resize,
+retained child focus, actual hit/actions, AccessKit and Agent snapshots. It opens
+no native window; native interaction and downstream adoption remain separate.
+
+The 2026-11-09 update/anchor entries have their own decision-0040 evidence; the
+historical GPV03 native qualification does not automatically cover them. Downstream
+exhaustive `VirtualListError` matches must include the new `ItemIndexOutOfBounds`
+variant. Existing constructor/range entries keep their original failure variants.
 
 ## Affected consumers — ADR-0465 source qualification
 

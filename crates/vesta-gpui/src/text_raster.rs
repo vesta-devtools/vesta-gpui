@@ -52,9 +52,12 @@ impl std::error::Error for TextRasterError {}
 
 const GLYPH_CACHE_ENTRIES: usize = 4096;
 const GLYPH_CACHE_BYTES: usize = 8 * 1024 * 1024;
-const GLYPH_RUN_CACHE_ENTRIES: usize = 256;
-const GLYPH_RUN_CACHE_GLYPHS: usize = 8192;
+// Admit dense short-text presentations inside the existing eight-MiB budget.
+// Per-run admission remains separate from aggregate cache retention.
+const GLYPH_RUN_CACHE_ENTRIES: usize = 1024;
+const GLYPH_RUN_CACHE_GLYPHS: usize = 32768;
 const GLYPH_RUN_CACHE_BYTES: usize = 8 * 1024 * 1024;
+const MAX_GLYPHS_PER_RUN: usize = 8192;
 const BITMAP_CACHE_ENTRIES: usize = 64;
 const BITMAP_CACHE_BYTES: usize = 16 * 1024 * 1024;
 const MAX_BITMAP_PIXELS: f32 = 4_194_304.0;
@@ -621,8 +624,7 @@ impl TextRasterizer {
                         image: glyph_image,
                     };
                     glyph_bytes = glyph_bytes.saturating_add(glyph.retained_bytes());
-                    if glyphs.len() == GLYPH_RUN_CACHE_GLYPHS || glyph_bytes > GLYPH_RUN_CACHE_BYTES
-                    {
+                    if glyphs.len() == MAX_GLYPHS_PER_RUN || glyph_bytes > GLYPH_RUN_CACHE_BYTES {
                         return Err(TextRasterError::GlyphBudgetExceeded);
                     }
                     glyphs.push(glyph);
@@ -819,7 +821,7 @@ mod tests {
         }
         let oversized = context
             .shape_styled_text(
-                &"X".repeat(GLYPH_RUN_CACHE_GLYPHS + 1),
+                &"X".repeat(MAX_GLYPHS_PER_RUN + 1),
                 8.0,
                 crate::FontRole::Ui,
                 &[],
@@ -888,6 +890,55 @@ mod tests {
             rasterizer.glyph_runs.entries.len() <= GLYPH_RUN_CACHE_ENTRIES
                 && rasterizer.glyph_runs.bytes <= GLYPH_RUN_CACHE_BYTES
         );
+    }
+
+    #[test]
+    fn dense_short_text_working_set_reuses_shaping_and_positioned_runs() {
+        let mut context = crate::TextInputContext::default();
+        assert!(context.register_font(Arc::new(
+            include_bytes!("../tests/fixtures/MaterialIcons-Regular.ttf").to_vec()
+        )));
+        context.set_font_stack(crate::FontRole::Icon, "Material Icons");
+        let mut rasterizer = TextRasterizer::default();
+        let bounds = Rect::new(0.0, 0.0, 400.0, 24.0);
+        let view = TextInputViewport {
+            bounds,
+            clip: bounds,
+            origin: crate::Point::default(),
+            scroll_x: 0.0,
+            scroll_y: 0.0,
+            caret: None,
+        };
+        let physical = RasterViewport::new(view, 1.5).expect("finite viewport");
+        let mut cached = Vec::new();
+        // Exceeds the old 512 shaping entries, 256 run entries and 8192
+        // aggregate glyphs, while each individual run stays small.
+        for index in 0..792 {
+            let text = format!("{}{index:04}", "\u{e145}".repeat(16));
+            let snapshot = context
+                .shape_static_text(&text, 8.0, crate::FontRole::Icon)
+                .expect("shape");
+            let glyphs = rasterizer
+                .glyph_run(&snapshot, 1.5, &physical)
+                .expect("run");
+            assert!(glyphs.len() >= 16);
+            cached.push((text, snapshot, glyphs));
+        }
+        assert_eq!(context.static_text_cache_counts().0, cached.len());
+        assert_eq!(rasterizer.glyph_runs.entries.len(), cached.len());
+        assert!(rasterizer.glyph_runs.glyph_count > MAX_GLYPHS_PER_RUN);
+        for (text, original, original_glyphs) in cached {
+            let snapshot = context
+                .shape_static_text(&text, 8.0, crate::FontRole::Icon)
+                .expect("same shape");
+            assert!(Arc::ptr_eq(&snapshot.0, &original.0));
+            let glyphs = rasterizer
+                .glyph_run(&snapshot, 1.5, &physical)
+                .expect("same run");
+            assert!(Arc::ptr_eq(&glyphs, &original_glyphs));
+        }
+        assert!(rasterizer.glyph_runs.bytes <= GLYPH_RUN_CACHE_BYTES);
+        assert!(rasterizer.glyph_runs.glyph_count <= GLYPH_RUN_CACHE_GLYPHS);
     }
 
     #[test]

@@ -17,9 +17,30 @@ pub(super) enum CollectionDataAction {
     RemoveSelected,
     Restore,
     ToggleRowHeights,
+    ResizeSelectedRow,
 }
 
 impl DemoState {
+    fn virtual_scroll_anchor(&self) -> Option<(usize, vesta_gpui_widgets::ListScrollAnchor)> {
+        let anchor = if let Some(metrics) = &self.virtual_metrics {
+            metrics
+                .range(VIRTUAL_VIEWPORT_HEIGHT, self.virtual_scroll.offset_y(), 0)
+                .ok()?
+                .anchor()
+        } else {
+            VirtualListRange::compute(
+                self.virtual_ids.len(),
+                VIRTUAL_ROW_HEIGHT,
+                VIRTUAL_VIEWPORT_HEIGHT,
+                self.virtual_scroll.offset_y(),
+                0,
+            )
+            .ok()?
+            .anchor()
+        }?;
+        Some((*self.virtual_ids.get(anchor.index())?, anchor))
+    }
+
     fn measured_virtual_rows(&self) -> vesta_gpui_widgets::VariableListMetrics {
         let heights = self
             .virtual_ids
@@ -287,7 +308,35 @@ pub(super) fn collection_key_update(
 
 impl App {
     pub(super) fn apply_collection_data(&mut self, action: CollectionDataAction) {
-        let previous = self.demo.virtual_ids.clone();
+        // Preserve the fixed-list data/focus repair policy. Anchoring applies to
+        // measured rows and transitions into/out of the variable-height mode.
+        let anchor = if self.demo.virtual_metrics.is_some()
+            || action == CollectionDataAction::ToggleRowHeights
+        {
+            self.demo.virtual_scroll_anchor()
+        } else {
+            None
+        };
+        // Preserve an observed row, not an unshown initial data position. Reuse
+        // current window routes rather than introducing another readiness flag.
+        let anchor = anchor.filter(|(id, _)| {
+            let action = DemoAction::SelectVirtual(*id);
+            self.ui_actions
+                .action_at(self.scopes.gallery.element(VIRTUAL_ROW_BASE + *id as u32))
+                == Some(&action)
+                || self.native_windows.values().any(|host| {
+                    host.actions
+                        .action_at(host.scopes.gallery.element(VIRTUAL_ROW_BASE + *id as u32))
+                        == Some(&action)
+                })
+        });
+        let previous = matches!(
+            action,
+            CollectionDataAction::Reverse
+                | CollectionDataAction::RemoveSelected
+                | CollectionDataAction::Restore
+        )
+        .then(|| self.demo.virtual_ids.clone());
         let focused = std::iter::once(STANDALONE_WINDOW)
             .chain(self.native_windows.values().map(|host| host.ui_window))
             .filter_map(|window| match self.collection_item_focus_for(window) {
@@ -312,8 +361,27 @@ impl App {
                     Some(self.demo.measured_virtual_rows())
                 };
             }
+            CollectionDataAction::ResizeSelectedRow => {
+                if let Some(index) = self
+                    .demo
+                    .virtual_ids
+                    .iter()
+                    .position(|id| self.demo.virtual_selection.contains(id))
+                    && let Some(metrics) = &mut self.demo.virtual_metrics
+                {
+                    let (_, height) = metrics.row_bounds(index).expect("current selected row");
+                    let height = if height > VIRTUAL_ROW_HEIGHT * 2.0 {
+                        VIRTUAL_ROW_HEIGHT
+                    } else {
+                        VIRTUAL_ROW_HEIGHT * 3.0
+                    };
+                    metrics
+                        .update_height(index, height)
+                        .expect("bounded measured row edit");
+                }
+            }
         }
-        if self.demo.virtual_metrics.is_some() && action != CollectionDataAction::ToggleRowHeights {
+        if self.demo.virtual_metrics.is_some() && previous.is_some() {
             self.demo.virtual_metrics = Some(self.demo.measured_virtual_rows());
         }
         self.demo
@@ -322,9 +390,33 @@ impl App {
         self.demo
             .virtual_scroll
             .sync_content_height(self.demo.virtual_content_height(), VIRTUAL_VIEWPORT_HEIGHT);
+        if let Some((id, anchor)) = anchor {
+            let index = if self.demo.virtual_ids.get(anchor.index()) == Some(&id) {
+                Some(anchor.index())
+            } else {
+                self.demo.virtual_ids.iter().position(|item| *item == id)
+            };
+            if let Some(index) = index {
+                let offset = self.demo.virtual_metrics.as_ref().map_or_else(
+                    || {
+                        index as f32 * VIRTUAL_ROW_HEIGHT
+                            + anchor.offset_in_row().min(VIRTUAL_ROW_HEIGHT.next_down())
+                    },
+                    |metrics| {
+                        metrics
+                            .offset_for_anchor(anchor, index, VIRTUAL_VIEWPORT_HEIGHT)
+                            .expect("current anchor geometry")
+                    },
+                );
+                self.demo
+                    .virtual_scroll
+                    .scroll_by(offset - self.demo.virtual_scroll.offset_y());
+            }
+        }
         for (window, id) in focused {
+            let Some(previous) = &previous else { continue };
             if let Some(next) = vesta_gpui_widgets::collection_focus_after_change(
-                &previous,
+                previous,
                 &self.demo.virtual_ids,
                 &id,
                 None,

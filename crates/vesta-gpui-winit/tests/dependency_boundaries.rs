@@ -20,7 +20,15 @@ fn winit_adapter_excludes_render_and_product_crates() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let source = fs::read_to_string(root.join("src/lib.rs")).expect("adapter source");
     assert!(source.contains("#![deny(unsafe_code)]"));
-    assert_eq!(source.matches("#[allow(unsafe_code)]").count(), 1);
+    // ADR-0045 adds only the explicitly installed System allocator boundary;
+    // keep the unsafe allowance attached to these two named private modules.
+    let unsafe_modules = source
+        .lines()
+        .collect::<Vec<_>>()
+        .windows(2)
+        .filter_map(|lines| (lines[0].trim() == "#[allow(unsafe_code)]").then_some(lines[1].trim()))
+        .collect::<Vec<_>>();
+    assert_eq!(unsafe_modules, ["mod monitor;", "mod trace_allocator;"]);
     assert!(source.contains("mod monitor;"));
     let platform = fs::read_to_string(root.join("src/monitor.rs")).expect("platform query");
     assert!(platform.contains("GetMonitorInfoW"));

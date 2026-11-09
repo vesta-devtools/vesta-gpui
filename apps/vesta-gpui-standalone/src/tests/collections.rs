@@ -2,6 +2,93 @@ use super::*;
 use crate::window_collections::collection_item_focus;
 
 #[test]
+fn measured_row_updates_keep_the_visible_item_and_child_focus_through_data_changes() {
+    let mut app = App::new();
+    activate_gallery_page(&mut app, "gallery.collections");
+    app.apply_collection_data(CollectionDataAction::ToggleRowHeights);
+    app.apply_demo_action(DemoAction::SelectVirtual(0));
+    install_action_route(&mut app);
+    let child = app.scopes.gallery.element(20_000_000 + 4);
+    app.set_window_focus(STANDALONE_WINDOW, Some(child));
+    app.demo.virtual_scroll.scroll_by(2_007.0);
+    install_action_route(&mut app);
+    let anchor = |app: &App| {
+        let metrics = app
+            .demo
+            .virtual_metrics
+            .as_ref()
+            .expect("variable geometry");
+        let anchor = metrics
+            .range(
+                VIRTUAL_VIEWPORT_HEIGHT,
+                app.demo.virtual_scroll.offset_y(),
+                0,
+            )
+            .expect("visible range")
+            .anchor()
+            .expect("visible row");
+        (app.demo.virtual_ids[anchor.index()], anchor.offset_in_row())
+    };
+    let original = anchor(&app);
+    let old_offset = app.demo.virtual_scroll.offset_y();
+    app.apply_collection_data(CollectionDataAction::ResizeSelectedRow);
+    assert_eq!(anchor(&app), original);
+    assert_eq!(app.demo.virtual_scroll.offset_y(), old_offset + 28.0);
+    let root = install_action_route(&mut app);
+    assert!(
+        root.find(child).is_some(),
+        "offscreen focused child remains projected"
+    );
+    assert_eq!(
+        app.ui_actions.action_at(child),
+        Some(&DemoAction::OpenCommandPalette)
+    );
+    assert_eq!(app.window_focus(STANDALONE_WINDOW), Some(child));
+    let visible_id = app
+        .scopes
+        .gallery
+        .element(VIRTUAL_ROW_BASE + original.0 as u32);
+    let layout = LayoutEngine
+        .compute(&root, Viewport::new(1280.0, 800.0, 1.0))
+        .expect("updated layout");
+    let viewport = layout
+        .node(app.scopes.gallery.element(VIRTUAL_SCROLL))
+        .expect("viewport")
+        .rect;
+    let visible = layout
+        .node(visible_id)
+        .expect("same first visible row")
+        .rect;
+    assert_eq!(visible.y - viewport.y, -original.1);
+    assert_eq!(
+        root.find(visible_id)
+            .expect("same identity")
+            .semantic
+            .as_ref()
+            .expect("row semantics")
+            .label,
+        format!("Object {:05}", original.0)
+    );
+    app.apply_collection_data(CollectionDataAction::Reverse);
+    assert_eq!(
+        anchor(&app),
+        original,
+        "host remaps the anchor by its stable ID"
+    );
+    install_action_route(&mut app);
+    assert_eq!(app.window_focus(STANDALONE_WINDOW), Some(child));
+    app.apply_collection_data(CollectionDataAction::RemoveSelected);
+    assert_eq!(
+        anchor(&app),
+        original,
+        "removing an earlier row preserves the visible item"
+    );
+    // The removed child is retired by ordinary route/input reconciliation.
+    let root = install_action_route(&mut app);
+    assert!(root.find(child).is_none());
+}
+
+#[test]
 fn table_editor_preserves_cell_drafts_and_cancels_removed_source() {
     table_resize_survives_a_narrow_projection_after_wide_edits();
     table_query_preserves_live_cells_and_retires_missing_owners();

@@ -4,6 +4,7 @@ mod application_chrome;
 mod application_run;
 mod application_state;
 mod breadcrumb_demo;
+mod collection_samples;
 mod color_demo;
 mod conditional_controls;
 mod demo_actions;
@@ -396,6 +397,7 @@ struct App {
     ui_query: ui_query::Store,
     scopes: UiScopes,
     documents: GalleryDocuments,
+    collection_samples: collection_samples::View,
     mode: AcceptanceMode,
     theme: WidgetTheme,
     window: Option<Arc<Window>>,

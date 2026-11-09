@@ -50,6 +50,11 @@ references rather than additional application products.
 
 ## UI performance tracing
 
+The [native Vesta Trace tool](apps/vesta-trace/CAPTURE.md) opens from a GPUI host,
+or launches/connects to one, then captures, saves and analyzes recorded work.
+Motion exposes a **Trace…** action. Versioned acquisition and evidence queries
+provide the same workflow to Agents. Professional Insights alignment is active.
+
 The opt-in [in-process trace recorder](docs/TRACING.md) is shared by libraries and
 hosts. It records bounded layout/text/paint/render CPU-side wall-time intervals
 with automatic parent/frame association, then exports an offline frame picker,

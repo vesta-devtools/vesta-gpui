@@ -9,6 +9,8 @@ pub(super) enum ScrollTarget {
     Horizontal,
     VirtualList,
     VirtualTable,
+    Messages,
+    WideTable,
     Tree,
     Page(ItemId),
     Tabs(PaneId),
@@ -23,6 +25,8 @@ pub(super) struct ScrollGeometry {
     pub(super) horizontal: Option<Rect>,
     pub(super) virtual_list: Option<Rect>,
     pub(super) virtual_table: Option<Rect>,
+    pub(super) messages: Option<Rect>,
+    pub(super) wide_table: Option<Rect>,
     pub(super) tree: Option<Rect>,
     pub(super) pages: HashMap<ItemId, Rect>,
     pub(super) tabs: HashMap<ElementId, (PaneId, Rect)>,
@@ -50,6 +54,8 @@ impl ScrollGeometry {
             horizontal: clipped(gallery.element(HORIZONTAL_SCROLL)),
             virtual_list: clipped(gallery.element(VIRTUAL_SCROLL)),
             virtual_table: clipped(gallery.element(TABLE_VIRTUAL_ROOT + 2)),
+            messages: clipped(gallery.element(collection_samples::MESSAGE_VIEWPORT)),
+            wide_table: clipped(gallery.element(collection_samples::TABLE_VIEWPORT)),
             tree: clipped(gallery.element(TREE_SCROLL)),
             pages: pages
                 .filter_map(|item| clipped(page_scroll_id(gallery, item)).map(|rect| (item, rect)))
@@ -89,6 +95,16 @@ impl ScrollGeometry {
     pub(super) fn targets(&self, gallery: ElementScope) -> Vec<(ElementId, Rect, ScrollTarget)> {
         let mut targets = Vec::new();
         for (rect, target, element) in [
+            (
+                self.messages,
+                ScrollTarget::Messages,
+                gallery.element(collection_samples::MESSAGE_VIEWPORT),
+            ),
+            (
+                self.wide_table,
+                ScrollTarget::WideTable,
+                gallery.element(collection_samples::TABLE_VIEWPORT),
+            ),
             (self.tree, ScrollTarget::Tree, gallery.element(TREE_SCROLL)),
             (
                 self.virtual_list,
@@ -138,6 +154,7 @@ impl ScrollGeometry {
 /// The shared scroll states a window can drive; `gallery` is `None` for native floating
 /// windows, which do not project the main gallery scroll container.
 pub(super) struct ScrollStates<'a> {
+    pub(super) samples: Option<&'a mut collection_samples::View>,
     pub(super) tree: &'a mut ScrollAreaState,
     pub(super) virtual_list: &'a mut ScrollAreaState,
     pub(super) virtual_table: &'a mut ScrollAreaState,
@@ -183,6 +200,8 @@ impl<'a> ScrollStates<'a> {
 
     pub(super) fn for_target(&mut self, target: ScrollTarget) -> Option<&mut ScrollAreaState> {
         match target {
+            ScrollTarget::Messages => self.samples.as_deref_mut().map(|view| view.scroll(true)),
+            ScrollTarget::WideTable => self.samples.as_deref_mut().map(|view| view.scroll(false)),
             ScrollTarget::Tree => Some(self.tree),
             ScrollTarget::VirtualList => Some(self.virtual_list),
             ScrollTarget::VirtualTable => Some(self.virtual_table),

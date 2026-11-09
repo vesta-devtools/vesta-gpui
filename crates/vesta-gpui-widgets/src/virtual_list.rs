@@ -2,7 +2,10 @@
 
 mod variable;
 
-pub use variable::{VariableListMetrics, VariableListRange, variable_list_with_items};
+pub use variable::{
+    LazyListMetrics, ListMeasurement, ListScrollAnchor, VariableListMetrics, VariableListRange,
+    variable_list_with_items,
+};
 
 use vesta_gpui::{Dimension, Element, Point, Semantic, SemanticRole, Style};
 
@@ -18,6 +21,7 @@ pub enum VirtualListError {
     ContentTooLarge,
     ViewportTooDense,
     ItemCountMismatch,
+    ItemIndexOutOfBounds,
 }
 
 impl std::fmt::Display for VirtualListError {
@@ -27,6 +31,7 @@ impl std::fmt::Display for VirtualListError {
             Self::ContentTooLarge => "virtual list content exceeds its extent limit",
             Self::ViewportTooDense => "virtual list viewport exceeds its row limit",
             Self::ItemCountMismatch => "virtual list item count does not match its range",
+            Self::ItemIndexOutOfBounds => "virtual list item index is out of bounds",
         })
     }
 }
@@ -105,6 +110,21 @@ impl VirtualListRange {
     #[must_use]
     pub const fn is_empty(self) -> bool {
         self.first == self.end
+    }
+
+    /// Capture the first visible item of a computed range, excluding overscan.
+    /// As with projection, raw DTOs require valid current geometry.
+    #[must_use]
+    pub fn anchor(self) -> Option<ListScrollAnchor> {
+        if self.count == 0 {
+            return None;
+        }
+        let index = ((f64::from(self.offset) / f64::from(self.row_height)).floor() as usize)
+            .min(self.count - 1);
+        Some(ListScrollAnchor::at(
+            index,
+            self.offset - index as f32 * self.row_height,
+        ))
     }
 }
 

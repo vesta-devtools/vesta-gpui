@@ -184,6 +184,10 @@ impl EventRow {
 
 #[derive(Debug)]
 pub struct Session {
+    pub gpu_tracks: Vec<crate::gpu::plot::Track>,
+    pub gpu_execution: BTreeMap<(u64, u64), vesta_gpui::trace::gpu::GpuExecutionEstimate>,
+    pub memory: Option<crate::memory::MemorySession>,
+    pub thread_names: BTreeMap<LaneKey, Option<String>>,
     pub gpu: Option<crate::gpu::GpuCapture>,
     pub gpu_counts: crate::gpu::Counts,
     pub gpu_lanes: std::collections::BTreeSet<LaneKey>,

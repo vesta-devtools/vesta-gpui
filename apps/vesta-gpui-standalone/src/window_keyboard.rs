@@ -85,6 +85,7 @@ impl App {
                     || self.handle_radio_group_key(window, key)
                     || self.handle_scalar_control_key(window, key)
                     || self.handle_window_ramp_key(window, key)
+                    || self.handle_sample_key(window, key)
                     || self.handle_collection_key_for(window, key)
                     || self.resize_window_split_with_key(window, key)
             }

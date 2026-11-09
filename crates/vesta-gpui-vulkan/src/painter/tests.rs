@@ -3,6 +3,56 @@ use std::cell::Cell;
 use vesta_gpui::render::{ImageIssue, ImageResolution};
 use vesta_gpui::{Dimension, Element, ElementId, ElementKey, LayoutEngine, Style};
 
+#[test]
+fn glyph_run_promotes_only_a_redundant_scissor_and_retains_overflow_clipping() {
+    let mut context = TextInputContext::default();
+    assert!(context.register_font(Arc::new(
+        include_bytes!("../../../vesta-gpui/tests/fixtures/MaterialIcons-Regular.ttf").to_vec()
+    )));
+    context.set_font_stack(vesta_gpui::FontRole::Icon, "Material Icons");
+    let snapshot = context
+        .shape_static_text("\u{e145}", 16.0, vesta_gpui::FontRole::Icon)
+        .expect("font");
+    let viewport = Viewport::new(160.0, 80.0, 1.5);
+    let bounds = Rect::new(20.0, 10.0, 80.0, 40.0);
+    let mut rasterizer = TextRasterizer::default();
+    for (clip, promoted) in [(bounds, true), (Rect::new(20.0, 10.0, 3.0, 40.0), false)] {
+        let mut draws = Vec::new();
+        glyphs(
+            &mut draws,
+            viewport,
+            bounds,
+            TextInputViewport {
+                bounds,
+                clip,
+                origin: Point::new(20.0, 10.0),
+                scroll_x: 0.0,
+                scroll_y: 0.0,
+                caret: None,
+            },
+            &snapshot,
+            Color::rgb8(255, 255, 255),
+            &mut rasterizer,
+        )
+        .expect("glyph run");
+        assert!(!draws.is_empty());
+        let expected = render::scissor(
+            if promoted {
+                viewport.logical_rect()
+            } else {
+                clip
+            },
+            viewport,
+        )
+        .expect("scissor");
+        assert!(
+            draws
+                .iter()
+                .all(|draw| matches!(draw, Prepared::Glyph {scissor,..} if *scissor == expected))
+        );
+    }
+}
+
 struct Resolver {
     state: ImageResolution,
     calls: Cell<usize>,

@@ -92,3 +92,164 @@ allocator-only ABBA and same-Model consumer comparison now have separate scoped
 qualification. Current evidence and final immutable-delivery work live only in
 the [finite programme ledger](REFINEMENT.md); this dated checkpoint retains its
 original workload, executable and shared-machine limits.
+
+## Incremental measured-list checkpoint — 2026-11-09
+
+[Decision 0040](decisions/0040-Incremental-Variable-List-Metrics-And-Scroll-Anchors.md)
+adds point height updates and caller-remapped scroll anchors to the existing
+bounded variable-list projection. Run the public consumer with:
+
+```powershell
+cargo run --locked -p vesta-gpui-widgets --example variable_list_updates -j 2
+```
+
+Local raw samples, executable/source hashes and machine/profile context are in
+`target/research/list-updates-20261109/{workloads.txt,receipt.json}`. The Ryzen 9
+5950X Windows machine was shared with other builds. The normal dev profile uses
+opt-level 1 and dependency opt-level 3. Each path is warmed, then measured in four
+blocks with alternating order, with 256 deterministic height edits per block.
+Both paths capture/restore the same anchor and query the new range. Signatures
+match; each final incremental index also equals a fresh full reconstruction.
+
+| Rows | Full reconstruction, microseconds/edit | Incremental update, microseconds/edit |
+| --- | --- | --- |
+| 1,000 | 2.057–2.102 | 0.270–0.272 |
+| 100,000 | 169.418–171.254 | 0.155–0.164 |
+
+This compares two paths in the new implementation, not old/new application
+versions or BUI versus VestaGPUI. It measures geometry updates plus anchor/range
+work, excluding initial construction, window/rendering, source lookup, layout,
+semantics and projection. Other Host work can still be O(n).
+
+The space/update tradeoff also has a query cost: a separate 20,000-lookup probe
+reported 27.6/111.1 ns for prefix-search reference/block-index range lookup at
+1,000 rows, and 83.0/214.0 ns at 100,000. The reference is two searches in the old
+prefix-vector representation, not the whole old public API with all validation.
+The block index keeps f32 row heights plus about 3.125% additional block storage
+on large lists. These samples support incremental mutation workloads; they do
+not establish faster static lists, native frames, GPU work, FPS or display latency.
+
+Portable checks preserve fractional-edge admission, failed-update atomicity and
+layout/hit/action/focus/semantic identity. Standalone exercises its current
+variable-list consumer, including height changes and stable-ID remapping; purely
+fixed-height data mutations retain their existing scroll/focus repair policy.
+Physical input and screen-reader acceptance remain separate.
+
+## Dense table text checkpoint — 2026-11-09
+
+[Decision 0042](decisions/0042-Dense-Table-Text-Preparation-And-Clip-Batching.md)
+keeps the current cell Elements and semantics, fits a larger short-text working
+set inside bounded caches, and lets fitting text runs share the viewport scissor
+for existing atlas batching. Overflow retains its original clipping.
+
+Run the Standalone consumer probe with real Windows Segoe UI and YaHei fonts:
+
+```powershell
+cargo run --locked -p vesta-gpui-standalone --example table_pipeline -- target/table-cpu.json
+cargo run --locked -p vesta-gpui-standalone --example table_pipeline -- target/table-gpu.json --gpu
+```
+
+Outputs use create-new semantics. The first command measures CPU stages without
+a window or GPU. It projects 32 rows, eight/24 columns, 96-logical-pixel tracks
+and 264/792 text cells including headers, at 150% DPI. Selection changes each
+frame. Four frames warm the same retained layout/text owners; 32 measured frames
+follow. Assertions outside timing verify cell hit/action/tab identity, AccessKit,
+Agent inspection and complete realized-node counts. Each path includes the same
+projection, layout, routes, hits, semantics, inspection, paint and preparation.
+
+Local before/final nearest-rank p50 CPU samples, milliseconds:
+
+| Columns | Paint preparation before → final | Complete measured CPU pipeline before → final |
+| --- | --- | --- |
+| 8 | 95.053 → 0.584 | 96.081 → 1.488 |
+| 24 | 300.005 → 2.190 | 302.810 → 4.904 |
+
+The initial bottleneck is sequential cache churn, not cell tree construction
+(initial projection p50 0.218/0.657 ms). A cache-only isolation run had preparation
+p50 about 0.53/1.73 ms. These are sequential before/after runs, not an alternating
+executable trial. They use the normal dev profile on the shared Ryzen 9 5950X
+Windows machine during other builds. All raw samples remain recorded; the large
+improvement characterizes this repeated short-text workload, not arbitrary cells,
+larger working sets, FPS or physical-display latency. Cache entry ceilings and
+aggregate glyph retention increased; byte budgets and per-run limits are listed
+in [the text resource contract](TEXT-AND-OBSERVATION.md).
+
+The explicit `--gpu` mode uses a hidden native window and the actual renderer,
+on the local NVIDIA GeForce RTX 3070 Ti / Vulkan 1.3.281. It captures the third
+successful frame of each scene at a fixed 2306×1026 physical target. Higher DPI
+shows fewer cells because the target stays fixed. Selection and a focused cell
+are present. The final RGBA bytes match the original bytes in all six scenes:
+
+| Columns | Scale | Actual UI draw calls before → final | Scissor updates before → final |
+| --- | --- | --- | --- |
+| 8 | 100% | 307 → 85 | 297 → 85 |
+| 8 | 150% | 235 → 76 | 225 → 76 |
+| 8 | 175% | 199 → 61 | 189 → 61 |
+| 24 | 100% | 851 → 117 | 825 → 117 |
+| 24 | 150% | 469 → 126 | 450 → 125 |
+| 24 | 175% | 331 → 93 | 315 → 93 |
+
+CPU prepared entries are individual glyph/shape payloads, not these uploaded GPU
+draw calls. The native result is a draw/coverage check; it claims no GPU duration,
+screen-reader acceptance or consumer product integration. Overflowing labels and
+intervening paint can limit batching. Rich content and retained focus continue
+through the ordinary Element, text and input paths.
+
+Local evidence lives under `target/research`: `table-pipeline-{baseline,cache,final,
+summary}-20261109.json`, `table-gpu-{baseline,cache-only,contained}-20261109.json`,
+their `.rgba` payloads, `table-gpu-contained-comparison-20261109.json` and
+`table-receipt-20261109.json`. The failed preliminary cropped-quad experiment is
+retained as `table-gpu-clipped-*` and its comparison; that path is not implemented.
+
+## Streaming-list append checkpoint — 2026-11-09
+
+[Decision 0044](decisions/0044-Streaming-Lists-And-Wide-Tables.md) extends the
+existing geometry probe with equal-input append/splice work. Both paths warm,
+then alternate order in four blocks of 256 appends. With 100,000 initial rows,
+full reconstruction takes 224.588–248.488 microseconds per step and incremental
+splice 0.508–1.523. Every step includes the same source-height append and
+anchor/range work; final metrics equal a fresh full reconstruction and signatures
+match. Ordinary Vec capacity growth can reallocate the height array. General
+prepend/remove is still O(n).
+
+These are normal dev-profile geometry samples on the shared Ryzen 9 5950X
+machine, not text/UI frames, Agent latency or FPS. The slowest block is retained.
+A final-source repetition records 211.219–229.789 / 0.445–0.721 microseconds for
+the same rebuild/incremental paths; both full recordings remain in the evidence.
+Original samples, source/executable hashes, the real-font eleven-state public
+message consumer and current package-check logs are under
+`target/research/streaming-lists-20261109/`. No native message-input or downstream
+product qualification follows from this portable consumer checkpoint.
+
+## Column-window CPU checkpoint — 2026-11-09
+
+The public `wide_table --measure <font paths>` consumer compares the existing
+all-column, row-windowed projector with `table_view_columns`, using 10,000
+source records, 256 rich columns, four visible rows, one retained focused cell,
+a 720 × 140 logical viewport and real Segoe UI/YaHei fonts. Frozen counts are
+zero in both paths; the separate 512-column consumer exercises frozen ends.
+Host row names, data, theme, integer scroll steps, visible child identities,
+clipped geometry, hit actions, all 40 visible text paint commands and focused
+AccessKit/Agent identity agree. Both use complete inspection within the same
+4,096-node/64-KiB defaults. Host row names replace the legacy concatenation of
+all cell labels, which otherwise exceeds the bounded text budget in this source.
+
+After four warmups, sixteen samples alternate which path runs first. Full
+construction realizes 1,280 cells / 3,081 Elements; column windows realize 51 /
+149, including overscan and the focused cell. The paint-comparison run's CPU
+total is 11.844–21.192 ms (median 14.064) for full columns and 0.412–1.222 ms
+(median 0.764) for windows. The earlier run, before adding the exact text-paint
+comparison outside timing, records medians 15.648 / 0.878 ms; both complete logs
+retain slow samples and demonstrate shared-machine variation. After the final
+consumer-only stable-row-name assertion, an executable-hash-bound repetition
+records 9.544–14.049 / 0.456–0.818 ms, with medians 10.245 / 0.588. All three
+recordings remain; this later observation does not replace the slower runs.
+
+Timing includes tree construction, real-font retained layout, route/hit
+construction, AccessKit, complete bounded Agent snapshot and paint generation.
+It excludes source/column-metrics creation, assertion/signature validation,
+renderer preparation, GPU submission, native input and physical display latency.
+This is the normal dev opt-level 1/dependencies opt-level 3 profile on the shared
+Ryzen 9 5950X. It is neither a native FPS claim nor a sparse-column metric index;
+metrics construction/order/width changes remain O(n). Local raw logs and source/
+binary/font receipts live under `target/research/wide-tables-20261109/`.

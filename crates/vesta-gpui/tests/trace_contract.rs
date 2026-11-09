@@ -188,6 +188,7 @@ fn capacity_stop_and_late_guards_preserve_capture_ownership() {
     let capture = TraceCapture::start(config(2)).expect("first capture");
     let late = trace::frame("old.open");
     let clock = trace::gpu::GpuClock {
+        calibration_support: Default::default(),
         generation: 7,
         device_name: "synthetic device".into(),
         vendor_id: 0,
