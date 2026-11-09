@@ -20,11 +20,11 @@ immutable revision, with the consuming application's owner.
 
 | Stage | Required result | State |
 | --- | --- | --- |
-| CL00 Candidate preparation | Reconcile current API migrations and scoped measurements; identify concurrent source ownership; produce the final source inventory and exact checks when the delivery batch is stable | Migration notes now cover 0040/0042 and the new list APIs. Final inventory/package remains pending while the chosen source batch changes. Trace is concurrently changing its native capture workflow under decision 0043. |
+| CL00 Candidate preparation | Reconcile current API migrations and scoped measurements; identify concurrent source ownership; produce the final source inventory and exact checks when the delivery batch is stable | Public commit `2dbb22d` has a verified source seal and an immutable local source package. Migration notes cover 0040/0042 and the new list APIs. Subsequent Trace changes have a separate source boundary. |
 | CL01 Structural list updates | Validated append/prepend/replace/remove geometry; stable Host-remapped scroll anchor; failed updates atomic; incremental append measured against full reconstruction | Local software/public-consumer checkpoint passes. General prepend/remove remains O(n), not a sparse index. |
-| CL02 Measured message viewport | Budgeted visible-row measurement and explicit width/font/content invalidation; streaming tail following; user scrolling pauses following; prepend preserves the viewed item; empty/remove/resize and retained child focus handled | `LazyListMetrics`, the public consumer and Standalone integration are implemented. Initial Main/Float physical and semantic-command checkpoints are recorded below; expanded native reflow/input/accessibility qualification remains. |
-| CL03 Wide tables | Construct visible columns plus frozen and explicitly retained focused cells; declared column identity/width/order; aligned headers and rows; coherent horizontal scrolling, clipping, RTL, action/focus/semantic/Agent behavior | Core attachment, bounded column projection, the public consumer and the native 10,000 × 512 table are implemented. Initial physical horizontal scroll/range-copy and semantic capture/focus checkpoints pass within the scope below; expanded native qualification remains. |
-| CL04 Consumer and delivery closure | Real public consumers and Standalone integration; equivalent-work performance evidence; affected and full software checks; scoped native visual/input evidence; current source inventory/package and reviewable release notes | Pending. Public commit identity, push/release and downstream adoption follow maintenance requirements. |
+| CL02 Measured message viewport | Budgeted visible-row measurement and explicit width/font/content invalidation; streaming tail following; user scrolling pauses following; prepend preserves the viewed item; empty/remove/resize and retained child focus handled | Implemented; public-consumer and expanded Main/Float reflow/input checkpoints pass. SDK Inspect confirms sampled native message-button focus, including Home revealing an unrealized first item. Full reader speech and a native multi-monitor DPI sweep are not claimed. |
+| CL03 Wide tables | Construct visible columns plus frozen and explicitly retained focused cells; declared column identity/width/order; aligned headers and rows; coherent horizontal scrolling, clipping, RTL, action/focus/semantic/Agent behavior | Implemented; public-consumer and expanded scroll/range-copy/RTL/retained-focus checkpoints pass within the recorded scope. SDK Inspect confirms sampled native grid-button focus. |
+| CL04 Consumer and delivery closure | Real public consumers and Standalone integration; equivalent-work performance evidence; affected and full software checks; scoped native visual/input evidence; current source inventory/package and reviewable release notes | Local full software checks, release notes, public push and exact-commit source packaging are recorded. The CI caller-symbol failure is reproduced and a limited-symbol test profile passes locally with the original assertion; corrected public CI remains pending. No product migration, release tag or registry publication is implied. |
 
 Range-selection/TSV convenience follows the same Host-owned selection and
 clipboard contracts when the wide-table consumer demonstrates the needed
@@ -245,3 +245,58 @@ projection establishes successful native screen-reader focus. Keep that check
 open. No product dependency was migrated, release tag created or registry
 publication performed. Current-source software/inventory closure is being
 prepared for the separately authorized commit and push.
+
+## Public source and independent native-focus observation — 2026-11-10
+
+Commit `2dbb22d9734228fb81aeb12b7baf73f0dbbe1db4` is published on `main`.
+Its source receipt covers 616 entries with tree SHA-256
+`6c0c5ef7e14a191bebfec4d0e1361291959b5019eed2a4e85eb42ee9890ed81b`.
+The final local pre-push checkpoint passes 297 tests across 47 test targets,
+two documentation tests, seven Node tool tests, three Python bundle tests,
+strict workspace and base-renderer Clippy, formatting, UTF-8 and the resolved
+eight-library architecture. Affected Trace tests and full strict Clippy were
+repeated after its last edits. Logs and the selected-source receipt are under
+`target/research/pre-push-checkpoint-20261110/` and the corresponding
+`pre-push-*-20261110.log` files; earlier failed attempts remain recorded.
+
+An immutable `git archive` export of that commit passes the source verifier
+and the normal `tools/release/package.ps1` packaging path. Its ZIP has 617
+entries (including SOURCE.json), 3,753,015 bytes and SHA-256
+`411d9b4be65fa79bc5e5c416cd2abe20c083466d733b8924782d96ceb38af4f6`.
+The export, package and checksum live under
+`target/research/source-delivery-2dbb22d-20261110/`. This is a local source
+candidate; it does not qualify subsequent working-tree edits or publish a tag.
+
+The published commit's software checks must still be distinguished from its
+public CI result. Actions run 42663463893 fails the heap integration test's
+requirement to resolve `heap_capture_child`; its test profile sets debug level
+zero. Raw allocation operations and stacks are present. The caller-symbol
+contract remains required. The same pinned-toolchain/no-incremental/debug-zero
+configuration reproduces that failure locally. Changing only the test profile
+to debug level one passes both heap integration tests, including the original
+caller-name assertion; neither allocator forwarding nor capture/assertion code
+is changed. CI retains the lean development profile and limited test symbols,
+without full variable/type debug information. Original debug-zero/debug-one
+logs are `target/research/heap-capture-ci-debug{0,1}-20261110.log`. The corrected
+revision still needs its own public Actions result.
+
+A separately built standard Standalone executable, SHA-256
+`1ba3cdf5a6f0870ccc0066ee856c5c45b824c7dc8c7f0af285a680fb63714ae4`,
+uses the published commit's unchanged native input boundary. Windows SDK Inspect
+10.0.26100.0 x64 independently observes actual Focus events with
+`HasKeyboardFocus: true`, the fixture process ID and button role after physical
+grid, Append and message clicks. Physical Home reveals the first message and
+moves Core focus from Message 2001 to Message 1000; settled Inspect focus moves
+to the corresponding first-message button. Expected and submitted AccessKit
+identity/bounds agree. The helper still reports the older Note editor, including
+with only one native window, so that field is an observation limitation for
+this sample. Some UIA reads need settlement; immediate readback alone is not
+proof of a failed native update.
+
+Original SDK screenshots, API protocol, UIA observations, final presented GPU
+capture and hashed receipt are under
+`target/research/native-collections-focus-20261110/`. The fixture exits normally
+with an unchanged executable. Its Inspect window is closed and Computer Use is
+stopped; subsequent investigation uses command-line tools. This adds sampled
+native focus evidence at actual scale 1.25, not Narrator/NVDA speech, a native
+multi-monitor DPI sweep or qualification of concurrent Trace changes.

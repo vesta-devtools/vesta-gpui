@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "6c0c5ef7e14a191bebfec4d0e1361291959b5019eed2a4e85eb42ee9890ed81b",
+  "tree_sha256": "02b22ffb2ba38eee203635a6c8b9a3a61d19d568622a327ea9ff5485bc5fdfdf",
   "files": [
     {
       "path": ".gitattributes",
@@ -15,8 +15,8 @@
     },
     {
       "path": ".github/workflows/checks.yml",
-      "bytes": 2299,
-      "sha256": "b50d67a5c961e679db1bc1b0c8f5e593e9b9bfb6ab902fa78a557b61137007d1"
+      "bytes": 2456,
+      "sha256": "8ed746deaf478d8fe5cf0a0c720d37c88825ef4fb3031f75e783f2c04f73f7a8"
     },
     {
       "path": ".gitignore",
@@ -2935,8 +2935,8 @@
     },
     {
       "path": "docs/decisions/0044-Streaming-Lists-And-Wide-Tables.md",
-      "bytes": 17331,
-      "sha256": "5fb9dd0243c49fdff788e59d2943190dc3bcacd709e410e17def70ffbac99bbd"
+      "bytes": 21035,
+      "sha256": "7ae34f1f4e28baf766104cb780284cc0b85089cd38219cfcf9d9470cd951c4b7"
     },
     {
       "path": "docs/decisions/0045-Capture-Owned-Heap-Lifetimes-And-Stacks.md",
