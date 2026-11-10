@@ -17,9 +17,9 @@ cargo run --locked --offline -p vesta-gpui-widgets --example wide_table -- C:/Wi
 
 This portable real-font consumer opens no native window or clipboard. Bounds,
 limits, failures and Host duties are in the [Table contract](SUPPORTED-API.md#column-windows-and-frozen-bands--2026-11-09-addition).
-Add `--measure` for the equal-visible-work CPU comparison against the existing
-all-column projector; [scope and measurements](../../docs/PERFORMANCE.md#column-window-cpu-checkpoint--2026-11-09)
-remain separate from native/GPU acceptance.
+The completed one-time CPU comparison is retained with its
+[scope and measurements](../../docs/PERFORMANCE.md#column-window-cpu-checkpoint--2026-11-09)
+in local research evidence, outside the maintained example.
 
 Editor-specific node cards/pins, parameter value/slider presentations and path/menu
 chrome belong to [vesta-world-builder-ui (historical context)](../../docs/VALIDATION.md#historical-evidence).
@@ -204,16 +204,11 @@ Measured variable lists support `VariableListMetrics::update_height` without a
 full rebuild. Capture a range's `ListScrollAnchor` before changing measurements
 or order, retain the row's stable ID in Host, and restore with its new index via
 `offset_for_anchor`. The borrowed range still drives ordinary bounded Element,
-action and semantic projection. Source count/order changes require rebuilding;
-measurement, removed-item and bottom-follow policy remain caller-owned.
+action and semantic projection. Host remaps stable identities when applying
+source splices; measurement, removed-item and bottom-follow policy remain caller-owned.
 
-The `variable_list_updates` example compares equal deterministic point updates
-plus anchor restoration using full reconstruction and incremental updates. It
-also reports the steady query tradeoff against the previous prefix-vector search:
-
-```powershell
-cargo run --locked -p vesta-gpui-widgets --example variable_list_updates
-```
+The completed point-update/append comparisons and steady-query tradeoff are
+retained in the dated [performance evidence](../../docs/PERFORMANCE.md).
 
 `VariableListMetrics::splice` adds validated append/prepend/replace/remove.
 Append grows the existing block index; general insertion/removal still rebuilds

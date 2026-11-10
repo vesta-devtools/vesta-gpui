@@ -24,48 +24,6 @@ impl View {
 }
 
 impl App {
-    pub(crate) fn prepare_collection_fixture(&mut self) -> Result<(), String> {
-        if !fixture_requested() {
-            return Ok(());
-        }
-        if self.smoke || self.native_capture.is_some() || frame_reflow_probe::requested() {
-            return Err("--collections-fixture needs its own interactive run".into());
-        }
-        self.mode = AcceptanceMode::Gallery2d;
-        self.demo.workspace = demo_workspace();
-        let main = workspace_session::ensure_streaming_tab(&mut self.demo.workspace)
-            .ok_or("sample tab missing")?;
-        self.demo
-            .workspace
-            .activate(main)
-            .map_err(|error| error.to_string())?;
-        let pane = self
-            .demo
-            .workspace
-            .panes()
-            .first()
-            .ok_or("sample pane missing")?
-            .id;
-        let second = self
-            .demo
-            .workspace
-            .add_item(
-                pane,
-                "Messages & Data",
-                vesta_workspace::PanelTypeId::new(PANEL),
-            )
-            .map_err(|error| error.to_string())?;
-        if !self.float_workspace_item(second, WindowPlacement::new(1000.0, 60.0, 560.0, 760.0)) {
-            return Err("could not float the second collection view".into());
-        }
-        self.demo
-            .workspace
-            .activate(main)
-            .map_err(|error| error.to_string())?;
-        self.demo.sync_workspace_ui();
-        Ok(())
-    }
-
     pub(crate) fn sample_focus(&self, window: UiWindowId) -> Option<Action> {
         match self
             .window_actions(window)?

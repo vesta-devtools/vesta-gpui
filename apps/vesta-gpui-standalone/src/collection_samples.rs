@@ -7,9 +7,6 @@ mod messages;
 mod table;
 
 pub(super) const PANEL: &str = "gallery.streaming";
-pub(super) fn fixture_requested() -> bool {
-    std::env::args().any(|argument| argument == "--collections-fixture")
-}
 pub(super) const MESSAGE_VIEWPORT: u32 = 80_000_001;
 pub(super) const TABLE_VIEWPORT: u32 = 80_000_102;
 const ROW_HEIGHT: f32 = 28.0;

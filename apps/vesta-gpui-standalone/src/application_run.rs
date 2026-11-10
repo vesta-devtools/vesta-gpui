@@ -8,6 +8,12 @@ pub(super) fn run() -> Result<(), Box<dyn Error>> {
                 .into(),
         );
     }
+    if std::env::args().any(|argument| argument == "--collections-fixture") {
+        return Err(
+            "standalone_collection_fixture_retired: open Messages & Data in the ordinary Gallery"
+                .into(),
+        );
+    }
     render_backend::validate_args()?;
     window_documents::validate_smoke_args()?;
     native_capture::validate_args()?;
@@ -15,7 +21,6 @@ pub(super) fn run() -> Result<(), Box<dyn Error>> {
     event_loop.set_control_flow(ControlFlow::Wait);
     let mut app = App::new();
     app.prepare_native_capture()?;
-    app.prepare_collection_fixture()?;
     app.prepare_frame_reflow_probe()?;
     if app.smoke && app.mode == AcceptanceMode::Gallery2d {
         // Exercise text/popover controls and the image cache in the same visible Dock pages.
@@ -182,11 +187,7 @@ impl ApplicationHandler<UserEvent> for App {
         if self.window.is_some() {
             return;
         }
-        if !self.smoke
-            && self.native_capture.is_none()
-            && !frame_reflow_probe::requested()
-            && !collection_samples::fixture_requested()
-        {
+        if !self.smoke && self.native_capture.is_none() && !frame_reflow_probe::requested() {
             match ui_preferences::load() {
                 Ok(Some(preferences)) => {
                     let drawer = self.drawer_state();
@@ -373,7 +374,6 @@ impl ApplicationHandler<UserEvent> for App {
             && self.native_capture.is_none()
             && self.window.is_some()
             && !frame_reflow_probe::requested()
-            && !collection_samples::fixture_requested()
         {
             let drawer_width = self
                 .drawer_resize

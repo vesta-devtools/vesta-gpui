@@ -97,11 +97,9 @@ original workload, executable and shared-machine limits.
 
 [Decision 0040](decisions/0040-Incremental-Variable-List-Metrics-And-Scroll-Anchors.md)
 adds point height updates and caller-remapped scroll anchors to the existing
-bounded variable-list projection. Run the public consumer with:
-
-```powershell
-cargo run --locked -p vesta-gpui-widgets --example variable_list_updates -j 2
-```
+bounded variable-list projection. The one-time comparison source is retired
+from maintained examples after qualification; its original source is retained
+under `target/research/regression-prune-product-adoption-20261110/retired/`.
 
 Local raw samples, executable/source hashes and machine/profile context are in
 `target/research/list-updates-20261109/{workloads.txt,receipt.json}`. The Ryzen 9

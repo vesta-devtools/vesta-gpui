@@ -12,9 +12,6 @@ use vesta_gpui_widgets::{
     WideTableIds, Widget, WidgetContent, WidgetIdentity, WidgetTheme, table_view_columns,
 };
 
-#[path = "wide_table/performance.rs"]
-mod performance;
-
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct RecordId(u32);
@@ -361,20 +358,13 @@ impl Host {
 
 fn main() -> Result<()> {
     let mut context = TextInputContext::default();
-    let mut paths = std::env::args().skip(1).collect::<Vec<_>>();
-    let measure = paths.iter().any(|path| path == "--measure");
-    paths.retain(|path| path != "--measure");
+    let paths = std::env::args().skip(1).collect::<Vec<_>>();
     if paths.is_empty() {
         return Err("pass one or more Host font paths".into());
     }
-    let mut fonts = Vec::new();
     for path in paths {
         let bytes = Arc::new(std::fs::read(path)?);
-        assert!(context.register_font(bytes.clone()));
-        fonts.push(bytes);
-    }
-    if measure {
-        return performance::run(&fonts);
+        assert!(context.register_font(bytes));
     }
     let mut host = Host {
         records: (0..10_000)

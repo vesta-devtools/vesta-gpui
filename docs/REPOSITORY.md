@@ -82,6 +82,22 @@ not identify unfinished development code.
 
 ## Future maintenance
 
+The 2026-11-10 user-directed regression cleanup retires the completed
+`variable_list_updates` comparison, `wide_table --measure` comparison and native
+`streaming_collections` replay driver, including its special two-window startup.
+Their 802 source lines are preserved under
+`target/research/regression-prune-product-adoption-20261110/retired/`; original
+qualification receipts and source archives are unchanged. The retired startup
+flag is rejected before creating windows or loading/saving preferences.
+
+Keep the reusable message/wide-table examples and focused geometry, atomic
+failure, identity, focus, clipping, lifecycle, serialization and dependency
+contracts. Completed one-time comparisons and visual acceptance replays belong
+in local research evidence rather than permanent automatic regression targets.
+Add or retain a test only for a distinct durable behavior or demonstrated
+high-risk failure; simple presentation constants and duplicated cases do not
+justify another regression. Product integration follows the cleanup.
+
 Keep one owner for each concern: architecture in ARCHITECTURE, API support in the
 capability inventories, finite programme evidence in REFINEMENT, and new defects
 with their source and affected contract. Preserve historical records without
