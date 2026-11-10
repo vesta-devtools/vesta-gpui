@@ -6,7 +6,7 @@
   "authority": "independently-maintained-source",
   "immutable_git_revision": null,
   "import_receipt_sha256": "54367f4486609c990cdec2cd807a8d5391a01d9db1a156e04f2dc57f6d19b129",
-  "tree_sha256": "02b22ffb2ba38eee203635a6c8b9a3a61d19d568622a327ea9ff5485bc5fdfdf",
+  "tree_sha256": "0add93d4515ad6b0343873be7d3e22c3e38afdee6639b8972e0c045120f7aab1",
   "files": [
     {
       "path": ".gitattributes",
@@ -2640,8 +2640,8 @@
     },
     {
       "path": "docs/PERFORMANCE.md",
-      "bytes": 15294,
-      "sha256": "92ffc37c79ac7e6c07993aa3c9b154b6ef394420562b6def97e370aec6610f85"
+      "bytes": 16891,
+      "sha256": "172694fe27d41b318b5df7bb96826e429409bc515ca981abe4d21030597ce100"
     },
     {
       "path": "docs/REFINEMENT-HISTORY.md",
@@ -2935,8 +2935,8 @@
     },
     {
       "path": "docs/decisions/0044-Streaming-Lists-And-Wide-Tables.md",
-      "bytes": 21035,
-      "sha256": "7ae34f1f4e28baf766104cb780284cc0b85089cd38219cfcf9d9470cd951c4b7"
+      "bytes": 25686,
+      "sha256": "9fb866d4172e556f517018c680a2d66d3695190a59c781c56e420cc411c41990"
     },
     {
       "path": "docs/decisions/0045-Capture-Owned-Heap-Lifetimes-And-Stacks.md",
@@ -2955,8 +2955,8 @@
     },
     {
       "path": "release/0.1.0-rc.2.md",
-      "bytes": 15910,
-      "sha256": "24b002c7d3ace46f743ea1baa236b36aa9e1386e363ccc00ad6ec706056a06e6"
+      "bytes": 16152,
+      "sha256": "f4734123f60f2d02a20934b61044f7ee44b072413866a789aebc0238ac8ab6a0"
     },
     {
       "path": "rust-toolchain.toml",

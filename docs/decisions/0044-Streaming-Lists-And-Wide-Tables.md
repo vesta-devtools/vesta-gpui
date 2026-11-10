@@ -1,7 +1,8 @@
 # Streaming lists, wide tables and source delivery
 
-Status: Accepted; implementation in progress.
+Status: Completed for CL00–CL04 within the recorded library/consumer scope.
 Date: 2026-11-09.
+Closure audit: 2026-11-10 (Asia/Shanghai).
 
 ## Objective and ownership
 
@@ -20,11 +21,11 @@ immutable revision, with the consuming application's owner.
 
 | Stage | Required result | State |
 | --- | --- | --- |
-| CL00 Candidate preparation | Reconcile current API migrations and scoped measurements; identify concurrent source ownership; produce the final source inventory and exact checks when the delivery batch is stable | Public commit `2dbb22d` has a verified source seal and an immutable local source package. Migration notes cover 0040/0042 and the new list APIs. Subsequent Trace changes have a separate source boundary. |
-| CL01 Structural list updates | Validated append/prepend/replace/remove geometry; stable Host-remapped scroll anchor; failed updates atomic; incremental append measured against full reconstruction | Local software/public-consumer checkpoint passes. General prepend/remove remains O(n), not a sparse index. |
-| CL02 Measured message viewport | Budgeted visible-row measurement and explicit width/font/content invalidation; streaming tail following; user scrolling pauses following; prepend preserves the viewed item; empty/remove/resize and retained child focus handled | Implemented; public-consumer and expanded Main/Float reflow/input checkpoints pass. SDK Inspect confirms sampled native message-button focus, including Home revealing an unrealized first item. Full reader speech and a native multi-monitor DPI sweep are not claimed. |
-| CL03 Wide tables | Construct visible columns plus frozen and explicitly retained focused cells; declared column identity/width/order; aligned headers and rows; coherent horizontal scrolling, clipping, RTL, action/focus/semantic/Agent behavior | Implemented; public-consumer and expanded scroll/range-copy/RTL/retained-focus checkpoints pass within the recorded scope. SDK Inspect confirms sampled native grid-button focus. |
-| CL04 Consumer and delivery closure | Real public consumers and Standalone integration; equivalent-work performance evidence; affected and full software checks; scoped native visual/input evidence; current source inventory/package and reviewable release notes | Local full software checks, release notes, public push and exact-commit source packaging are recorded. The CI caller-symbol failure is reproduced and a limited-symbol test profile passes locally with the original assertion; corrected public CI remains pending. No product migration, release tag or registry publication is implied. |
+| CL00 Candidate preparation | Reconcile current API migrations and scoped measurements; identify concurrent source ownership; produce the final source inventory and exact checks when the delivery batch is stable | Complete. Published source at `3c9a247` is sealed and packaged; migration notes cover 0040/0042 and the new list/table APIs. Subsequent Trace changes retain their own source boundary. |
+| CL01 Structural list updates | Validated append/prepend/replace/remove geometry; stable Host-remapped scroll anchor; failed updates atomic; incremental append measured against full reconstruction | Complete. Differential/admission/anchor tests and a fresh published-source public workload pass. General prepend/remove remains O(n), not a sparse index. |
+| CL02 Measured message viewport | Budgeted visible-row measurement and explicit width/font/content invalidation; streaming tail following; user scrolling pauses following; prepend preserves the viewed item; empty/remove/resize and retained child focus handled | Complete within scope. Public-consumer and expanded Main/Float reflow/input checkpoints pass. SDK Inspect confirms sampled native message-button focus, including Home revealing an unrealized first item. Full reader speech and a native multi-monitor DPI sweep are not claimed. |
+| CL03 Wide tables | Construct visible columns plus frozen and explicitly retained focused cells; declared column identity/width/order; aligned headers and rows; coherent horizontal scrolling, clipping, RTL, action/focus/semantic/Agent behavior | Complete within scope. Public-consumer and expanded scroll/range-copy/RTL/retained-focus checkpoints pass. SDK Inspect confirms sampled native grid-button focus; source range copy is bounded to 4096 cells. |
+| CL04 Consumer and delivery closure | Real public consumers and Standalone integration; equivalent-work performance evidence; affected and full software checks; scoped native visual/input evidence; current source inventory/package and reviewable release notes | Complete for this programme. Full public CI at `3c9a247`, fresh exact-source consumers/performance, scoped native evidence and verified source archives are recorded below. No product migration, release tag or registry publication is implied. |
 
 Range-selection/TSV convenience follows the same Host-owned selection and
 clipboard contracts when the wide-table consumer demonstrates the needed
@@ -300,3 +301,50 @@ with an unchanged executable. Its Inspect window is closed and Computer Use is
 stopped; subsequent investigation uses command-line tools. This adds sampled
 native focus evidence at actual scale 1.25, not Narrator/NVDA speech, a native
 multi-monitor DPI sweep or qualification of concurrent Trace changes.
+
+## CL00–CL04 closure audit — 2026-11-10
+
+This audit supersedes open items in the earlier dated checkpoints above.
+The [successful public Actions run](https://github.com/vesta-devtools/vesta-gpui/actions/runs/42670124592)
+is bound to `3c9a247b546330b93d3d9b8ad37432b7d0c64c52`. Its original job log
+contains 297 workspace tests across 47 test targets, two documentation tests,
+seven source/tool tests, the resolved eight-library architecture check, format,
+strict all-feature workspace Clippy and base-renderer Clippy. The heap caller
+assertion passes with limited test symbols. The failed predecessor run remains
+recorded; no assertion or runtime capture code was relaxed to obtain this pass.
+
+All 617 Git files, including SOURCE.json, are compared with the fixed source
+copy by their Git blob hashes. That copy verifies tree SHA-256
+`02b22ffb2ba38eee203635a6c8b9a3a61d19d568622a327ea9ff5485bc5fdfdf`.
+Its verified 617-entry source ZIP has SHA-256
+`440cbbedf7f81d9d6d2e3c502e59dfc766d94d93dee9950f9bbc91fd3a831635`.
+The closing documentation is resealed and packaged as its own source revision;
+it does not change the qualified Rust implementation, manifests or lockfile.
+
+The fixed copy builds its three public consumers in its own ordinary Cargo
+target, without another checkout's compiled artifacts. Fresh message-list and
+512-column table runs each pass eleven states. The equal-work geometry and
+wide-table workloads pass their independent reconstruction/signature assertions;
+source and executable hashes are unchanged after running. Current raw logs,
+compiler output, font/executable hashes, Git/source comparison, CI JSON and the
+requirement-by-requirement receipt are under
+`target/research/collection-closure-20261110/`. The CPU measurements and their
+limits are recorded in [Performance](../PERFORMANCE.md#published-source-consumer-recheck--2026-11-10).
+
+| Requirement | Inspected implementation and proving evidence |
+| --- | --- |
+| Host ownership and existing architecture | Source/records and per-window views stay in Standalone; libraries expose derived geometry/projection. Public API contracts state identities, caller work, lifecycle, limits and failures. The resolved production graph still has eight libraries. Apache-2.0 ownership is unchanged; no BUI source/dependency or upstream compatibility adapter is added. |
+| Structural list updates and anchors | Seeded independent geometry, admission atomicity and stable Host-remapped anchors in `virtual_list/variable/tests.rs`; fresh equal-input append/reconstruction workload. |
+| Budgeted text measurement | `measured/tests.rs` checks width/font/content invalidation, callback budgets, deferred/invalid measurements and empty/removal outcomes; the real-font consumer exercises retained child routing, AccessKit and complete Agent snapshots. |
+| Streaming native Host | `collection_samples/tests.rs` checks append/stream/tail, reader-preserving prepend/reflow/empty and independently measured views over one source. The recorded native Main/Float fixture covers reader/tail separation and reflow. |
+| Wide-table projection and frozen bands | `table_view/window/tests.rs` checks full-scan geometry, fractional LTR/RTL bounds, clips, hits, retained focus and invalid factories. The public 10,000 × 512 consumer checks reorder/resize/reveal and bounded projection. |
+| Selection and copying | Native Host tests and the physical range/copy checkpoint cover stable-ID rectangular selection and bounded source values across unrealized cells; existing HostClipboard owns delivery. |
+| Native input, focus and observation | Physical input and next-presented GPU captures remain separate from semantic commands. SDK Inspect independently observes sampled actual UIA focus. Thirty named native capture/focus artifacts are hash-verified. `2dbb22d` and `3c9a247` have identical native Rust/manifests/lockfile. |
+| Delivery and ongoing work | Release notes cover migrations; source archives verify every entry; public commits use the selected public identity. The source boundary includes the published Trace batch, while subsequent Trace edits remain separately owned and unqualified by this receipt. |
+
+The completed programme is library/public-consumer and scoped Standalone work.
+Full screen-reader speech, native multi-monitor DPI coverage, release tagging,
+registry publication and Agent/Builder dependency adoption retain their own
+qualification and coordination; none is inferred from these results. Inspect
+and the owned fixture are closed. Computer Use remains stopped so this audit
+does not occupy another session's desktop.

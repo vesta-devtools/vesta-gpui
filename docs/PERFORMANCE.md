@@ -253,3 +253,29 @@ This is the normal dev opt-level 1/dependencies opt-level 3 profile on the share
 Ryzen 9 5950X. It is neither a native FPS claim nor a sparse-column metric index;
 metrics construction/order/width changes remain O(n). Local raw logs and source/
 binary/font receipts live under `target/research/wide-tables-20261109/`.
+
+## Published-source consumer recheck — 2026-11-10
+
+The immutable source copy of `3c9a247b546330b93d3d9b8ad37432b7d0c64c52`
+passes its source verifier and matches all 617 published Git blobs. Its own
+ordinary Cargo target builds the message, wide-table and geometry consumers;
+both real-font consumers pass eleven states and their exact hit/action/focus,
+AccessKit and complete Agent-snapshot assertions. No native window is opened.
+The source receipt and all three executable hashes agree before/after the run.
+
+With the same alternating equal-input method above, four 100,000-row append
+blocks record 252.229–268.100 microseconds per step for reconstruction and
+0.481–0.945 for incremental splice. Signatures and final reconstruction agree.
+Pure query lookup is slower than the cached-prefix reference in this run:
+91.4 versus 208.6 ns at 100,000 rows. The index targets changing geometry;
+it does not make every unchanged-range lookup faster.
+
+The equal-visible-work table comparison keeps 1,280/51 constructed cells and
+3,081/149 Elements. Sixteen samples after four warmups record full-column totals
+of 11.414–18.416 ms (median 14.134) and column-window totals of 0.436–0.885 ms
+(median 0.651). All visible text paint, clipped child geometry/actions and retained
+focus signatures agree. The workload, inclusions/exclusions and dev profile
+remain as described above; shared-machine timing is not GPU/display latency or
+an FPS claim. Previous slower samples remain intact. Fresh logs and the exact
+source/executable/font receipt are in
+`target/research/collection-closure-20261110/`.
