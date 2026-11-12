@@ -7,6 +7,8 @@ pub use labels::{NumericAtlas, NumericLabel, NumericLabelStyle, NumericLabels};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct DisplaySources {
+    /// Actual point content, independent of the optional all-point edit overlay.
+    pub content_points: Vec<ContentPoint>,
     /// Already transformed into display world space by the host.
     pub points: Vec<[f32; 3]>,
     /// Original world-space wire segments. Some(empty) deliberately draws no edges.
@@ -17,6 +19,13 @@ pub struct DisplaySources {
     pub normal_style: Option<NormalStyle>,
     pub marker_style: Option<MarkerStyle>,
     pub numeric_labels: Option<NumericLabels>,
+}
+
+/// A small content point in display world space, retaining its source color.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ContentPoint {
+    pub position: [f32; 3],
+    pub color: [f32; 4],
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

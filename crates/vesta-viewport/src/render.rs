@@ -486,6 +486,63 @@ mod grid_tests {
             failures.push("overflowing marker must be omitted as a complete billboard");
         }
         assert!(failures.is_empty(), "{failures:?}");
+        let red = [1.0, 0.0, 0.0, 1.0];
+        let green = [0.0, 1.0, 0.0, 1.0];
+        let blue = [0.0, 0.0, 1.0, 1.0];
+        let positions = [[0.0, 0.0, 0.25], [0.0, 0.0, 0.5]];
+        scene.sources = Some(DisplaySources {
+            content_points: vec![
+                crate::display::ContentPoint {
+                    position: positions[0],
+                    color: red,
+                },
+                crate::display::ContentPoint {
+                    position: positions[1],
+                    color: green,
+                },
+                crate::display::ContentPoint {
+                    position: [f32::NAN; 3],
+                    color: red,
+                },
+                crate::display::ContentPoint {
+                    position: positions[0],
+                    color: [f32::NAN; 4],
+                },
+            ],
+            points: positions.to_vec(),
+            marker_style: Some(MarkerStyle {
+                diameter: 6.0,
+                edge_width: 1.0,
+                color: blue,
+            }),
+            ..DisplaySources::default()
+        });
+        scene.display.points = false;
+        let content = marker_triangles(&scene, camera, ViewportRect::full(100, 100));
+        assert_eq!(
+            content.len(),
+            12,
+            "content points survive with edit markers disabled; invalid content is omitted atomically"
+        );
+        assert!(content[..6].iter().all(|vertex| vertex.color == red));
+        assert!(content[6..].iter().all(|vertex| vertex.color == green));
+        scene.display.points = true;
+        let editing = marker_triangles(&scene, camera, ViewportRect::full(100, 100));
+        assert_eq!(editing.len(), 24);
+        assert_eq!(
+            &editing[..12],
+            content.as_slice(),
+            "edit overlays cannot tint or replace point content"
+        );
+        assert!(editing[12..].iter().all(|vertex| vertex.color == blue));
+        let width = |vertices: &[crate::display::MarkerVertex]| {
+            (vertices[1].clip_position[0] - vertices[0].clip_position[0]).abs()
+                / vertices[0].clip_position[3]
+        };
+        assert!(
+            (width(&editing[12..18]) / width(&content[..6]) - 3.0).abs() < 1e-5,
+            "edit markers have an independent screen size"
+        );
     }
 
     #[test]

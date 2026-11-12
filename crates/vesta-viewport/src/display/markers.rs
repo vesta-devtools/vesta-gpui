@@ -27,27 +27,39 @@ pub fn marker_triangles(
     let Some(sources) = &scene.sources else {
         return Vec::new();
     };
-    let Some(style) = sources.marker_style else {
-        return Vec::new();
-    };
-    if !scene.display.points
-        || rect.width == 0
-        || rect.height == 0
-        || !style.diameter.is_finite()
-        || style.diameter <= 0.0
-        || !style.edge_width.is_finite()
-        || style.edge_width <= 0.0
-        || !style.color.into_iter().all(f32::is_finite)
-    {
-        return Vec::new();
-    }
-    let softness = 2.0 * style.edge_width / style.diameter;
-    if !softness.is_finite() {
+    if rect.width == 0 || rect.height == 0 {
         return Vec::new();
     }
     let matrix = view_projection(camera, rect.width as f32 / rect.height as f32);
     let mut result = Vec::new();
-    for point in &sources.points {
+    let content = sources.content_points.iter().map(|point| {
+        (
+            &point.position,
+            MarkerStyle {
+                diameter: 2.0,
+                edge_width: 0.5,
+                color: point.color,
+            },
+        )
+    });
+    let edit_style = sources.marker_style.filter(|_| scene.display.points);
+    let markers = sources
+        .points
+        .iter()
+        .filter_map(|point| edit_style.map(|style| (point, style)));
+    for (point, style) in content.chain(markers) {
+        if !style.diameter.is_finite()
+            || style.diameter <= 0.0
+            || !style.edge_width.is_finite()
+            || style.edge_width <= 0.0
+            || !style.color.into_iter().all(f32::is_finite)
+        {
+            continue;
+        }
+        let softness = 2.0 * style.edge_width / style.diameter;
+        if !softness.is_finite() {
+            continue;
+        }
         if !point.iter().all(|v| v.is_finite()) {
             continue;
         }
